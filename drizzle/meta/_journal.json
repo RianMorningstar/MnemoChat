@@ -1,0 +1,41 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1772732900132,
+      "tag": "0000_skinny_masque",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1772734864208,
+      "tag": "0001_old_sunfire",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1772735779910,
+      "tag": "0002_colossal_stone_men",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1772736987804,
+      "tag": "0003_amazing_ultimatum",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1772738654981,
+      "tag": "0004_handy_tony_stark",
+      "breakpoints": true
+    }
+  ]
+}

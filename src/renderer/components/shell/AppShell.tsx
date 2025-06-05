@@ -1,0 +1,123 @@
+import { useState } from "react";
+import {
+  PanelLeftClose,
+  PanelLeft,
+  Menu,
+  X,
+  LayoutDashboard,
+  MessageSquare,
+  UserCircle,
+  Grid3X3,
+  BookOpen,
+  Settings,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { MainNav, type NavItem } from "./MainNav";
+import { UserMenu } from "./UserMenu";
+import { ConnectionIndicator } from "./ConnectionIndicator";
+
+const navigationItems: NavItem[] = [
+  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { label: "Chat & Roleplay", href: "/chat", icon: MessageSquare },
+  { label: "Characters", href: "/characters", icon: UserCircle },
+  { label: "Library", href: "/library", icon: Grid3X3 },
+  { label: "Story Mode", href: "/story", icon: BookOpen },
+  { label: "Settings", href: "/settings", icon: Settings },
+];
+
+interface AppShellProps {
+  children: React.ReactNode;
+}
+
+export function AppShell({ children }: AppShellProps) {
+  const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  return (
+    <div className="flex h-screen font-sans bg-zinc-950">
+      {/* Mobile overlay */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/60 md:hidden"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside
+        className={cn(
+          "flex h-full shrink-0 flex-col border-r border-zinc-800 bg-zinc-900 transition-all duration-200",
+          "hidden md:flex",
+          collapsed ? "w-16" : "w-60",
+          mobileOpen &&
+            "fixed inset-y-0 left-0 z-50 flex w-60 shadow-2xl md:relative md:shadow-none",
+        )}
+      >
+        {/* Header */}
+        <div className="flex h-14 items-center justify-between border-b border-zinc-800 px-3">
+          {!collapsed && (
+            <span className="font-heading text-base font-semibold tracking-tight text-zinc-100">
+              MnemoChat
+            </span>
+          )}
+          <button
+            onClick={() => {
+              setCollapsed((c) => !c);
+              setMobileOpen(false);
+            }}
+            className="rounded-md p-1.5 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-100"
+          >
+            {collapsed ? (
+              <PanelLeft className="h-5 w-5" strokeWidth={1.5} />
+            ) : (
+              <PanelLeftClose className="h-5 w-5" strokeWidth={1.5} />
+            )}
+          </button>
+        </div>
+
+        {/* Navigation */}
+        <div className="mt-4 flex-1 overflow-y-auto">
+          <MainNav items={navigationItems} collapsed={collapsed} />
+        </div>
+
+        {/* Connection indicator */}
+        <div className="border-t border-zinc-800">
+          <ConnectionIndicator collapsed={collapsed} />
+        </div>
+
+        {/* User menu */}
+        <div className="border-t border-zinc-800 pt-2">
+          <UserMenu
+            persona={{ name: "Alex Morgan" }}
+            collapsed={collapsed}
+          />
+        </div>
+      </aside>
+
+      {/* Main content area */}
+      <div className="flex flex-1 flex-col overflow-hidden">
+        {/* Mobile top bar */}
+        <header className="flex h-14 items-center gap-3 border-b border-zinc-800 bg-zinc-900 px-4 md:hidden">
+          <button
+            onClick={() => setMobileOpen((o) => !o)}
+            className="rounded-md p-1.5 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-100"
+          >
+            {mobileOpen ? (
+              <X className="h-5 w-5" strokeWidth={1.5} />
+            ) : (
+              <Menu className="h-5 w-5" strokeWidth={1.5} />
+            )}
+          </button>
+          <span className="font-heading text-base font-semibold tracking-tight text-zinc-100">
+            MnemoChat
+          </span>
+        </header>
+
+        {/* Page content */}
+        <main className="flex-1 overflow-y-auto bg-zinc-950">
+          {children}
+        </main>
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,95 @@
+import { useState } from "react";
+import type {
+  ContentTier,
+  ContentTierOption,
+  ConnectionState,
+  OllamaModel,
+  WizardStep,
+} from "@shared/types";
+import { StepIndicator } from "./StepIndicator";
+import { ContentTierStep } from "./ContentTierStep";
+import { ConnectOllamaStep } from "./ConnectOllamaStep";
+import { ModelPickerStep } from "./ModelPickerStep";
+
+interface OnboardingWizardProps {
+  contentTierOptions: ContentTierOption[];
+  ollamaModels: OllamaModel[];
+  connectionState: ConnectionState;
+  detectedEndpoint: string | null;
+  onSelectContentTier?: (tier: ContentTier) => void;
+  onConfirmAge?: () => void;
+  onConnectOllama?: (endpoint: string) => void;
+  onSelectModel?: (modelName: string) => void;
+  onCompleteWizard?: () => void;
+}
+
+export function OnboardingWizard({
+  contentTierOptions,
+  ollamaModels,
+  connectionState,
+  detectedEndpoint,
+  onSelectContentTier,
+  onConfirmAge,
+  onConnectOllama,
+  onSelectModel,
+  onCompleteWizard,
+}: OnboardingWizardProps) {
+  const [step, setStep] = useState<WizardStep>(1);
+  const [selectedTier, setSelectedTier] = useState<ContentTier | null>(null);
+  const [selectedModel, setSelectedModel] = useState<string | null>(null);
+
+  const handleNext = () => {
+    setStep((s) => Math.min(s + 1, 3) as WizardStep);
+  };
+
+  return (
+    <div
+      className="flex min-h-screen flex-col bg-zinc-950"
+      style={{ fontFamily: "'Inter', system-ui, sans-serif" }}
+    >
+      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(ellipse_at_top,rgba(99,102,241,0.05),transparent_60%)]" />
+
+      <header className="relative z-10 flex justify-center px-6 pt-8">
+        <StepIndicator currentStep={step} totalSteps={3} />
+      </header>
+
+      <main className="relative z-10 flex flex-1 items-center justify-center px-6 py-12">
+        {step === 1 && (
+          <ContentTierStep
+            options={contentTierOptions}
+            selectedTier={selectedTier}
+            onSelectTier={(tier) => {
+              setSelectedTier(tier);
+              onSelectContentTier?.(tier);
+            }}
+            onConfirmAge={onConfirmAge}
+            onNext={handleNext}
+          />
+        )}
+
+        {step === 2 && (
+          <ConnectOllamaStep
+            connectionState={connectionState}
+            detectedEndpoint={detectedEndpoint}
+            modelCount={ollamaModels.length}
+            onConnect={onConnectOllama}
+            onNext={handleNext}
+          />
+        )}
+
+        {step === 3 && (
+          <ModelPickerStep
+            models={ollamaModels}
+            selectedModel={selectedModel}
+            contentTier={selectedTier}
+            onSelectModel={(name) => {
+              setSelectedModel(name);
+              onSelectModel?.(name);
+            }}
+            onComplete={onCompleteWizard}
+          />
+        )}
+      </main>
+    </div>
+  );
+}
