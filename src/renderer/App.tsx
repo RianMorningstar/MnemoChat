@@ -13,7 +13,7 @@ import {
   SettingsPage,
   OnboardingPage,
 } from "@/pages";
-import { getSetting } from "@/lib/api";
+import { getSetting, getConnections } from "@/lib/api";
 
 function AppShellLayout() {
   return (
@@ -28,16 +28,16 @@ function RootRedirect() {
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    getSetting("onboarding_completed")
-      .then((setting) => {
-        if (setting?.value === "true") {
+    Promise.all([
+      getSetting("onboarding_completed").catch(() => null),
+      getConnections().catch(() => []),
+    ])
+      .then(([setting, connections]) => {
+        if (setting?.value === "true" || connections.length > 0) {
           navigate("/characters", { replace: true });
         } else {
           navigate("/onboarding", { replace: true });
         }
-      })
-      .catch(() => {
-        navigate("/onboarding", { replace: true });
       })
       .finally(() => setChecking(false));
   }, [navigate]);

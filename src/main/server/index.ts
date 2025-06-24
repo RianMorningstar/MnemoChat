@@ -21,7 +21,7 @@ import { ollamaProxyRoutes } from "./routes/ollama-proxy";
 const server = Fastify();
 
 export async function startServer(): Promise<number> {
-  await server.register(cors, { origin: true });
+  await server.register(cors, { origin: true, methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"] });
   await server.register(settingsRoutes);
   await server.register(connectionRoutes);
   await server.register(characterRoutes);

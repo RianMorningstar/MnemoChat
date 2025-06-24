@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router";
 import type { ContentTier, ConnectionState, OllamaModel, ContentTierOption } from "@shared/types";
 import { OnboardingWizard } from "@/components/onboarding";
-import { getSetting, setSetting, createConnection, activateConnection } from "@/lib/api";
+import { getSetting, setSetting, createConnection, activateConnection, getConnections } from "@/lib/api";
 import { checkOllamaHealth, fetchOllamaModels } from "@/lib/ollama";
 
 const CONTENT_TIER_OPTIONS: ContentTierOption[] = [
@@ -33,15 +33,18 @@ export function OnboardingPage() {
   const [selectedTier, setSelectedTier] = useState<ContentTier | null>(null);
   const [selectedModel, setSelectedModel] = useState<string | null>(null);
 
-  // Check if onboarding already completed
+  // Check if onboarding already completed or a connection already exists
   useEffect(() => {
-    getSetting("onboarding_completed").then((setting) => {
-      if (setting?.value === "true") {
-        navigate("/dashboard", { replace: true });
+    Promise.all([
+      getSetting("onboarding_completed").catch(() => null),
+      getConnections().catch(() => []),
+    ]).then(([setting, connections]) => {
+      if (setting?.value === "true" || connections.length > 0) {
+        navigate("/characters", { replace: true });
       } else {
         setLoading(false);
       }
-    }).catch(() => setLoading(false));
+    });
   }, [navigate]);
 
   // Auto-detect Ollama
@@ -63,20 +66,25 @@ export function OnboardingPage() {
   }, [tryConnect]);
 
   const handleComplete = async () => {
-    const profileId = crypto.randomUUID();
-    await createConnection({
-      id: profileId,
-      name: "Local Ollama",
-      endpoint,
-      defaultModel: selectedModel || undefined,
-      contentTier: selectedTier || undefined,
-    });
-    await activateConnection(profileId);
-    await setSetting("onboarding_completed", "true");
-    if (selectedTier) {
-      await setSetting("content_tier", selectedTier);
+    try {
+      const profileId = crypto.randomUUID();
+      const cleanEndpoint = endpoint.replace(/\/+$/, "");
+      await createConnection({
+        id: profileId,
+        name: "Local Ollama",
+        endpoint: cleanEndpoint,
+        defaultModel: selectedModel || undefined,
+        contentTier: selectedTier || undefined,
+      });
+      await activateConnection(profileId);
+      await setSetting("onboarding_completed", "true");
+      if (selectedTier) {
+        await setSetting("content_tier", selectedTier);
+      }
+      navigate("/characters", { replace: true });
+    } catch (err) {
+      console.error("Onboarding completion failed:", err);
     }
-    navigate("/dashboard", { replace: true });
   };
 
   if (loading) {
