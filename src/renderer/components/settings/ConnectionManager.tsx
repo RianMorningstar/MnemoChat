@@ -49,27 +49,39 @@ export function ConnectionManager() {
   };
 
   const handleDelete = async (id: string) => {
-    await deleteConnection(id);
-    setConfirmDeleteId(null);
-    await loadProfiles();
+    try {
+      await deleteConnection(id);
+      setConfirmDeleteId(null);
+      await loadProfiles();
+    } catch (err) {
+      console.error("Failed to delete connection:", err);
+    }
   };
 
   const handleActivate = async (id: string) => {
-    await activateConnection(id);
-    await loadProfiles();
+    try {
+      await activateConnection(id);
+      await loadProfiles();
+    } catch (err) {
+      console.error("Failed to activate connection:", err);
+    }
   };
 
   const handleAdd = async () => {
     if (!newName.trim() || !newEndpoint.trim()) return;
-    await createConnection({
-      id: crypto.randomUUID(),
-      name: newName.trim(),
-      endpoint: newEndpoint.trim(),
-    });
-    setNewName("");
-    setNewEndpoint("");
-    setShowAdd(false);
-    await loadProfiles();
+    try {
+      await createConnection({
+        id: crypto.randomUUID(),
+        name: newName.trim(),
+        endpoint: newEndpoint.trim(),
+      });
+      setNewName("");
+      setNewEndpoint("");
+      setShowAdd(false);
+      await loadProfiles();
+    } catch (err) {
+      console.error("Failed to add connection:", err);
+    }
   };
 
   if (loading) {
