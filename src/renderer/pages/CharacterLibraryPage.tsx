@@ -7,6 +7,7 @@ import {
   deleteCharacter,
   duplicateCharacter,
 } from "@/lib/api";
+import { extractCharacterFromPng } from "@/lib/png-metadata";
 import type { Character, ImportPreview } from "@shared/character-types";
 
 export function CharacterLibraryPage() {
@@ -76,23 +77,51 @@ export function CharacterLibraryPage() {
     []
   );
 
-  const handleImportPng = useCallback((_file: File) => {
-    // Placeholder: real PNG metadata parsing would go here
-    const mockPreview: ImportPreview = {
-      name: "Imported Character",
-      description: "Imported from PNG card",
-      portraitUrl: null,
-      tags: ["imported"],
-      creatorName: null,
-      characterVersion: null,
-      tokenCount: 0,
-    };
-    setImportPreview(mockPreview);
-    setPendingImportData({
-      name: mockPreview.name,
-      description: mockPreview.description,
-      tags: mockPreview.tags,
-    });
+  const handleImportPng = useCallback(async (file: File) => {
+    try {
+      const card = await extractCharacterFromPng(file);
+      if (!card) {
+        console.warn("No character card data found in PNG");
+        return;
+      }
+
+      // Convert the PNG to a persistent data URL for storage
+      const dataUrl = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.readAsDataURL(file);
+      });
+
+      const preview: ImportPreview = {
+        name: card.name,
+        description: card.description,
+        portraitUrl: dataUrl,
+        tags: card.tags,
+        creatorName: card.creatorName,
+        characterVersion: card.characterVersion,
+        tokenCount: 0,
+      };
+      setImportPreview(preview);
+      setPendingImportData({
+        name: card.name,
+        portraitUrl: dataUrl,
+        description: card.description,
+        personality: card.personality,
+        scenario: card.scenario,
+        firstMessage: card.firstMessage,
+        alternateGreetings: card.alternateGreetings,
+        systemPrompt: card.systemPrompt,
+        postHistoryInstructions: card.postHistoryInstructions,
+        exampleDialogues: card.exampleDialogues,
+        creatorNotes: card.creatorNotes,
+        tags: card.tags,
+        creatorName: card.creatorName,
+        characterVersion: card.characterVersion,
+        specVersion: card.specVersion as "v1" | "v2",
+      });
+    } catch (err) {
+      console.error("Failed to parse PNG character card:", err);
+    }
   }, []);
 
   const handleConfirmImport = useCallback(async () => {

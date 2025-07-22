@@ -18,7 +18,7 @@ import { sceneRoutes } from "./routes/scenes";
 import { exportRoutes } from "./routes/export";
 import { ollamaProxyRoutes } from "./routes/ollama-proxy";
 
-const server = Fastify();
+const server = Fastify({ bodyLimit: 10 * 1024 * 1024 });
 
 export async function startServer(): Promise<number> {
   await server.register(cors, { origin: true, methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"] });

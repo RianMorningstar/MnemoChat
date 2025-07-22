@@ -107,7 +107,7 @@ export function CharacterLibrary({
       e.preventDefault();
       setDragOver(false);
       const file = e.dataTransfer.files[0];
-      if (file && file.type === "image/png") {
+      if (file && (file.type === "image/png" || file.name.toLowerCase().endsWith(".png"))) {
         onImportPng(file);
       }
     },
