@@ -11,6 +11,8 @@ import {
   FileText,
   BookOpen,
   FileJson,
+  Plus,
+  Trash2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { ChatRoleplayProps, ExportScope, ExportFormat } from '@shared/chat-types'
@@ -47,6 +49,8 @@ export function ChatView({
   onLoadPreset,
   onSwitchModel,
   onOpenChat,
+  onDeleteChat,
+  onNewChat,
   onRenameChat,
   onOpenCharacterEditor,
   onExportChat,
@@ -232,6 +236,13 @@ export function ChatView({
                   />
                 </div>
                 <button
+                  onClick={() => onNewChat?.()}
+                  className="rounded-md p-1 text-zinc-500 hover:bg-zinc-800 hover:text-indigo-400"
+                  title="New chat"
+                >
+                  <Plus className="h-4 w-4" />
+                </button>
+                <button
                   onClick={() => setChatListOpen(false)}
                   className="rounded-md p-1 text-zinc-500 hover:text-zinc-300"
                 >
@@ -241,44 +252,55 @@ export function ChatView({
             </div>
             <div className="flex-1 overflow-y-auto">
               {filteredChatList.map((c) => (
-                <button
+                <div
                   key={c.id}
-                  onClick={() => {
-                    onOpenChat?.(c.id)
-                    setChatListOpen(false)
-                  }}
                   className={cn(
-                    'flex w-full items-start gap-2.5 border-b border-zinc-800/50 px-3 py-3 text-left transition-colors hover:bg-zinc-800/50',
+                    'group/item flex w-full items-start gap-2.5 border-b border-zinc-800/50 px-3 py-3 text-left transition-colors hover:bg-zinc-800/50',
                     c.id === chat.id && 'bg-indigo-500/5 border-l-2 border-l-indigo-500'
                   )}
                 >
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-xs font-bold text-zinc-500">
-                    {c.characterName.charAt(0)}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-xs font-medium text-zinc-300">
-                      {c.title || 'Untitled chat'}
-                    </p>
-                    <p className="text-[10px] text-zinc-600">{c.characterName}</p>
-                    <div className="mt-1 flex items-center gap-2 text-[10px] text-zinc-600">
-                      <span>{c.messageCount} msgs</span>
-                      {c.bookmarkCount > 0 && <span>{c.bookmarkCount} bm</span>}
-                      {c.wordCount > 0 && <span>{c.wordCount.toLocaleString()} words</span>}
+                  <button
+                    onClick={() => {
+                      onOpenChat?.(c.id)
+                      setChatListOpen(false)
+                    }}
+                    className="flex min-w-0 flex-1 items-start gap-2.5"
+                  >
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-xs font-bold text-zinc-500">
+                      {c.characterName.charAt(0)}
                     </div>
-                    {c.tags.length > 0 && (
-                      <div className="mt-1 flex flex-wrap gap-1">
-                        {c.tags.map((tag) => (
-                          <span
-                            key={tag}
-                            className="rounded bg-zinc-800 px-1 py-0.5 text-[9px] text-zinc-500"
-                          >
-                            {tag}
-                          </span>
-                        ))}
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-xs font-medium text-zinc-300">
+                        {c.title || 'Untitled chat'}
+                      </p>
+                      <p className="text-[10px] text-zinc-600">{c.characterName}</p>
+                      <div className="mt-1 flex items-center gap-2 text-[10px] text-zinc-600">
+                        <span>{c.messageCount} msgs</span>
+                        {c.bookmarkCount > 0 && <span>{c.bookmarkCount} bm</span>}
+                        {c.wordCount > 0 && <span>{c.wordCount.toLocaleString()} words</span>}
                       </div>
-                    )}
-                  </div>
-                </button>
+                      {c.tags.length > 0 && (
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {c.tags.map((tag) => (
+                            <span
+                              key={tag}
+                              className="rounded bg-zinc-800 px-1 py-0.5 text-[9px] text-zinc-500"
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => onDeleteChat?.(c.id)}
+                    className="shrink-0 rounded-md p-1 text-zinc-600 opacity-0 transition-all hover:bg-red-500/10 hover:text-red-400 group-hover/item:opacity-100"
+                    title="Delete chat"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
               ))}
             </div>
           </div>

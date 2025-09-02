@@ -22,6 +22,7 @@ import {
   getAvailableModels,
   getConnections,
   updateChat,
+  deleteChat as apiDeleteChat,
   renameChat as apiRenameChat,
 } from "@/lib/api";
 import type {
@@ -101,6 +102,8 @@ export function ChatPage() {
 
     async function init() {
       setLoading(true);
+      setChat(null);
+      setMessages([]);
       try {
         // Load presets, models, chat list, and active connection in parallel
         const [presetsData, models, chats, connections] = await Promise.all([
@@ -279,6 +282,29 @@ export function ChatPage() {
     navigate(`/chat/${id}`);
   }, [navigate]);
 
+  const onDeleteChat = useCallback(async (id: string) => {
+    await apiDeleteChat(id);
+    const updatedList = chatList.filter((c) => c.id !== id);
+    setChatList(updatedList);
+    if (id === chatId) {
+      setChat(null);
+      setMessages([]);
+      setBookmarks([]);
+      setSceneDirection(defaultScene);
+      setTokenBudget(defaultBudget);
+      if (updatedList.length > 0) {
+        navigate(`/chat/${updatedList[0].id}`, { replace: true });
+      } else {
+        navigate("/chat", { replace: true });
+      }
+    }
+  }, [chatList, chatId, navigate]);
+
+  const onNewChat = useCallback(() => {
+    if (!chat) return;
+    navigate(`/chat?character=${chat.characterId}`);
+  }, [chat, navigate]);
+
   const onRenameChat = useCallback(async (id: string, title: string) => {
     await apiRenameChat(id, title);
     setChat((prev) => prev ? { ...prev, title } : prev);
@@ -398,6 +424,8 @@ export function ChatPage() {
       onDeletePreset={onDeletePreset}
       onSwitchModel={onSwitchModel}
       onOpenChat={onOpenChat}
+      onDeleteChat={onDeleteChat}
+      onNewChat={onNewChat}
       onRenameChat={onRenameChat}
       onOpenCharacterEditor={onOpenCharacterEditor}
       onExportChat={onExportChat}

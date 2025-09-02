@@ -191,6 +191,10 @@ export interface ChatRoleplayProps {
   // Chat management
   /** Called when user opens a different chat from the list */
   onOpenChat?: (chatId: string) => void
+  /** Called when user deletes a chat */
+  onDeleteChat?: (chatId: string) => void
+  /** Called when user starts a new chat with the current character */
+  onNewChat?: () => void
   /** Called when user renames the current chat */
   onRenameChat?: (chatId: string, title: string) => void
   /** Called when user opens the character editor */
