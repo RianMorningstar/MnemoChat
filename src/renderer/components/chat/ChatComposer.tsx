@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import {
   Send,
+  Square,
   MessageSquare,
   BookOpen,
   Pen,
@@ -14,7 +15,9 @@ import type { InputMode, SceneDirection } from '@shared/chat-types'
 interface ChatComposerProps {
   inputMode: InputMode
   sceneDirection: SceneDirection
+  isGenerating?: boolean
   onSendMessage?: (content: string, mode: InputMode) => void
+  onStopGeneration?: () => void
   onChangeInputMode?: (mode: InputMode) => void
   onUpdateSceneDirection?: (text: string) => void
   onSetInjectionDepth?: (depth: number) => void
@@ -30,7 +33,9 @@ const modes: { id: InputMode; label: string; icon: typeof MessageSquare; descrip
 export function ChatComposer({
   inputMode,
   sceneDirection,
+  isGenerating,
   onSendMessage,
+  onStopGeneration,
   onChangeInputMode,
   onUpdateSceneDirection,
   onSetInjectionDepth,
@@ -218,19 +223,28 @@ export function ChatComposer({
           )}
         </div>
 
-        {/* Send */}
-        <button
-          onClick={handleSend}
-          disabled={inputMode !== 'continue' && !message.trim()}
-          className={cn(
-            'flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors',
-            inputMode !== 'continue' && !message.trim()
-              ? 'bg-zinc-800 text-zinc-600 cursor-not-allowed'
-              : 'bg-indigo-500 text-white hover:bg-indigo-400'
-          )}
-        >
-          <Send className="h-4 w-4" />
-        </button>
+        {/* Send / Stop */}
+        {isGenerating ? (
+          <button
+            onClick={onStopGeneration}
+            className="flex items-center gap-1.5 rounded-xl bg-red-500/80 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-red-500"
+          >
+            <Square className="h-4 w-4" />
+          </button>
+        ) : (
+          <button
+            onClick={handleSend}
+            disabled={inputMode !== 'continue' && !message.trim()}
+            className={cn(
+              'flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors',
+              inputMode !== 'continue' && !message.trim()
+                ? 'bg-zinc-800 text-zinc-600 cursor-not-allowed'
+                : 'bg-indigo-500 text-white hover:bg-indigo-400'
+            )}
+          >
+            <Send className="h-4 w-4" />
+          </button>
+        )}
       </div>
     </div>
   )

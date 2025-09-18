@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router";
 import { ChatView } from "@/components/chat";
 import {
@@ -24,6 +24,7 @@ import {
   updateChat,
   deleteChat as apiDeleteChat,
   renameChat as apiRenameChat,
+  generateResponse,
 } from "@/lib/api";
 import type {
   Chat,
@@ -72,6 +73,9 @@ export function ChatPage() {
   const [activePreset, setActivePreset] = useState<GenerationPreset | null>(null);
   const [availableModels, setAvailableModels] = useState<AvailableModel[]>([]);
   const [inputMode, setInputMode] = useState<InputMode>("in_character");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [streamingContent, setStreamingContent] = useState("");
+  const abortRef = useRef<AbortController | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -176,17 +180,49 @@ export function ChatPage() {
     setChat(updated);
   }, [chat]);
 
+  const triggerGeneration = useCallback((targetChatId: string, mode: InputMode) => {
+    setIsGenerating(true);
+    setStreamingContent("");
+    const controller = generateResponse(
+      targetChatId,
+      { mode },
+      (token) => setStreamingContent((prev) => prev + token),
+      async () => {
+        setIsGenerating(false);
+        setStreamingContent("");
+        await refreshMessages();
+      },
+      (err) => {
+        setIsGenerating(false);
+        setStreamingContent("");
+        console.error("Generation error:", err);
+      },
+    );
+    abortRef.current = controller;
+  }, [refreshMessages]);
+
+  const onStopGeneration = useCallback(() => {
+    abortRef.current?.abort();
+    setIsGenerating(false);
+    setStreamingContent("");
+  }, []);
+
   // Callbacks
   const onSendMessage = useCallback(async (content: string, mode: InputMode) => {
     if (!chat) return;
-    const role = mode === "narrate" ? "system" : "user";
-    await createMessage(chat.id, {
-      role,
-      content,
-      isSystemMessage: mode === "narrate",
-    });
-    await refreshMessages();
-  }, [chat, refreshMessages]);
+
+    if (mode !== "continue") {
+      const role = mode === "narrate" ? "system" : "user";
+      await createMessage(chat.id, {
+        role,
+        content,
+        isSystemMessage: mode === "narrate",
+      });
+      await refreshMessages();
+    }
+
+    triggerGeneration(chat.id, mode);
+  }, [chat, refreshMessages, triggerGeneration]);
 
   const onEditMessage = useCallback(async (messageId: string, newContent: string) => {
     await updateMessage(messageId, newContent);
@@ -198,9 +234,12 @@ export function ChatPage() {
     await refreshMessages();
   }, [refreshMessages]);
 
-  const onRegenerate = useCallback((messageId: string) => {
-    console.log("onRegenerate stub:", messageId);
-  }, []);
+  const onRegenerate = useCallback(async (messageId: string) => {
+    if (!chat) return;
+    await apiDeleteMessage(messageId);
+    await refreshMessages();
+    triggerGeneration(chat.id, "in_character");
+  }, [chat, refreshMessages, triggerGeneration]);
 
   const onSwipeNavigate = useCallback((_messageId: string, _direction: "left" | "right") => {
     console.log("onSwipeNavigate stub:", _messageId, _direction);
@@ -392,6 +431,9 @@ export function ChatPage() {
     <ChatView
       chat={chat}
       messages={messages}
+      isGenerating={isGenerating}
+      streamingContent={streamingContent}
+      onStopGeneration={onStopGeneration}
       swipeAlternatives={{}}
       sceneDirection={sceneDirection}
       tokenBudget={tokenBudget}

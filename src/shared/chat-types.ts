@@ -128,6 +128,8 @@ export interface ChatRoleplayProps {
   // Data
   chat: Chat
   messages: Message[]
+  isGenerating?: boolean
+  streamingContent?: string
   swipeAlternatives: Record<string, SwipeAlternative[]>
   sceneDirection: SceneDirection
   tokenBudget: TokenBudget
@@ -137,6 +139,10 @@ export interface ChatRoleplayProps {
   bookmarks: Bookmark[]
   inputMode: InputMode
   availableModels: AvailableModel[]
+
+  // Generation control
+  /** Called to stop an in-progress generation */
+  onStopGeneration?: () => void
 
   // Message actions
   /** Called when user sends a message */

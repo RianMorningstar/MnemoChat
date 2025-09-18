@@ -23,6 +23,8 @@ import { SceneSidebar } from './SceneSidebar'
 export function ChatView({
   chat,
   messages,
+  isGenerating,
+  streamingContent,
   sceneDirection,
   tokenBudget,
   activePreset,
@@ -31,6 +33,7 @@ export function ChatView({
   bookmarks,
   inputMode,
   availableModels,
+  onStopGeneration,
   onSendMessage,
   onEditMessage,
   onDeleteMessage,
@@ -67,7 +70,7 @@ export function ChatView({
     if (threadRef.current) {
       threadRef.current.scrollTop = threadRef.current.scrollHeight
     }
-  }, [messages.length])
+  }, [messages.length, streamingContent])
 
   function handleToggleSidebar() {
     setSidebarOpen(!sidebarOpen)
@@ -324,13 +327,40 @@ export function ChatView({
                 onRemoveBookmark={onRemoveBookmark}
               />
             ))}
+
+            {/* Streaming response bubble */}
+            {isGenerating && (
+              <div className="flex gap-3 px-6 py-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-600/30 to-indigo-800/30 text-xs font-bold text-indigo-300 ring-1 ring-indigo-500/20">
+                  {chat.characterName.charAt(0)}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="mb-1 text-[11px] font-medium text-indigo-400">
+                    {chat.characterName}
+                  </p>
+                  <div className="rounded-2xl rounded-tl-sm bg-zinc-800/60 px-4 py-3 text-sm leading-relaxed text-zinc-300">
+                    {streamingContent ? (
+                      <span className="whitespace-pre-wrap">{streamingContent}</span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-zinc-500">
+                        <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-indigo-500" />
+                        <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-indigo-500" style={{ animationDelay: '0.2s' }} />
+                        <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-indigo-500" style={{ animationDelay: '0.4s' }} />
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Composer */}
           <ChatComposer
             inputMode={inputMode}
             sceneDirection={sceneDirection}
+            isGenerating={isGenerating}
             onSendMessage={onSendMessage}
+            onStopGeneration={onStopGeneration}
             onChangeInputMode={onChangeInputMode}
             onUpdateSceneDirection={onUpdateSceneDirection}
             onSetInjectionDepth={onSetInjectionDepth}

@@ -722,6 +722,79 @@ export async function addBlock(
   return json(res);
 }
 
+// Generation (SSE streaming)
+export function generateResponse(
+  chatId: string,
+  opts: { mode?: string },
+  onToken: (content: string) => void,
+  onDone: (message: Message) => void,
+  onError: (error: string) => void,
+): AbortController {
+  const controller = new AbortController();
+
+  (async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/chats/${chatId}/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: opts.mode }),
+        signal: controller.signal,
+      });
+
+      if (!res.ok) {
+        onError(`HTTP ${res.status}: ${res.statusText}`);
+        return;
+      }
+
+      const reader = res.body?.getReader();
+      if (!reader) {
+        onError("No response stream");
+        return;
+      }
+
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        let currentEvent = "";
+        for (const line of lines) {
+          if (line.startsWith("event: ")) {
+            currentEvent = line.slice(7).trim();
+          } else if (line.startsWith("data: ")) {
+            const data = line.slice(6);
+            try {
+              const parsed = JSON.parse(data);
+              if (currentEvent === "token") {
+                onToken(parsed.content);
+              } else if (currentEvent === "done") {
+                onDone(parsed.message as Message);
+              } else if (currentEvent === "error") {
+                onError(parsed.error);
+              }
+            } catch {
+              // skip malformed data
+            }
+            currentEvent = "";
+          }
+        }
+      }
+    } catch (err) {
+      if ((err as Error).name !== "AbortError") {
+        onError(err instanceof Error ? err.message : "Generation failed");
+      }
+    }
+  })();
+
+  return controller;
+}
+
 // Export
 export async function generatePdf(
   targetId: string,
