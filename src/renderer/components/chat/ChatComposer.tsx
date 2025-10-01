@@ -60,7 +60,7 @@ export function ChatComposer({
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+    if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       handleSend()
     }
@@ -147,13 +147,13 @@ export function ChatComposer({
       </div>
 
       {/* Composer */}
-      <div className="flex items-end gap-2 p-3">
+      <div className="flex items-end gap-2 px-3 py-2">
         {/* Mode selector */}
-        <div className="relative">
+        <div className="relative mb-1">
           <button
             onClick={() => setShowModeMenu(!showModeMenu)}
             className={cn(
-              'flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-medium transition-colors',
+              'flex h-[38px] items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium transition-colors',
               inputMode === 'in_character' && 'bg-indigo-500/15 text-indigo-400',
               inputMode === 'narrate' && 'bg-teal-500/15 text-teal-400',
               inputMode === 'continue' && 'bg-amber-500/15 text-amber-400'
@@ -211,12 +211,12 @@ export function ChatComposer({
                   ? 'Write a narrative beat...'
                   : 'Write your message...'
             }
-            className="max-h-40 min-h-[40px] w-full resize-none rounded-xl border border-zinc-700 bg-zinc-800/50 py-2.5 pl-4 pr-16 text-sm leading-relaxed text-zinc-100 outline-none transition-colors placeholder:text-zinc-600 focus:border-indigo-500/50"
+            className="max-h-40 min-h-[38px] w-full resize-none rounded-xl border border-zinc-700 bg-zinc-800/50 py-2 pl-4 pr-12 text-sm leading-relaxed text-zinc-100 outline-none transition-colors placeholder:text-zinc-600 focus:border-indigo-500/50"
             style={{ fieldSizing: 'content' } as React.CSSProperties}
           />
           {/* Char/token count */}
           {charCount > 0 && (
-            <div className="absolute bottom-1.5 right-12 flex items-center gap-1 text-[10px] tabular-nums text-zinc-600">
+            <div className="absolute bottom-2 right-12 flex items-center gap-1 text-[10px] tabular-nums text-zinc-600">
               <Hash className="h-2.5 w-2.5" />
               {approxTokens}
             </div>
@@ -224,27 +224,29 @@ export function ChatComposer({
         </div>
 
         {/* Send / Stop */}
-        {isGenerating ? (
-          <button
-            onClick={onStopGeneration}
-            className="flex items-center gap-1.5 rounded-xl bg-red-500/80 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-red-500"
-          >
-            <Square className="h-4 w-4" />
-          </button>
-        ) : (
-          <button
-            onClick={handleSend}
-            disabled={inputMode !== 'continue' && !message.trim()}
-            className={cn(
-              'flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors',
-              inputMode !== 'continue' && !message.trim()
-                ? 'bg-zinc-800 text-zinc-600 cursor-not-allowed'
-                : 'bg-indigo-500 text-white hover:bg-indigo-400'
-            )}
-          >
-            <Send className="h-4 w-4" />
-          </button>
-        )}
+        <div className="mb-1">
+          {isGenerating ? (
+            <button
+              onClick={onStopGeneration}
+              className="flex h-[38px] w-[38px] items-center justify-center rounded-xl bg-red-500/80 text-white transition-colors hover:bg-red-500"
+            >
+              <Square className="h-4 w-4" />
+            </button>
+          ) : (
+            <button
+              onClick={handleSend}
+              disabled={inputMode !== 'continue' && !message.trim()}
+              className={cn(
+                'flex h-[38px] w-[38px] items-center justify-center rounded-xl transition-colors',
+                inputMode !== 'continue' && !message.trim()
+                  ? 'bg-zinc-800 text-zinc-600 cursor-not-allowed'
+                  : 'bg-indigo-500 text-white hover:bg-indigo-400'
+              )}
+            >
+              <Send className="h-4 w-4" />
+            </button>
+          )}
+        </div>
       </div>
     </div>
   )
