@@ -8,6 +8,7 @@ import {
   generationPresets,
   connectionProfiles,
   bookmarks,
+  personas,
 } from "../../db/schema";
 import { eq, asc, desc, sql } from "drizzle-orm";
 
@@ -52,6 +53,12 @@ function updateChatCounts(chatId: string) {
     .run();
 }
 
+function substituteVars(text: string, charName: string, userName: string): string {
+  return text
+    .replace(/\{\{char\}\}/gi, charName)
+    .replace(/\{\{user\}\}/gi, userName);
+}
+
 function buildSystemMessage(char: {
   systemPrompt: string | null;
   description: string | null;
@@ -59,16 +66,27 @@ function buildSystemMessage(char: {
   scenario: string | null;
   name: string;
 }): string {
-  if (char.systemPrompt) return char.systemPrompt;
-
   const parts: string[] = [];
-  if (char.description) parts.push(char.description);
-  if (char.personality) parts.push(`Personality: ${char.personality}`);
-  if (char.scenario) parts.push(`Scenario: ${char.scenario}`);
 
-  return parts.length > 0
-    ? parts.join("\n\n")
-    : `You are ${char.name}. Stay in character and respond naturally.`;
+  if (char.systemPrompt) {
+    parts.push(char.systemPrompt);
+  }
+
+  const preamble = `Write {{char}}'s next reply in a fictional chat between {{char}} and {{user}}.`;
+
+  const fields: string[] = [];
+  if (char.description) fields.push(`{{char}}'s description: ${char.description}`);
+  if (char.personality) fields.push(`{{char}}'s personality: ${char.personality}`);
+  if (char.scenario) fields.push(`Scenario: ${char.scenario}`);
+
+  if (fields.length > 0) {
+    parts.unshift(preamble + "\n\n" + fields.join("\n\n"));
+  } else if (parts.length === 0) {
+    // No system prompt and no fields — use fallback
+    return `Write ${char.name}'s next reply in a fictional chat between ${char.name} and {{user}}.`;
+  }
+
+  return parts.join("\n\n");
 }
 
 interface OllamaChatMessage {
@@ -159,14 +177,34 @@ export async function generateRoutes(app: FastifyInstance) {
         // Load first preset as active
         const preset = db.select().from(generationPresets).limit(1).get();
 
+        // Resolve persona/user name
+        const userName = chat.personaName || "User";
+        const charName = char.name;
+        const sub = (text: string) => substituteVars(text, charName, userName);
+
         // Build Ollama messages array
         const ollamaMessages: OllamaChatMessage[] = [];
 
         // System message
         ollamaMessages.push({
           role: "system",
-          content: buildSystemMessage(char),
+          content: sub(buildSystemMessage(char)),
         });
+
+        // Persona context
+        if (chat.personaName) {
+          const persona = db
+            .select()
+            .from(personas)
+            .where(eq(personas.name, chat.personaName))
+            .get();
+          if (persona?.description) {
+            ollamaMessages.push({
+              role: "system",
+              content: sub(`[${userName}'s persona: ${persona.description}]`),
+            });
+          }
+        }
 
         // Example dialogues
         if (char.exampleDialogues) {
@@ -175,7 +213,7 @@ export async function generateRoutes(app: FastifyInstance) {
             if (examples.length > 0) {
               ollamaMessages.push({
                 role: "system",
-                content: "Example dialogue:\n" + examples.join("\n"),
+                content: sub("[Example Chat]\n" + examples.join("\n")),
               });
             }
           } catch {
@@ -189,7 +227,7 @@ export async function generateRoutes(app: FastifyInstance) {
         // Chat history
         const historyMessages: OllamaChatMessage[] = chatMessages.map((m) => ({
           role: (m.role === "system" ? "system" : m.role) as OllamaChatMessage["role"],
-          content: m.content || "",
+          content: sub(m.content || ""),
         }));
 
         // Inject scene direction at configured depth
@@ -198,7 +236,7 @@ export async function generateRoutes(app: FastifyInstance) {
           const insertIdx = Math.max(0, historyMessages.length - depth);
           historyMessages.splice(insertIdx, 0, {
             role: "system",
-            content: `[Scene Direction: ${scene.text}]`,
+            content: sub(`[Scene Direction: ${scene.text}]`),
           });
         }
 
@@ -206,11 +244,19 @@ export async function generateRoutes(app: FastifyInstance) {
         if (postInstructions) {
           historyMessages.push({
             role: "system",
-            content: postInstructions,
+            content: sub(postInstructions),
           });
         }
 
         ollamaMessages.push(...historyMessages);
+
+        // Continue mode nudge
+        if (mode === "continue") {
+          ollamaMessages.push({
+            role: "system",
+            content: "[Continue your last message without repeating its original content.]",
+          });
+        }
 
         // Build Ollama options from preset
         const options: Record<string, unknown> = {};

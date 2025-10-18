@@ -158,15 +158,19 @@ export async function chatRoutes(app: FastifyInstance) {
       .get();
 
     if (character?.firstMessage) {
+      const personaName = (body.personaName as string) || "User";
+      const firstMessageContent = character.firstMessage
+        .replace(/\{\{char\}\}/gi, character.name)
+        .replace(/\{\{user\}\}/gi, personaName);
       const msgId = generateId();
       db.insert(messages)
         .values({
           id: msgId,
           chatId: id,
           role: "assistant",
-          content: character.firstMessage,
+          content: firstMessageContent,
           timestamp: now,
-          tokenCount: Math.ceil(character.firstMessage.length / 4),
+          tokenCount: Math.ceil(firstMessageContent.length / 4),
           isSystemMessage: 0,
           model: modelId,
         })
