@@ -30,7 +30,7 @@ export type ProviderType = "ollama";
 export type ModelTag = "roleplay" | "instruct" | "uncensored" | "vision" | "code";
 
 /** Wizard step indices */
-export type WizardStep = 1 | 2 | 3;
+export type WizardStep = 1 | 2 | 3 | 4;
 
 export interface ContentTierOption {
   id: ContentTier;

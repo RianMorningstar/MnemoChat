@@ -6,6 +6,7 @@ import {
   ChatPage,
   CharactersPage,
   CharacterEditorPage,
+  PersonaEditorPage,
   LibraryPage,
   StoryPage,
   ProjectDetailPage,
@@ -64,6 +65,7 @@ export function App() {
           <Route path="/chat/:chatId" element={<ChatPage />} />
           <Route path="/characters" element={<CharactersPage />} />
           <Route path="/characters/:id/edit" element={<CharacterEditorPage />} />
+          <Route path="/personas/:id/edit" element={<PersonaEditorPage />} />
           <Route path="/library" element={<LibraryPage />} />
           <Route path="/story" element={<StoryPage />} />
           <Route path="/story/:projectId" element={<ProjectDetailPage />} />

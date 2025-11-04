@@ -21,6 +21,7 @@ import {
   deletePreset as apiDeletePreset,
   getAvailableModels,
   getConnections,
+  getPersonas,
   updateChat,
   deleteChat as apiDeleteChat,
   renameChat as apiRenameChat,
@@ -109,12 +110,13 @@ export function ChatPage() {
       setChat(null);
       setMessages([]);
       try {
-        // Load presets, models, chat list, and active connection in parallel
-        const [presetsData, models, chats, connections] = await Promise.all([
+        // Load presets, models, chat list, active connection, and personas in parallel
+        const [presetsData, models, chats, connections, personas] = await Promise.all([
           getPresets(),
           getAvailableModels(),
           getChats(),
           getConnections().catch(() => []),
+          getPersonas().catch(() => []),
         ]);
 
         if (cancelled) return;
@@ -133,10 +135,12 @@ export function ChatPage() {
           const model =
             (defaultModelId && models.find((m) => m.id === defaultModelId)) ||
             models[0];
+          const defaultPersona = personas.find((p) => p.isDefault) || personas[0];
           const newChat = await createChat({
             characterId,
             modelId: model?.id || "unknown",
             modelName: model?.name || "Unknown Model",
+            personaName: defaultPersona?.name,
           });
           if (cancelled) return;
           navigate(`/chat/${newChat.id}`, { replace: true });

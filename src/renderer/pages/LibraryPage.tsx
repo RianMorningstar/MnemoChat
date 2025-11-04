@@ -19,6 +19,7 @@ import {
   deletePersona,
   duplicatePersona,
   setDefaultPersona,
+  createPersona,
   importDiscoverCard,
   likeDiscoverCard,
   seedDiscoverData,
@@ -275,6 +276,23 @@ export function LibraryPage() {
     [fetchLibraryData]
   );
 
+  const handleEditPersona = useCallback(
+    (id: string) => navigate(`/personas/${id}/edit`),
+    [navigate]
+  );
+
+  const handleCreatePersona = useCallback(
+    async () => {
+      try {
+        const persona = await createPersona({ name: "New Persona" });
+        navigate(`/personas/${persona.id}/edit`);
+      } catch (err) {
+        console.error("Failed to create persona:", err);
+      }
+    },
+    [navigate]
+  );
+
   // Discover actions
   const handleImportCard = useCallback(
     async (cardId: string) => {
@@ -386,6 +404,8 @@ export function LibraryPage() {
             onDeletePersona={handleDeletePersona}
             onDuplicatePersona={handleDuplicatePersona}
             onSetDefaultPersona={handleSetDefaultPersona}
+            onEditPersona={handleEditPersona}
+            onCreatePersona={handleCreatePersona}
           />
         )}
         {activeTab === "discover" && (

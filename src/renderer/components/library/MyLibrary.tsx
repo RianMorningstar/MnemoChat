@@ -14,6 +14,7 @@ import {
   User,
   Star,
   ChevronDown,
+  MoreHorizontal,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type {
@@ -37,7 +38,9 @@ type MyLibraryProps = Pick<
   | 'onEditLorebook' | 'onAttachLorebook' | 'onExportLorebook'
   | 'onDuplicateLorebook' | 'onDeleteLorebook'
   | 'onEditPersona' | 'onSetDefaultPersona' | 'onDuplicatePersona' | 'onDeletePersona'
->
+> & {
+  onCreatePersona?: () => void;
+}
 
 export function MyLibrary({
   libraryCharacters,
@@ -68,6 +71,7 @@ export function MyLibrary({
   onSetDefaultPersona,
   onDuplicatePersona,
   onDeletePersona,
+  onCreatePersona,
 }: MyLibraryProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [activeCollection, setActiveCollection] = useState<string | null>(null)
@@ -375,66 +379,170 @@ export function MyLibrary({
       {/* Personas view */}
       {activeContentType === 'personas' && (
         <div className="flex-1 overflow-y-auto p-6">
-          <div className="mx-auto max-w-2xl space-y-1">
+          <div className="mb-4 flex justify-end px-0">
+            <button
+              onClick={onCreatePersona}
+              className="flex items-center gap-1.5 rounded-lg bg-indigo-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-indigo-400"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Create Persona
+            </button>
+          </div>
+          <div
+            className={cn(
+              'grid gap-3',
+              gridDensity === 'compact'
+                ? 'grid-cols-3 sm:grid-cols-4 lg:grid-cols-6'
+                : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4'
+            )}
+          >
             {[...personas]
               .sort((a, b) => (a.isDefault ? -1 : b.isDefault ? 1 : 0))
               .map((persona) => (
-                <div
+                <PersonaCard
                   key={persona.id}
-                  className="group flex items-start gap-4 rounded-xl border border-zinc-800/50 bg-zinc-900 p-4 transition-all hover:border-zinc-700"
-                >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-zinc-400">
-                    <User className="h-5 w-5" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-sm font-medium text-zinc-200">{persona.name}</h3>
-                      {persona.isDefault && (
-                        <span className="flex items-center gap-1 rounded-full bg-indigo-500/15 px-2 py-0.5 text-[10px] font-medium text-indigo-400">
-                          <Star className="h-3 w-3" fill="currentColor" />
-                          Default
-                        </span>
-                      )}
-                    </div>
-                    <p className="mt-1 text-xs leading-relaxed text-zinc-500">{persona.description}</p>
-                    <p className="mt-1 text-[10px] text-zinc-600">
-                      Last used: {new Date(persona.lastUsed).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                    <button
-                      onClick={() => onEditPersona?.(persona.id)}
-                      className="rounded p-1.5 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-200"
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                    </button>
-                    {!persona.isDefault && (
-                      <button
-                        onClick={() => onSetDefaultPersona?.(persona.id)}
-                        className="rounded p-1.5 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-200"
-                        title="Set as default"
-                      >
-                        <Star className="h-3.5 w-3.5" />
-                      </button>
-                    )}
-                    <button
-                      onClick={() => onDuplicatePersona?.(persona.id)}
-                      className="rounded p-1.5 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-200"
-                    >
-                      <Copy className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      onClick={() => onDeletePersona?.(persona.id)}
-                      className="rounded p-1.5 text-zinc-400 hover:bg-red-500/20 hover:text-red-400"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                </div>
+                  persona={persona}
+                  isCompact={gridDensity === 'compact'}
+                  onEdit={() => onEditPersona?.(persona.id)}
+                  onSetDefault={() => onSetDefaultPersona?.(persona.id)}
+                  onDuplicate={() => onDuplicatePersona?.(persona.id)}
+                  onDelete={() => onDeletePersona?.(persona.id)}
+                />
               ))}
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+// ── Persona Card (mirrors LibraryCard layout) ───────────────────────
+
+interface PersonaCardProps {
+  persona: { id: string; name: string; description: string; avatarUrl: string; isDefault: boolean; lastUsed: string }
+  isCompact: boolean
+  onEdit?: () => void
+  onSetDefault?: () => void
+  onDuplicate?: () => void
+  onDelete?: () => void
+}
+
+function PersonaCard({ persona, isCompact, onEdit, onSetDefault, onDuplicate, onDelete }: PersonaCardProps) {
+  const [hovered, setHovered] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+
+  return (
+    <div
+      className="group relative cursor-pointer overflow-hidden rounded-xl border border-zinc-800/50 bg-zinc-900 transition-all hover:border-zinc-700 hover:shadow-lg hover:shadow-black/20"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => { setHovered(false); setMenuOpen(false) }}
+      onClick={onEdit}
+    >
+      {/* Portrait area */}
+      <div className={cn('relative overflow-hidden', 'aspect-[3/4]')}>
+        {persona.avatarUrl ? (
+          <img
+            src={persona.avatarUrl}
+            alt={persona.name}
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <div className="flex h-full items-center justify-center bg-gradient-to-br from-indigo-900/40 to-zinc-900/80">
+            <span className={cn('font-bold text-zinc-500/60', isCompact ? 'text-4xl' : 'text-6xl')}>
+              {persona.name.charAt(0)}
+            </span>
+          </div>
+        )}
+
+        {/* Bottom gradient */}
+        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
+
+        {/* Name + badge */}
+        <div className="absolute inset-x-0 bottom-0 p-3">
+          <div className="flex items-end justify-between gap-2">
+            <div className="min-w-0">
+              <h3
+                className={cn('truncate font-semibold text-white', isCompact ? 'text-xs' : 'text-sm')}
+                style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}
+              >
+                {persona.name}
+              </h3>
+              {persona.description && (
+                <p className="mt-0.5 line-clamp-1 text-[9px] text-white/60">
+                  {persona.description}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Default badge */}
+        {persona.isDefault && (
+          <div className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-indigo-500/80 px-2 py-0.5 text-[9px] font-medium text-white backdrop-blur-sm">
+            <Star className="h-3 w-3" fill="currentColor" />
+            Default
+          </div>
+        )}
+
+        {/* Hover overlay */}
+        {hovered && (
+          <div className="absolute inset-0 flex flex-col justify-between bg-black/60 p-3 backdrop-blur-[2px]">
+            <div className="flex justify-end">
+              <span className="rounded bg-zinc-900/80 px-1.5 py-0.5 text-[10px] tabular-nums text-zinc-400">
+                Last used: {new Date(persona.lastUsed).toLocaleDateString()}
+              </span>
+            </div>
+            <div>
+              {persona.description && (
+                <p className="mb-2 line-clamp-3 text-[10px] leading-relaxed text-zinc-400">
+                  {persona.description}
+                </p>
+              )}
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={(e) => { e.stopPropagation(); onEdit?.() }}
+                  className="flex-1 rounded-md bg-indigo-500 py-1.5 text-center text-[11px] font-medium text-white transition-colors hover:bg-indigo-400"
+                >
+                  Edit
+                </button>
+                {!persona.isDefault && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onSetDefault?.() }}
+                    className="rounded-md bg-zinc-700/80 p-1.5 text-zinc-300 transition-colors hover:bg-zinc-600"
+                    title="Set as default"
+                  >
+                    <Star className="h-3.5 w-3.5" />
+                  </button>
+                )}
+                <div className="relative">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen) }}
+                    className="rounded-md bg-zinc-700/80 p-1.5 text-zinc-300 transition-colors hover:bg-zinc-600"
+                  >
+                    <MoreHorizontal className="h-3.5 w-3.5" />
+                  </button>
+                  {menuOpen && (
+                    <div className="absolute bottom-full right-0 z-20 mb-1 w-40 rounded-lg border border-zinc-700 bg-zinc-800 py-1 shadow-xl">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onDuplicate?.(); setMenuOpen(false) }}
+                        className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[11px] text-zinc-300 hover:bg-zinc-700"
+                      >
+                        <Copy className="h-3 w-3" /> Duplicate
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onDelete?.(); setMenuOpen(false) }}
+                        className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[11px] text-red-400 hover:bg-zinc-700"
+                      >
+                        <Trash2 className="h-3 w-3" /> Delete
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

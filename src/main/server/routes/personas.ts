@@ -17,6 +17,17 @@ export async function personaRoutes(app: FastifyInstance) {
     }));
   });
 
+  // Get single persona
+  app.get<{ Params: { id: string } }>(
+    "/api/personas/:id",
+    async (request, reply) => {
+      const { id } = request.params;
+      const row = db.select().from(personas).where(eq(personas.id, id)).get();
+      if (!row) return reply.status(404).send({ error: "Persona not found" });
+      return { ...row, isDefault: row.isDefault === 1 };
+    }
+  );
+
   // Create persona
   app.post("/api/personas", async (request) => {
     const body = request.body as Record<string, unknown>;

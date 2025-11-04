@@ -8,4 +8,5 @@ export { StoryPage } from "./StoryPage";
 export { ProjectDetailPage } from "./ProjectDetailPage";
 export { SceneEditorPage } from "./SceneEditorPage";
 export { SettingsPage } from "./SettingsPage";
+export { PersonaEditorPage } from "./PersonaEditorPage";
 export { OnboardingPage } from "./OnboardingPage";

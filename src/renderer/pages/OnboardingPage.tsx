@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router";
 import type { ContentTier, ConnectionState, OllamaModel, ContentTierOption } from "@shared/types";
 import { OnboardingWizard } from "@/components/onboarding";
-import { getSetting, setSetting, createConnection, activateConnection, getConnections } from "@/lib/api";
+import { getSetting, setSetting, createConnection, activateConnection, getConnections, createPersona, setDefaultPersona } from "@/lib/api";
 import { checkOllamaHealth, fetchOllamaModels } from "@/lib/ollama";
 
 const CONTENT_TIER_OPTIONS: ContentTierOption[] = [
@@ -32,6 +32,8 @@ export function OnboardingPage() {
   const [models, setModels] = useState<OllamaModel[]>([]);
   const [selectedTier, setSelectedTier] = useState<ContentTier | null>(null);
   const [selectedModel, setSelectedModel] = useState<string | null>(null);
+  const [personaName, setPersonaName] = useState("");
+  const [personaDescription, setPersonaDescription] = useState("");
 
   // Check if onboarding already completed or a connection already exists
   useEffect(() => {
@@ -77,6 +79,16 @@ export function OnboardingPage() {
         contentTier: selectedTier || undefined,
       });
       await activateConnection(profileId);
+
+      // Create default persona
+      if (personaName.trim()) {
+        const persona = await createPersona({
+          name: personaName.trim(),
+          description: personaDescription.trim(),
+        });
+        await setDefaultPersona(persona.id);
+      }
+
       await setSetting("onboarding_completed", "true");
       if (selectedTier) {
         await setSetting("content_tier", selectedTier);
@@ -101,6 +113,10 @@ export function OnboardingPage() {
       ollamaModels={models}
       connectionState={connectionState}
       detectedEndpoint={endpoint}
+      personaName={personaName}
+      personaDescription={personaDescription}
+      onChangePersonaName={setPersonaName}
+      onChangePersonaDescription={setPersonaDescription}
       onSelectContentTier={setSelectedTier}
       onConnectOllama={tryConnect}
       onSelectModel={setSelectedModel}

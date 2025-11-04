@@ -405,6 +405,11 @@ export async function getPersonas(): Promise<Persona[]> {
   return json(res);
 }
 
+export async function getPersona(id: string): Promise<Persona> {
+  const res = await fetch(`${API_BASE}/api/personas/${id}`);
+  return json(res);
+}
+
 export async function createPersona(data: Partial<Persona> = {}): Promise<Persona> {
   const res = await fetch(`${API_BASE}/api/personas`, {
     method: "POST",

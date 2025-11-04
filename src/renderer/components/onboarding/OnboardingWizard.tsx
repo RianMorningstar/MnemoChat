@@ -8,6 +8,7 @@ import type {
 } from "@shared/types";
 import { StepIndicator } from "./StepIndicator";
 import { ContentTierStep } from "./ContentTierStep";
+import { PersonaStep } from "./PersonaStep";
 import { ConnectOllamaStep } from "./ConnectOllamaStep";
 import { ModelPickerStep } from "./ModelPickerStep";
 
@@ -16,6 +17,10 @@ interface OnboardingWizardProps {
   ollamaModels: OllamaModel[];
   connectionState: ConnectionState;
   detectedEndpoint: string | null;
+  personaName: string;
+  personaDescription: string;
+  onChangePersonaName: (name: string) => void;
+  onChangePersonaDescription: (description: string) => void;
   onSelectContentTier?: (tier: ContentTier) => void;
   onConfirmAge?: () => void;
   onConnectOllama?: (endpoint: string) => void;
@@ -28,6 +33,10 @@ export function OnboardingWizard({
   ollamaModels,
   connectionState,
   detectedEndpoint,
+  personaName,
+  personaDescription,
+  onChangePersonaName,
+  onChangePersonaDescription,
   onSelectContentTier,
   onConfirmAge,
   onConnectOllama,
@@ -39,7 +48,7 @@ export function OnboardingWizard({
   const [selectedModel, setSelectedModel] = useState<string | null>(null);
 
   const handleNext = () => {
-    setStep((s) => Math.min(s + 1, 3) as WizardStep);
+    setStep((s) => Math.min(s + 1, 4) as WizardStep);
   };
 
   return (
@@ -50,7 +59,7 @@ export function OnboardingWizard({
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(ellipse_at_top,rgba(99,102,241,0.05),transparent_60%)]" />
 
       <header className="relative z-10 flex justify-center px-6 pt-8">
-        <StepIndicator currentStep={step} totalSteps={3} />
+        <StepIndicator currentStep={step} totalSteps={4} />
       </header>
 
       <main className="relative z-10 flex flex-1 items-center justify-center px-6 py-12">
@@ -68,6 +77,16 @@ export function OnboardingWizard({
         )}
 
         {step === 2 && (
+          <PersonaStep
+            name={personaName}
+            description={personaDescription}
+            onChangeName={onChangePersonaName}
+            onChangeDescription={onChangePersonaDescription}
+            onNext={handleNext}
+          />
+        )}
+
+        {step === 3 && (
           <ConnectOllamaStep
             connectionState={connectionState}
             detectedEndpoint={detectedEndpoint}
@@ -77,7 +96,7 @@ export function OnboardingWizard({
           />
         )}
 
-        {step === 3 && (
+        {step === 4 && (
           <ModelPickerStep
             models={ollamaModels}
             selectedModel={selectedModel}

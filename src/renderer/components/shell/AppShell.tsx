@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useNavigate, useLocation } from "react-router";
 import {
   PanelLeftClose,
   PanelLeft,
@@ -15,6 +16,8 @@ import { cn } from "@/lib/utils";
 import { MainNav, type NavItem } from "./MainNav";
 import { UserMenu } from "./UserMenu";
 import { ConnectionIndicator } from "./ConnectionIndicator";
+import { getPersonas, setDefaultPersona as apiSetDefaultPersona, createPersona } from "@/lib/api";
+import type { Persona } from "@shared/library-types";
 
 const navigationItems: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -30,8 +33,42 @@ interface AppShellProps {
 }
 
 export function AppShell({ children }: AppShellProps) {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [personas, setPersonas] = useState<Persona[]>([]);
+  const [defaultPersona, setDefaultPersona] = useState<Persona | undefined>();
+
+  const fetchPersonas = useCallback(async () => {
+    try {
+      const all = await getPersonas();
+      setPersonas(all);
+      setDefaultPersona(all.find((p) => p.isDefault) || all[0]);
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    fetchPersonas();
+  }, [fetchPersonas, location.pathname]);
+
+  const handleSwitchPersona = useCallback(async (id: string) => {
+    try {
+      await apiSetDefaultPersona(id);
+      await fetchPersonas();
+    } catch (err) {
+      console.error("Failed to switch persona:", err);
+    }
+  }, [fetchPersonas]);
+
+  const handleCreatePersona = useCallback(async () => {
+    try {
+      const persona = await createPersona({ name: "New Persona" });
+      navigate(`/personas/${persona.id}/edit`);
+    } catch (err) {
+      console.error("Failed to create persona:", err);
+    }
+  }, [navigate]);
 
   return (
     <div className="flex h-screen font-sans bg-zinc-950">
@@ -88,8 +125,11 @@ export function AppShell({ children }: AppShellProps) {
         {/* User menu */}
         <div className="border-t border-zinc-800 pt-2">
           <UserMenu
-            persona={{ name: "Alex Morgan" }}
+            persona={defaultPersona ? { name: defaultPersona.name, avatarUrl: defaultPersona.avatarUrl || undefined } : undefined}
+            personas={personas}
             collapsed={collapsed}
+            onSwitchPersona={handleSwitchPersona}
+            onCreatePersona={handleCreatePersona}
           />
         </div>
       </aside>
