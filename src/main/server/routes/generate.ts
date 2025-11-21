@@ -102,7 +102,10 @@ export async function generateRoutes(app: FastifyInstance) {
       const body = (request.body as Record<string, unknown>) || {};
       const mode = (body.mode as string) || "in_character";
 
-      // Set SSE headers (CORS must be manual since we bypass Fastify's reply)
+      // Tell Fastify we're taking over the raw response
+      reply.hijack();
+
+      // Set SSE headers
       const origin = request.headers.origin || "*";
       reply.raw.writeHead(200, {
         "Content-Type": "text/event-stream",
@@ -112,10 +115,10 @@ export async function generateRoutes(app: FastifyInstance) {
         "Access-Control-Allow-Credentials": "true",
       });
 
-      // Track client disconnection
+      // Track client disconnection via the underlying socket
       let clientDisconnected = false;
       const abortController = new AbortController();
-      request.raw.on("close", () => {
+      reply.raw.on("close", () => {
         clientDisconnected = true;
         abortController.abort();
       });
@@ -274,8 +277,11 @@ export async function generateRoutes(app: FastifyInstance) {
           }
         }
 
-        // Call Ollama
+        // Call Ollama with timeout
         const startTime = Date.now();
+        const OLLAMA_TIMEOUT_MS = 120_000;
+        const timeoutSignal = AbortSignal.timeout(OLLAMA_TIMEOUT_MS);
+        const combinedSignal = AbortSignal.any([abortController.signal, timeoutSignal]);
         const ollamaRes = await fetch(`${connection.endpoint}/api/chat`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -285,11 +291,12 @@ export async function generateRoutes(app: FastifyInstance) {
             stream: true,
             options,
           }),
-          signal: abortController.signal,
+          signal: combinedSignal,
         });
 
         if (!ollamaRes.ok) {
           const errText = await ollamaRes.text().catch(() => "Unknown error");
+          console.error(`[generate] Ollama returned ${ollamaRes.status}: ${errText}`);
           sendSSE("error", { error: `Ollama error ${ollamaRes.status}: ${errText}` });
           reply.raw.end();
           return;
@@ -349,6 +356,10 @@ export async function generateRoutes(app: FastifyInstance) {
           }
         }
 
+        if (!fullContent) {
+          console.error(`[generate] Stream ended without producing any tokens (chat=${chatId}, model=${chat.modelId})`);
+        }
+
         // Only save to DB if client is still connected
         if (clientDisconnected) {
           reply.raw.end();
@@ -387,12 +398,20 @@ export async function generateRoutes(app: FastifyInstance) {
 
         reply.raw.end();
       } catch (err) {
-        // AbortError means client disconnected — don't save, just clean up
-        if ((err as Error).name === "AbortError" || clientDisconnected) {
+        // Client disconnected — don't save, just clean up
+        if ((err as Error).name === "AbortError" && clientDisconnected) {
           try { reply.raw.end(); } catch { /* already closed */ }
           return reply;
         }
-        const errorMsg = err instanceof Error ? err.message : "Generation failed";
+
+        // Timeout (AbortSignal.timeout fires TimeoutError, or AbortError with timeout)
+        const isTimeout = (err as Error).name === "TimeoutError" ||
+          ((err as Error).name === "AbortError" && !clientDisconnected);
+        const errorMsg = isTimeout
+          ? "Generation timed out — Ollama may be loading the model or unresponsive. Try again."
+          : err instanceof Error ? err.message : "Generation failed";
+
+        console.error(`[generate] ${errorMsg}`, err);
         try {
           sendSSE("error", { error: errorMsg });
         } catch {

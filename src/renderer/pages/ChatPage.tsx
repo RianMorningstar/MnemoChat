@@ -80,6 +80,7 @@ export function ChatPage() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [generationError, setGenerationError] = useState<string | null>(null);
 
   const loadChatData = useCallback(async (id: string) => {
     try {
@@ -187,6 +188,7 @@ export function ChatPage() {
   const triggerGeneration = useCallback((targetChatId: string, mode: InputMode) => {
     setIsGenerating(true);
     setStreamingContent("");
+    setGenerationError(null);
     const controller = generateResponse(
       targetChatId,
       { mode },
@@ -199,6 +201,7 @@ export function ChatPage() {
       (err) => {
         setIsGenerating(false);
         setStreamingContent("");
+        setGenerationError(err);
         console.error("Generation error:", err);
       },
     );
@@ -432,6 +435,18 @@ export function ChatPage() {
   }
 
   return (
+    <>
+    {generationError && (
+      <div className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 max-w-lg rounded-lg bg-red-900/90 px-4 py-3 text-sm text-red-100 shadow-lg backdrop-blur-sm flex items-center gap-3">
+        <span className="flex-1">{generationError}</span>
+        <button
+          onClick={() => setGenerationError(null)}
+          className="shrink-0 rounded p-1 hover:bg-red-800 text-red-300 hover:text-red-100"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    )}
     <ChatView
       chat={chat}
       messages={messages}
@@ -476,5 +491,6 @@ export function ChatPage() {
       onOpenCharacterEditor={onOpenCharacterEditor}
       onExportChat={onExportChat}
     />
+    </>
   );
 }
