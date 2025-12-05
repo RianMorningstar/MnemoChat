@@ -73,8 +73,8 @@ export function LibraryCard({
     return (
       <div className="group flex items-center gap-4 border-b border-zinc-800/50 px-4 py-3 transition-colors hover:bg-zinc-800/30">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br from-zinc-700/50 to-zinc-800">
-          {character.hasPortrait ? (
-            <span className="text-sm font-bold text-zinc-500">{character.name.charAt(0)}</span>
+          {character.portraitUrl ? (
+            <img src={character.portraitUrl} alt={character.name} className="h-full w-full object-cover" />
           ) : (
             <span className="text-sm font-bold text-zinc-600">{character.name.charAt(0)}</span>
           )}
@@ -116,12 +116,8 @@ export function LibraryCard({
       }}
     >
       <div className={cn('relative overflow-hidden', isCompact ? 'aspect-[3/4]' : 'aspect-[3/4]')}>
-        {character.hasPortrait ? (
-          <div className={cn('flex h-full items-center justify-center bg-gradient-to-br', getTagGradient(character.tags))}>
-            <span className={cn('font-bold text-zinc-500/60', isCompact ? 'text-4xl' : 'text-6xl')}>
-              {character.name.charAt(0)}
-            </span>
-          </div>
+        {character.portraitUrl ? (
+          <img src={character.portraitUrl} alt={character.name} className="h-full w-full object-cover" />
         ) : (
           <div className={cn('flex h-full items-center justify-center bg-gradient-to-br', getTagGradient(character.tags))}>
             <span className={cn('font-bold text-zinc-500/40', isCompact ? 'text-4xl' : 'text-6xl')}>
