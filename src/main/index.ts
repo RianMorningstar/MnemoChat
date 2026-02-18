@@ -17,9 +17,6 @@ async function createWindow(port: number) {
   });
 
   if (isDev) {
-    mainWindow.webContents.on("did-finish-load", () => {
-      mainWindow?.webContents.openDevTools();
-    });
     await mainWindow.loadURL(`http://localhost:5173`);
     globalShortcut.register("F12", () => {
       mainWindow?.webContents.toggleDevTools();
