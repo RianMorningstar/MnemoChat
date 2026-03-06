@@ -24,11 +24,37 @@ jobs:
         run: npm ci
 
       - name: Build and package
-        run: npm run package
+        run: npm run package -- --publish never
 
       - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          name: "v0.1.0 — First Recall"
+          body: |
+            First public release of MnemoChat.
+
+            MnemoChat is a local-first desktop app for AI roleplay and collaborative storytelling. Everything runs on your machine — your conversations, your characters, your data.
+
+            **What's in this release:**
+            - Character creation, import, and editing (supports standard `.png` card format)
+            - Lorebook support with keyword-triggered world info injection
+            - Streaming chat with SSE, stop button, and multiple input modes (in-character, narrate, continue)
+            - Scene direction sidebar and token budget display
+            - Generation presets, bookmarks, and chat export (txt, md, json)
+            - Persona management
+            - Library with collections, sorting, and grid density options
+            - Discover feed powered by [mnemo.studio](https://mnemo.studio)
+            - Story projects with scene editor
+            - Dashboard with activity stats
+            - Connection manager for Ollama and OpenAI-compatible backends
+
+            **Getting started:**
+            You'll need [Ollama](https://ollama.com) running with at least one model pulled. Download the installer for your platform below, run it, and the app will walk you through setup on first launch.
+
+            **Downloads:**
+            - `MnemoChat Setup *.exe` — Windows
+            - `MnemoChat-*.dmg` — macOS
+            - `MnemoChat-*.AppImage` — Linux
           files: |
             release/*.exe
             release/*.dmg
