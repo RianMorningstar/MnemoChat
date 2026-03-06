@@ -19,6 +19,7 @@ import { ConnectionIndicator } from "./ConnectionIndicator";
 import { TitleBar } from "./TitleBar";
 import { getPersonas, setDefaultPersona as apiSetDefaultPersona, createPersona } from "@/lib/api";
 import type { Persona } from "@shared/library-types";
+import logoUrl from "@/assets/mnemo-logo.svg?url";
 
 const navigationItems: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -95,11 +96,19 @@ export function AppShell({ children }: AppShellProps) {
       >
         {/* Header */}
         <div className="flex h-14 items-center justify-between border-b border-zinc-800 px-3">
-          {!collapsed && (
-            <span className="font-heading text-base font-semibold tracking-tight text-zinc-100">
-              MnemoChat
-            </span>
-          )}
+          <div className={cn("flex items-center gap-2", collapsed && "justify-center")}>
+            <img
+              src={logoUrl}
+              alt="MnemoChat"
+              className="h-5 w-5 opacity-95"
+              draggable={false}
+            />
+            {!collapsed && (
+              <span className="font-heading text-base font-semibold tracking-tight text-zinc-100">
+                MnemoChat
+              </span>
+            )}
+          </div>
           <button
             onClick={() => {
               setCollapsed((c) => !c);
@@ -151,9 +160,17 @@ export function AppShell({ children }: AppShellProps) {
               <Menu className="h-5 w-5" strokeWidth={1.5} />
             )}
           </button>
-          <span className="font-heading text-base font-semibold tracking-tight text-zinc-100">
-            MnemoChat
-          </span>
+          <div className="flex items-center gap-2">
+            <img
+              src={logoUrl}
+              alt="MnemoChat"
+              className="h-5 w-5 opacity-95"
+              draggable={false}
+            />
+            <span className="font-heading text-base font-semibold tracking-tight text-zinc-100">
+              MnemoChat
+            </span>
+          </div>
         </header>
 
         {/* Page content */}

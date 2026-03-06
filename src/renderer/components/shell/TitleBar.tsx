@@ -1,3 +1,5 @@
+import logoUrl from "@/assets/mnemo-logo.svg?url";
+
 export function TitleBar() {
   const isMac = window.electronAPI?.platform === "darwin";
 
@@ -10,8 +12,14 @@ export function TitleBar() {
       {isMac && <div className="w-20" />}
 
       {/* App title centered */}
-      <span className="flex-1 text-center text-xs font-medium text-zinc-500 tracking-wide">
-        MnemoChat
+      <span className="flex-1 flex items-center justify-center gap-2 text-xs font-medium text-zinc-500 tracking-wide">
+        <img
+          src={logoUrl}
+          alt="MnemoChat"
+          className="h-3.5 w-3.5 opacity-90"
+          draggable={false}
+        />
+        <span>MnemoChat</span>
       </span>
 
       {/* Window controls — hidden on macOS (native traffic lights handle it) */}
