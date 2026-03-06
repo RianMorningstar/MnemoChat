@@ -5,7 +5,10 @@ import {
   getChat,
   getChats,
   createChat,
+  addChatCharacter,
+  removeChatCharacter,
   getMessages,
+  getCharacters,
   createMessage,
   updateMessage,
   deleteMessage as apiDeleteMessage,
@@ -73,9 +76,12 @@ export function ChatPage() {
   const [presets, setPresets] = useState<GenerationPreset[]>([]);
   const [activePreset, setActivePreset] = useState<GenerationPreset | null>(null);
   const [availableModels, setAvailableModels] = useState<AvailableModel[]>([]);
+  const [allCharacters, setAllCharacters] = useState<{ id: string; name: string; portraitUrl: string }[]>([]);
   const [inputMode, setInputMode] = useState<InputMode>("in_character");
   const [isGenerating, setIsGenerating] = useState(false);
   const [streamingContent, setStreamingContent] = useState("");
+  const [pendingCharacterId, setPendingCharacterId] = useState<string | null>(null);
+  const [generatingCharacterId, setGeneratingCharacterId] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   const [loading, setLoading] = useState(true);
@@ -91,12 +97,21 @@ export function ChatPage() {
         getSceneDirection(id),
         getTokenBudget(id),
       ]);
-      setChat(chatData);
+      // Ensure characters array is always populated
+      const chatWithChars = {
+        ...chatData,
+        characters: chatData.characters?.length
+          ? chatData.characters
+          : [{ id: chatData.characterId, name: chatData.characterName, portraitUrl: chatData.characterPortraitUrl }],
+      };
+      setChat(chatWithChars);
       setMessages(msgs);
       setBookmarks(bms);
       setSceneDirection(scene);
       setTokenBudget(budget);
       setError(null);
+      // Default pending character to primary
+      setPendingCharacterId((prev) => prev ?? chatData.characterId);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load chat");
     }
@@ -110,14 +125,16 @@ export function ChatPage() {
       setLoading(true);
       setChat(null);
       setMessages([]);
+      setPendingCharacterId(null);
       try {
-        // Load presets, models, chat list, active connection, and personas in parallel
-        const [presetsData, models, chats, connections, personas] = await Promise.all([
+        // Load presets, models, chat list, active connection, personas, and characters in parallel
+        const [presetsData, models, chats, connections, personas, chars] = await Promise.all([
           getPresets(),
           getAvailableModels(),
           getChats(),
           getConnections().catch(() => []),
           getPersonas().catch(() => []),
+          getCharacters().catch(() => []),
         ]);
 
         if (cancelled) return;
@@ -126,6 +143,7 @@ export function ChatPage() {
         setActivePreset(presetsData[0] || null);
         setAvailableModels(models);
         setChatList(chats);
+        setAllCharacters(chars.map(c => ({ id: c.id, name: c.name, portraitUrl: c.portraitUrl ?? "" })));
 
         const characterId = searchParams.get("character");
 
@@ -182,25 +200,33 @@ export function ChatPage() {
     setChatList(chats);
     // Refresh chat stats
     const updated = await getChat(chat.id);
-    setChat(updated);
+    setChat({
+      ...updated,
+      characters: updated.characters?.length
+        ? updated.characters
+        : [{ id: updated.characterId, name: updated.characterName, portraitUrl: updated.characterPortraitUrl }],
+    });
   }, [chat]);
 
-  const triggerGeneration = useCallback((targetChatId: string, mode: InputMode) => {
+  const triggerGeneration = useCallback((targetChatId: string, mode: InputMode, characterId?: string) => {
     setIsGenerating(true);
     setStreamingContent("");
     setGenerationError(null);
+    setGeneratingCharacterId(characterId ?? null);
     const controller = generateResponse(
       targetChatId,
-      { mode },
+      { mode, characterId },
       (token) => setStreamingContent((prev) => prev + token),
       async () => {
         setIsGenerating(false);
         setStreamingContent("");
+        setGeneratingCharacterId(null);
         await refreshMessages();
       },
       (err) => {
         setIsGenerating(false);
         setStreamingContent("");
+        setGeneratingCharacterId(null);
         setGenerationError(err);
         console.error("Generation error:", err);
       },
@@ -212,6 +238,7 @@ export function ChatPage() {
     abortRef.current?.abort();
     setIsGenerating(false);
     setStreamingContent("");
+    setGeneratingCharacterId(null);
   }, []);
 
   // Callbacks
@@ -228,8 +255,8 @@ export function ChatPage() {
       await refreshMessages();
     }
 
-    triggerGeneration(chat.id, mode);
-  }, [chat, refreshMessages, triggerGeneration]);
+    triggerGeneration(chat.id, mode, pendingCharacterId ?? chat.characterId);
+  }, [chat, refreshMessages, triggerGeneration, pendingCharacterId]);
 
   const onEditMessage = useCallback(async (messageId: string, newContent: string) => {
     await updateMessage(messageId, newContent);
@@ -243,10 +270,13 @@ export function ChatPage() {
 
   const onRegenerate = useCallback(async (messageId: string) => {
     if (!chat) return;
+    // Find character who originally sent this message to regenerate with same character
+    const msg = messages.find((m) => m.id === messageId);
+    const regenCharId = msg?.characterId ?? pendingCharacterId ?? chat.characterId;
     await apiDeleteMessage(messageId);
     await refreshMessages();
-    triggerGeneration(chat.id, "in_character");
-  }, [chat, refreshMessages, triggerGeneration]);
+    triggerGeneration(chat.id, "in_character", regenCharId);
+  }, [chat, messages, pendingCharacterId, refreshMessages, triggerGeneration]);
 
   const onSwipeNavigate = useCallback((_messageId: string, _direction: "left" | "right") => {
     console.log("onSwipeNavigate stub:", _messageId, _direction);
@@ -388,6 +418,18 @@ export function ChatPage() {
     URL.revokeObjectURL(url);
   }, [messages, chat]);
 
+  const onAddCharacter = useCallback(async (characterId: string) => {
+    if (!chat) return;
+    const result = await addChatCharacter(chat.id, characterId);
+    setChat((prev) => prev ? { ...prev, characters: result.characters } : prev);
+  }, [chat]);
+
+  const onRemoveCharacter = useCallback(async (characterId: string) => {
+    if (!chat) return;
+    const result = await removeChatCharacter(chat.id, characterId);
+    setChat((prev) => prev ? { ...prev, characters: result.characters } : prev);
+  }, [chat]);
+
   // Loading state
   if (loading) {
     return (
@@ -433,6 +475,10 @@ export function ChatPage() {
       </div>
     );
   }
+
+  const generatingCharacter = generatingCharacterId && chat.characters
+    ? chat.characters.find((c) => c.id === generatingCharacterId) ?? null
+    : null;
 
   return (
     <>
@@ -490,6 +536,12 @@ export function ChatPage() {
       onRenameChat={onRenameChat}
       onOpenCharacterEditor={onOpenCharacterEditor}
       onExportChat={onExportChat}
+      pendingCharacterId={pendingCharacterId ?? chat.characterId}
+      generatingCharacter={generatingCharacter ?? undefined}
+      onSelectCharacter={(charId) => setPendingCharacterId(charId)}
+      allCharacters={allCharacters}
+      onAddCharacter={onAddCharacter}
+      onRemoveCharacter={onRemoveCharacter}
     />
     </>
   );

@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { db } from "../../db";
-import { chats, characters, messages, bookmarks, sceneDirections, swipeAlternatives } from "../../db/schema";
-import { eq, desc, sql } from "drizzle-orm";
+import { chats, characters, messages, bookmarks, sceneDirections, swipeAlternatives, chatCharacters } from "../../db/schema";
+import { eq, desc, sql, asc, and } from "drizzle-orm";
 
 function generateId(): string {
   return crypto.randomUUID();
@@ -45,6 +45,22 @@ function updateChatCounts(chatId: string) {
     .run();
 }
 
+function getChatCharacters(chatId: string) {
+  return db
+    .select({
+      id: characters.id,
+      name: characters.name,
+      portraitUrl: characters.portraitUrl,
+      position: chatCharacters.position,
+    })
+    .from(chatCharacters)
+    .leftJoin(characters, eq(chatCharacters.characterId, characters.id))
+    .where(eq(chatCharacters.chatId, chatId))
+    .orderBy(asc(chatCharacters.position))
+    .all()
+    .map((r) => ({ id: r.id!, name: r.name ?? "Unknown", portraitUrl: r.portraitUrl ?? "" }));
+}
+
 export async function chatRoutes(app: FastifyInstance) {
   // List all chats with character join
   app.get("/api/chats", async () => {
@@ -70,6 +86,7 @@ export async function chatRoutes(app: FastifyInstance) {
       characterName: r.characterName || "Unknown",
       characterPortraitUrl: r.characterPortraitUrl || "",
       tags: JSON.parse((r.tags as string) || "[]"),
+      characters: getChatCharacters(r.id),
     }));
   });
 
@@ -108,6 +125,7 @@ export async function chatRoutes(app: FastifyInstance) {
       characterTags: JSON.parse((row.characterTags as string) || "[]"),
       tags: JSON.parse((row.tags as string) || "[]"),
       lastMessageAt: row.lastMessageAt || "",
+      characters: getChatCharacters(id),
     };
   });
 
@@ -137,6 +155,16 @@ export async function chatRoutes(app: FastifyInstance) {
     };
 
     db.insert(chats).values(record).run();
+
+    // Populate chat_characters — primary character always first
+    const allCharacterIds: string[] = [characterId];
+    const extraIds = (body.characterIds as string[] | undefined) || [];
+    for (const cid of extraIds) {
+      if (cid !== characterId) allCharacterIds.push(cid);
+    }
+    allCharacterIds.forEach((cid, pos) => {
+      db.insert(chatCharacters).values({ chatId: id, characterId: cid, position: pos }).onConflictDoNothing().run();
+    });
 
     // Create default scene direction
     db.insert(sceneDirections)
@@ -210,6 +238,7 @@ export async function chatRoutes(app: FastifyInstance) {
       characterTags: JSON.parse((chat!.characterTags as string) || "[]"),
       tags: JSON.parse((chat!.tags as string) || "[]"),
       lastMessageAt: chat!.lastMessageAt || "",
+      characters: getChatCharacters(id),
     };
   });
 
@@ -254,6 +283,7 @@ export async function chatRoutes(app: FastifyInstance) {
     db.delete(bookmarks).where(eq(bookmarks.chatId, id)).run();
     db.delete(messages).where(eq(messages.chatId, id)).run();
     db.delete(sceneDirections).where(eq(sceneDirections.chatId, id)).run();
+    db.delete(chatCharacters).where(eq(chatCharacters.chatId, id)).run();
     db.delete(chats).where(eq(chats.id, id)).run();
 
     return { ok: true };
@@ -266,6 +296,36 @@ export async function chatRoutes(app: FastifyInstance) {
     db.update(chats).set({ title: body.title }).where(eq(chats.id, id)).run();
     return { ok: true };
   });
+
+  // Add character to group chat
+  app.post<{ Params: { id: string } }>("/api/chats/:id/characters", async (request) => {
+    const { id } = request.params;
+    const body = request.body as { characterId: string };
+
+    const existing = getChatCharacters(id);
+    const position = existing.length;
+
+    db.insert(chatCharacters)
+      .values({ chatId: id, characterId: body.characterId, position })
+      .onConflictDoNothing()
+      .run();
+
+    return { characters: getChatCharacters(id) };
+  });
+
+  // Remove character from group chat
+  app.delete<{ Params: { id: string; characterId: string } }>(
+    "/api/chats/:id/characters/:characterId",
+    async (request) => {
+      const { id, characterId } = request.params;
+
+      db.delete(chatCharacters)
+        .where(and(eq(chatCharacters.chatId, id), eq(chatCharacters.characterId, characterId)))
+        .run();
+
+      return { characters: getChatCharacters(id) };
+    }
+  );
 
   // Token budget
   app.get<{ Params: { id: string } }>("/api/chats/:id/token-budget", async (request, reply) => {
