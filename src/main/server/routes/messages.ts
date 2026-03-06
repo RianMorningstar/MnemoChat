@@ -2,13 +2,10 @@ import type { FastifyInstance } from "fastify";
 import { db } from "../../db";
 import { messages, bookmarks, swipeAlternatives, chats } from "../../db/schema";
 import { eq, asc, desc, sql } from "drizzle-orm";
+import { wordCount } from "../lib/chat-utils";
 
 function generateId(): string {
   return crypto.randomUUID();
-}
-
-function wordCount(text: string): number {
-  return text.trim() ? text.trim().split(/\s+/).length : 0;
 }
 
 function updateChatCounts(chatId: string) {

@@ -12,6 +12,7 @@ import {
   chatCharacters,
 } from "../../db/schema";
 import { eq, asc, desc, sql } from "drizzle-orm";
+import { wordCount, substituteVars, buildSystemMessage } from "../lib/chat-utils";
 
 function generateId(): string {
   return crypto.randomUUID();
@@ -39,7 +40,7 @@ function updateChatCounts(chatId: string) {
     .get();
 
   const totalWords = msgRows.reduce(
-    (sum, m) => sum + (m.content?.trim() ? m.content.trim().split(/\s+/).length : 0),
+    (sum, m) => sum + wordCount(m.content || ""),
     0
   );
 
@@ -52,42 +53,6 @@ function updateChatCounts(chatId: string) {
     })
     .where(eq(chats.id, chatId))
     .run();
-}
-
-function substituteVars(text: string, charName: string, userName: string): string {
-  return text
-    .replace(/\{\{char\}\}/gi, charName)
-    .replace(/\{\{user\}\}/gi, userName);
-}
-
-function buildSystemMessage(char: {
-  systemPrompt: string | null;
-  description: string | null;
-  personality: string | null;
-  scenario: string | null;
-  name: string;
-}): string {
-  const parts: string[] = [];
-
-  if (char.systemPrompt) {
-    parts.push(char.systemPrompt);
-  }
-
-  const preamble = `Write {{char}}'s next reply in a fictional chat between {{char}} and {{user}}.`;
-
-  const fields: string[] = [];
-  if (char.description) fields.push(`{{char}}'s description: ${char.description}`);
-  if (char.personality) fields.push(`{{char}}'s personality: ${char.personality}`);
-  if (char.scenario) fields.push(`Scenario: ${char.scenario}`);
-
-  if (fields.length > 0) {
-    parts.unshift(preamble + "\n\n" + fields.join("\n\n"));
-  } else if (parts.length === 0) {
-    // No system prompt and no fields — use fallback
-    return `Write ${char.name}'s next reply in a fictional chat between ${char.name} and {{user}}.`;
-  }
-
-  return parts.join("\n\n");
 }
 
 interface OllamaChatMessage {
