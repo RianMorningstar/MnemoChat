@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import {
   ArrowLeft,
   Download,
@@ -12,6 +12,7 @@ import {
   ChevronDown,
   FileText,
   Bookmark,
+  ImageIcon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type {
@@ -50,6 +51,7 @@ type ProjectDetailProps = Pick<
   project: Project
   scenes: Scene[]
   onBack?: () => void
+  onUpdateCoverImage?: (projectId: string, dataUrl: string | null) => void
 }
 
 const statusConfig: Record<ProjectStatus, { label: string; color: string }> = {
@@ -97,8 +99,21 @@ export function ProjectDetail({
   onOpenSourceChat,
   onExport,
   onExecuteExport,
+  onUpdateCoverImage,
 }: ProjectDetailProps) {
   const [statusMenuOpen, setStatusMenuOpen] = useState(false)
+  const coverInputRef = useRef<HTMLInputElement>(null)
+
+  function handleCoverFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      onUpdateCoverImage?.(project.id, reader.result as string)
+    }
+    reader.readAsDataURL(file)
+    e.target.value = ''
+  }
   const [addSceneMenuOpen, setAddSceneMenuOpen] = useState(false)
   const [exportModalOpen, setExportModalOpen] = useState(false)
   const [exportTargetId, setExportTargetId] = useState<string | null>(null)
@@ -316,6 +331,53 @@ export function ProjectDetail({
 
         {/* Right — Metadata panel */}
         <div className="w-80 shrink-0 overflow-y-auto bg-zinc-900/50 p-6 lg:w-96">
+          {/* Cover Image */}
+          <div className="mb-6">
+            <div className="mb-1.5 flex items-center justify-between">
+              <label className="text-[10px] font-medium uppercase tracking-widest text-zinc-600">
+                Cover Image
+              </label>
+              {project.coverImage && (
+                <button
+                  onClick={() => onUpdateCoverImage?.(project.id, null)}
+                  className="text-[10px] text-zinc-600 transition-colors hover:text-red-400"
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+            <input
+              ref={coverInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleCoverFileChange}
+            />
+            {project.coverImage ? (
+              <div className="relative overflow-hidden rounded-lg">
+                <img
+                  src={project.coverImage}
+                  alt="Cover"
+                  className="h-32 w-full object-cover"
+                />
+                <button
+                  onClick={() => coverInputRef.current?.click()}
+                  className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity hover:opacity-100"
+                >
+                  <span className="text-xs font-medium text-white">Change</span>
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => coverInputRef.current?.click()}
+                className="flex h-24 w-full items-center justify-center gap-2 rounded-lg border border-dashed border-zinc-700 text-zinc-600 transition-colors hover:border-zinc-500 hover:text-zinc-400"
+              >
+                <ImageIcon className="h-4 w-4" />
+                <span className="text-xs">Upload cover image</span>
+              </button>
+            )}
+          </div>
+
           {/* Title & Description */}
           <div className="mb-6">
             <label className="mb-1.5 block text-[10px] font-medium uppercase tracking-widest text-zinc-600">

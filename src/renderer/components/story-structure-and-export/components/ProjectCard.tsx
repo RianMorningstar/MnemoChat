@@ -50,10 +50,12 @@ export function ProjectCard({
       className="group cursor-pointer overflow-hidden rounded-xl border border-zinc-800/50 bg-zinc-900 transition-all hover:border-zinc-700 hover:shadow-lg hover:shadow-black/20"
       onClick={onOpen}
     >
-      {/* Cover area — character portrait collage or placeholder */}
+      {/* Cover area — cover image, character portrait collage, or placeholder */}
       <div className="relative aspect-[16/9] overflow-hidden bg-gradient-to-br from-zinc-800/80 to-zinc-900">
-        {/* Character initial collage */}
-        {initials.length > 0 ? (
+        {/* Cover image */}
+        {project.coverImage ? (
+          <img src={project.coverImage} alt={project.title} className="h-full w-full object-cover" />
+        ) : initials.length > 0 ? (
           <div className="flex h-full w-full items-center justify-center">
             <div
               className={cn(

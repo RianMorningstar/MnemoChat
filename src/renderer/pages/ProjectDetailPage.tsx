@@ -126,6 +126,12 @@ export function ProjectDetailPage() {
     setProject(updated);
   }
 
+  async function handleUpdateCoverImage(_projectId: string, dataUrl: string | null) {
+    if (!project) return;
+    const updated = await updateProject(project.id, { coverImage: dataUrl });
+    setProject(updated);
+  }
+
   async function handleExecuteExport(targetId: string, options: ExportOptions) {
     if (!project) return;
     const title = project.title.replace(/\s+/g, "_");
@@ -195,6 +201,7 @@ export function ProjectDetailPage() {
         onReorderScenes={handleReorderScenes}
         onOpenSourceChat={(chatId) => navigate(`/chat/${chatId}`)}
         onExecuteExport={handleExecuteExport}
+        onUpdateCoverImage={handleUpdateCoverImage}
       />
 
       {showBookmarkPicker && (
