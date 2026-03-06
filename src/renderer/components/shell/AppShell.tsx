@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { MainNav, type NavItem } from "./MainNav";
 import { UserMenu } from "./UserMenu";
 import { ConnectionIndicator } from "./ConnectionIndicator";
+import { TitleBar } from "./TitleBar";
 import { getPersonas, setDefaultPersona as apiSetDefaultPersona, createPersona } from "@/lib/api";
 import type { Persona } from "@shared/library-types";
 
@@ -71,7 +72,9 @@ export function AppShell({ children }: AppShellProps) {
   }, [navigate]);
 
   return (
-    <div className="flex h-screen font-sans bg-zinc-950">
+    <div className="flex flex-col h-screen font-sans bg-zinc-950">
+      <TitleBar />
+      <div className="flex flex-1 overflow-hidden">
       {/* Mobile overlay */}
       {mobileOpen && (
         <div
@@ -157,6 +160,7 @@ export function AppShell({ children }: AppShellProps) {
         <main className="flex-1 overflow-y-auto bg-zinc-950">
           {children}
         </main>
+      </div>
       </div>
     </div>
   );

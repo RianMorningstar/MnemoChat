@@ -1,4 +1,4 @@
-import { app, BrowserWindow, globalShortcut } from "electron";
+import { app, BrowserWindow, globalShortcut, ipcMain } from "electron";
 import path from "path";
 import { startServer, stopServer } from "./server";
 
@@ -6,14 +6,25 @@ const isDev = !app.isPackaged;
 
 let mainWindow: BrowserWindow | null = null;
 
-async function createWindow(port: number) {
+ipcMain.on("window:minimize", () => mainWindow?.minimize());
+ipcMain.on("window:maximize", () => {
+  if (mainWindow?.isMaximized()) {
+    mainWindow.unmaximize();
+  } else {
+    mainWindow?.maximize();
+  }
+});
+ipcMain.on("window:close", () => mainWindow?.close());
+
+async function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
-    autoHideMenuBar: true,
+    frame: false,
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
+      preload: path.join(__dirname, "preload.js"),
     },
   });
 
@@ -30,7 +41,7 @@ async function createWindow(port: number) {
 app.whenReady().then(async () => {
   const port = await startServer();
   process.env.MNEMOCHAT_API_PORT = String(port);
-  await createWindow(port);
+  await createWindow();
 });
 
 app.on("window-all-closed", () => {
@@ -45,7 +56,6 @@ app.on("before-quit", async () => {
 
 app.on("activate", async () => {
   if (BrowserWindow.getAllWindows().length === 0) {
-    const port = Number(process.env.MNEMOCHAT_API_PORT) || 3001;
-    await createWindow(port);
+    await createWindow();
   }
 });
