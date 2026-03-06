@@ -19,6 +19,7 @@ import type { ChatRoleplayProps, ExportScope, ExportFormat } from '@shared/chat-
 import { MessageBubble } from './MessageBubble'
 import { ChatComposer } from './ChatComposer'
 import { SceneSidebar } from './SceneSidebar'
+import { GroupCharacterStrip } from './GroupCharacterStrip'
 
 export function ChatView({
   chat,
@@ -58,12 +59,27 @@ export function ChatView({
   onOpenCharacterEditor,
   onExportChat,
   onToggleSidebar,
+  pendingCharacterId,
+  generatingCharacter,
+  onSelectCharacter,
+  allCharacters,
+  onAddCharacter,
+  onRemoveCharacter,
 }: ChatRoleplayProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [chatListOpen, setChatListOpen] = useState(false)
   const [modelMenuOpen, setModelMenuOpen] = useState(false)
   const [exportMenuOpen, setExportMenuOpen] = useState(false)
   const [chatSearchQuery, setChatSearchQuery] = useState('')
+  const [addCharMenuOpen, setAddCharMenuOpen] = useState(false)
+  const [addCharMenuPos, setAddCharMenuPos] = useState({ top: 0, left: 0 })
+  const addCharBtnRef = useRef<HTMLButtonElement>(null)
+
+  function openAddCharMenu() {
+    const rect = addCharBtnRef.current?.getBoundingClientRect()
+    if (rect) setAddCharMenuPos({ top: rect.bottom + 6, left: rect.left })
+    setAddCharMenuOpen(true)
+  }
   const threadRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -88,28 +104,90 @@ export function ChatView({
       {/* Header */}
       <div className="flex h-12 shrink-0 items-center gap-3 border-b border-zinc-800 bg-zinc-900/80 px-4 backdrop-blur">
         {/* Character info */}
-        <button
-          onClick={() => onOpenCharacterEditor?.(chat.characterId)}
-          className="flex items-center gap-2.5 rounded-lg px-2 py-1 transition-colors hover:bg-zinc-800"
-        >
-          {chat.characterPortraitUrl ? (
-            <img
-              src={chat.characterPortraitUrl}
-              alt={chat.characterName}
-              className="h-7 w-7 rounded-full object-cover ring-1 ring-indigo-500/20"
-            />
-          ) : (
-            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-indigo-600/30 to-indigo-800/30 text-xs font-bold text-indigo-300 ring-1 ring-indigo-500/20">
-              {chat.characterName.charAt(0)}
+        {chat.characters && chat.characters.length > 1 ? (
+          /* Group chat: show avatar stack + all names + add/remove controls */
+          <div className="flex items-center gap-2">
+            <div className="flex -space-x-2">
+              {chat.characters.slice(0, 4).map((char) => (
+                <div key={char.id} className="group relative ring-2 ring-zinc-900 rounded-full">
+                  {char.portraitUrl ? (
+                    <img src={char.portraitUrl} alt={char.name} className="h-7 w-7 rounded-full object-cover" />
+                  ) : (
+                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-indigo-600/30 to-indigo-800/30 text-xs font-bold text-indigo-300">
+                      {char.name.charAt(0)}
+                    </div>
+                  )}
+                  {/* Remove button — only show if not the primary character */}
+                  {char.id !== chat.characterId && onRemoveCharacter && (
+                    <button
+                      onClick={() => onRemoveCharacter(char.id)}
+                      title={`Remove ${char.name}`}
+                      className="absolute -right-0.5 -top-0.5 hidden h-3.5 w-3.5 items-center justify-center rounded-full bg-red-600 text-white group-hover:flex"
+                    >
+                      <X className="h-2 w-2" />
+                    </button>
+                  )}
+                </div>
+              ))}
             </div>
-          )}
-          <span
-            className="text-sm font-semibold text-zinc-200"
-            style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}
-          >
-            {chat.characterName}
-          </span>
-        </button>
+            <span
+              className="text-sm font-semibold text-zinc-200"
+              style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}
+            >
+              {chat.characters.length > 2
+                ? `${chat.characters[0].name} & ${chat.characters.length - 1} others`
+                : chat.characters.map(c => c.name).join(' & ')}
+            </span>
+            {/* Add character button */}
+            {onAddCharacter && (
+              <button
+                ref={addCharBtnRef}
+                onClick={openAddCharMenu}
+                title="Add participant"
+                className="flex h-6 w-6 items-center justify-center rounded-full bg-zinc-700 text-zinc-400 hover:bg-zinc-600 hover:text-zinc-200 transition-colors"
+              >
+                <Plus className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+        ) : (
+          /* Single character */
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => onOpenCharacterEditor?.(chat.characterId)}
+              className="flex items-center gap-2.5 rounded-lg px-2 py-1 transition-colors hover:bg-zinc-800"
+            >
+              {chat.characterPortraitUrl ? (
+                <img
+                  src={chat.characterPortraitUrl}
+                  alt={chat.characterName}
+                  className="h-7 w-7 rounded-full object-cover ring-1 ring-indigo-500/20"
+                />
+              ) : (
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-indigo-600/30 to-indigo-800/30 text-xs font-bold text-indigo-300 ring-1 ring-indigo-500/20">
+                  {chat.characterName.charAt(0)}
+                </div>
+              )}
+              <span
+                className="text-sm font-semibold text-zinc-200"
+                style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}
+              >
+                {chat.characterName}
+              </span>
+            </button>
+            {/* Add a second character to start a group chat */}
+            {onAddCharacter && (
+              <button
+                ref={addCharBtnRef}
+                onClick={openAddCharMenu}
+                title="Add participant"
+                className="flex h-6 w-6 items-center justify-center rounded-full bg-zinc-700 text-zinc-400 hover:bg-zinc-600 hover:text-zinc-200 transition-colors"
+              >
+                <Plus className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Model pill */}
         <div className="relative">
@@ -314,40 +392,52 @@ export function ChatView({
         {/* Message thread */}
         <div className="flex min-w-0 flex-1 flex-col">
           <div ref={threadRef} className="flex-1 overflow-y-auto py-4">
-            {messages.map((msg) => (
-              <MessageBubble
-                key={msg.id}
-                message={msg}
-                characterName={chat.characterName}
-                characterInitial={chat.characterName.charAt(0)}
-                characterPortraitUrl={chat.characterPortraitUrl}
-                onEdit={onEditMessage}
-                onDelete={onDeleteMessage}
-                onRegenerate={onRegenerate}
-                onSwipeNavigate={onSwipeNavigate}
-                onSwipeGenerate={onSwipeGenerate}
-                onBookmark={onBookmark}
-                onRemoveBookmark={onRemoveBookmark}
-              />
-            ))}
+            {messages.map((msg) => {
+              // In group chats, resolve per-message character identity
+              let charName = chat.characterName
+              let charPortrait = chat.characterPortraitUrl
+              if (msg.characterId && chat.characters && chat.characters.length > 1) {
+                const charInfo = chat.characters.find(c => c.id === msg.characterId)
+                if (charInfo) {
+                  charName = charInfo.name
+                  charPortrait = charInfo.portraitUrl
+                }
+              }
+              return (
+                <MessageBubble
+                  key={msg.id}
+                  message={msg}
+                  characterName={charName}
+                  characterInitial={charName.charAt(0)}
+                  characterPortraitUrl={charPortrait}
+                  onEdit={onEditMessage}
+                  onDelete={onDeleteMessage}
+                  onRegenerate={onRegenerate}
+                  onSwipeNavigate={onSwipeNavigate}
+                  onSwipeGenerate={onSwipeGenerate}
+                  onBookmark={onBookmark}
+                  onRemoveBookmark={onRemoveBookmark}
+                />
+              )
+            })}
 
             {/* Streaming response bubble */}
             {isGenerating && (
               <div className="flex gap-3 px-6 py-3">
-                {chat.characterPortraitUrl ? (
+                {(generatingCharacter?.portraitUrl ?? chat.characterPortraitUrl) ? (
                   <img
-                    src={chat.characterPortraitUrl}
-                    alt={chat.characterName}
+                    src={generatingCharacter?.portraitUrl ?? chat.characterPortraitUrl}
+                    alt={generatingCharacter?.name ?? chat.characterName}
                     className="h-8 w-8 shrink-0 rounded-full object-cover ring-1 ring-indigo-500/20"
                   />
                 ) : (
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-600/30 to-indigo-800/30 text-xs font-bold text-indigo-300 ring-1 ring-indigo-500/20">
-                    {chat.characterName.charAt(0)}
+                    {(generatingCharacter?.name ?? chat.characterName).charAt(0)}
                   </div>
                 )}
                 <div className="min-w-0 flex-1">
                   <p className="mb-1 text-[11px] font-medium text-indigo-400">
-                    {chat.characterName}
+                    {generatingCharacter?.name ?? chat.characterName}
                   </p>
                   <div className="rounded-2xl rounded-tl-sm bg-zinc-800/60 px-4 py-3 text-sm leading-relaxed text-zinc-300">
                     {streamingContent ? (
@@ -364,6 +454,16 @@ export function ChatView({
               </div>
             )}
           </div>
+
+          {/* Group character selector */}
+          {chat.characters && chat.characters.length > 1 && pendingCharacterId && onSelectCharacter && (
+            <GroupCharacterStrip
+              characters={chat.characters}
+              pendingCharacterId={pendingCharacterId}
+              isGenerating={!!isGenerating}
+              onSelectCharacter={onSelectCharacter}
+            />
+          )}
 
           {/* Composer */}
           <ChatComposer
@@ -394,6 +494,47 @@ export function ChatView({
           />
         )}
       </div>
+
+      {/* Add participant dropdown — rendered at root to escape header stacking context */}
+      {addCharMenuOpen && onAddCharacter && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setAddCharMenuOpen(false)} />
+          <div
+            className="fixed z-50 w-64 rounded-xl border border-zinc-600 max-h-72 overflow-y-auto"
+            style={{
+              top: addCharMenuPos.top,
+              left: addCharMenuPos.left,
+              backgroundColor: '#1a1a24',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.85)',
+            }}
+          >
+            <div className="border-b border-zinc-700 px-3 py-2 rounded-t-xl" style={{ backgroundColor: 'rgba(63,63,70,0.6)' }}>
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Add participant</p>
+            </div>
+            {(allCharacters ?? [])
+              .filter(c => !chat.characters.some(cc => cc.id === c.id))
+              .map(char => (
+                <button
+                  key={char.id}
+                  onClick={() => { onAddCharacter(char.id); setAddCharMenuOpen(false) }}
+                  className="flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm font-medium text-zinc-100 hover:bg-white/5 transition-colors"
+                >
+                  {char.portraitUrl ? (
+                    <img src={char.portraitUrl} alt={char.name} className="h-7 w-7 rounded-full object-cover shrink-0 ring-1 ring-zinc-600" />
+                  ) : (
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-zinc-700 text-xs font-bold text-zinc-300">
+                      {char.name.charAt(0)}
+                    </div>
+                  )}
+                  {char.name}
+                </button>
+              ))}
+            {(allCharacters ?? []).filter(c => !chat.characters.some(cc => cc.id === c.id)).length === 0 && (
+              <p className="px-3 py-3 text-xs text-zinc-500">No more characters to add</p>
+            )}
+          </div>
+        </>
+      )}
     </div>
   )
 }

@@ -9,8 +9,10 @@ import {
   connectionProfiles,
   bookmarks,
   personas,
+  chatCharacters,
 } from "../../db/schema";
 import { eq, asc, desc, sql } from "drizzle-orm";
+import { wordCount, substituteVars, buildSystemMessage } from "../lib/chat-utils";
 
 function generateId(): string {
   return crypto.randomUUID();
@@ -38,7 +40,7 @@ function updateChatCounts(chatId: string) {
     .get();
 
   const totalWords = msgRows.reduce(
-    (sum, m) => sum + (m.content?.trim() ? m.content.trim().split(/\s+/).length : 0),
+    (sum, m) => sum + wordCount(m.content || ""),
     0
   );
 
@@ -53,42 +55,6 @@ function updateChatCounts(chatId: string) {
     .run();
 }
 
-function substituteVars(text: string, charName: string, userName: string): string {
-  return text
-    .replace(/\{\{char\}\}/gi, charName)
-    .replace(/\{\{user\}\}/gi, userName);
-}
-
-function buildSystemMessage(char: {
-  systemPrompt: string | null;
-  description: string | null;
-  personality: string | null;
-  scenario: string | null;
-  name: string;
-}): string {
-  const parts: string[] = [];
-
-  if (char.systemPrompt) {
-    parts.push(char.systemPrompt);
-  }
-
-  const preamble = `Write {{char}}'s next reply in a fictional chat between {{char}} and {{user}}.`;
-
-  const fields: string[] = [];
-  if (char.description) fields.push(`{{char}}'s description: ${char.description}`);
-  if (char.personality) fields.push(`{{char}}'s personality: ${char.personality}`);
-  if (char.scenario) fields.push(`Scenario: ${char.scenario}`);
-
-  if (fields.length > 0) {
-    parts.unshift(preamble + "\n\n" + fields.join("\n\n"));
-  } else if (parts.length === 0) {
-    // No system prompt and no fields — use fallback
-    return `Write ${char.name}'s next reply in a fictional chat between ${char.name} and {{user}}.`;
-  }
-
-  return parts.join("\n\n");
-}
-
 interface OllamaChatMessage {
   role: "system" | "user" | "assistant";
   content: string;
@@ -101,6 +67,7 @@ export async function generateRoutes(app: FastifyInstance) {
       const { chatId } = request.params;
       const body = (request.body as Record<string, unknown>) || {};
       const mode = (body.mode as string) || "in_character";
+      const requestedCharacterId = (body.characterId as string) || null;
 
       console.log(`[generate] === Request received for chat=${chatId} mode=${mode} origin=${request.headers.origin} ===`);
 
@@ -140,17 +107,43 @@ export async function generateRoutes(app: FastifyInstance) {
           return;
         }
 
+        // Load all characters in this chat (for group chat support)
+        const groupMembers = db
+          .select({
+            id: characters.id,
+            name: characters.name,
+            position: chatCharacters.position,
+          })
+          .from(chatCharacters)
+          .leftJoin(characters, eq(chatCharacters.characterId, characters.id))
+          .where(eq(chatCharacters.chatId, chatId))
+          .orderBy(asc(chatCharacters.position))
+          .all();
+
+        // Determine which character is speaking: use requestedCharacterId if valid, else primary
+        const speakingCharId = (requestedCharacterId && groupMembers.some(m => m.id === requestedCharacterId))
+          ? requestedCharacterId
+          : chat.characterId;
+
         // Load character
         const char = db
           .select()
           .from(characters)
-          .where(eq(characters.id, chat.characterId))
+          .where(eq(characters.id, speakingCharId))
           .get();
         if (!char) {
           sendSSE("error", { error: "Character not found" });
           reply.raw.end();
           return;
         }
+
+        const isGroupChat = groupMembers.length > 1;
+        // Names of other participants (for group preamble)
+        const otherParticipantNames = groupMembers
+          .filter(m => m.id !== speakingCharId)
+          .map(m => m.name ?? "Unknown");
+        // Build a quick name lookup for history prefixing
+        const charNameById = new Map(groupMembers.map(m => [m.id!, m.name ?? "Unknown"]));
 
         // Load active connection
         const connection = db
@@ -196,6 +189,19 @@ export async function generateRoutes(app: FastifyInstance) {
           content: sub(buildSystemMessage(char)),
         });
 
+        // Group chat preamble
+        if (isGroupChat && otherParticipantNames.length > 0) {
+          ollamaMessages.push({
+            role: "system",
+            content: [
+              `This is a group roleplay. You are ONLY ${charName}. You must NEVER speak as, act as, or write the actions/thoughts of any other character.`,
+              `Other participants present: ${otherParticipantNames.join(", ")}. Their messages appear prefixed with [Name]: in the chat history — these are for context only.`,
+              `IMPORTANT: Do NOT use the physical appearance, mannerisms, speech patterns, or traits of ${otherParticipantNames.join(" or ")}. Stay strictly within ${charName}'s established character.`,
+              `The scene is already in progress. You are already present. Do NOT re-introduce yourself or greet as if the scene is just beginning — respond naturally to what has already happened.`,
+            ].join("\n"),
+          });
+        }
+
         // Persona context
         if (chat.personaName) {
           const persona = db
@@ -229,11 +235,18 @@ export async function generateRoutes(app: FastifyInstance) {
         // Post-history instructions will be injected after messages
         const postInstructions = char.postHistoryInstructions;
 
-        // Chat history
-        const historyMessages: OllamaChatMessage[] = chatMessages.map((m) => ({
-          role: (m.role === "system" ? "system" : m.role) as OllamaChatMessage["role"],
-          content: sub(m.content || ""),
-        }));
+        // Chat history — in group chats, prefix assistant messages from other characters
+        const historyMessages: OllamaChatMessage[] = chatMessages.map((m) => {
+          let content = sub(m.content || "");
+          if (isGroupChat && m.role === "assistant" && m.characterId && m.characterId !== speakingCharId) {
+            const otherName = charNameById.get(m.characterId) ?? "Unknown";
+            content = `[${otherName}]: ${content}`;
+          }
+          return {
+            role: (m.role === "system" ? "system" : m.role) as OllamaChatMessage["role"],
+            content,
+          };
+        });
 
         // Inject scene direction at configured depth
         if (scene && scene.enabled && scene.text) {
@@ -260,6 +273,14 @@ export async function generateRoutes(app: FastifyInstance) {
           ollamaMessages.push({
             role: "system",
             content: "[Continue your last message without repeating its original content.]",
+          });
+        }
+
+        // Final identity anchor for group chats — highest recency, prevents trait bleed
+        if (isGroupChat) {
+          ollamaMessages.push({
+            role: "system",
+            content: `Remember: you are ${charName}. Write only ${charName}'s response now. Do not include dialogue or actions for ${otherParticipantNames.join(", ")}.`,
           });
         }
 
@@ -385,6 +406,7 @@ export async function generateRoutes(app: FastifyInstance) {
           generationTimeMs,
           swipeIndex: null,
           swipeCount: null,
+          characterId: speakingCharId,
         };
 
         db.insert(messages).values(record).run();

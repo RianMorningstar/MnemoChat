@@ -73,6 +73,8 @@ export const messages = sqliteTable("messages", {
   generationTimeMs: integer("generation_time_ms"),
   swipeIndex: integer("swipe_index"),
   swipeCount: integer("swipe_count"),
+  /** Which character spoke this message (assistant messages in group chats) */
+  characterId: text("character_id"),
 });
 
 export const swipeAlternatives = sqliteTable("swipe_alternatives", {
@@ -237,6 +239,16 @@ export const contentBlocks = sqliteTable("content_blocks", {
   sourceMessageId: text("source_message_id").default(""),
   text: text("text").default(""),
 });
+
+export const chatCharacters = sqliteTable(
+  "chat_characters",
+  {
+    chatId: text("chat_id").notNull(),
+    characterId: text("character_id").notNull(),
+    position: integer("position").notNull().default(0),
+  },
+  (table) => [primaryKey({ columns: [table.chatId, table.characterId] })]
+);
 
 export const projectCharacters = sqliteTable(
   "project_characters",

@@ -214,11 +214,29 @@ export async function createChat(data: {
   modelName: string;
   personaName?: string;
   title?: string;
+  /** Additional character IDs for group chats */
+  characterIds?: string[];
 }): Promise<Chat> {
   const res = await fetch(`${API_BASE}/api/chats`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
+  });
+  return json(res);
+}
+
+export async function addChatCharacter(chatId: string, characterId: string): Promise<{ characters: { id: string; name: string; portraitUrl: string }[] }> {
+  const res = await fetch(`${API_BASE}/api/chats/${chatId}/characters`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ characterId }),
+  });
+  return json(res);
+}
+
+export async function removeChatCharacter(chatId: string, characterId: string): Promise<{ characters: { id: string; name: string; portraitUrl: string }[] }> {
+  const res = await fetch(`${API_BASE}/api/chats/${chatId}/characters/${characterId}`, {
+    method: "DELETE",
   });
   return json(res);
 }
@@ -754,7 +772,7 @@ export async function addBlock(
 // Generation (SSE streaming)
 export function generateResponse(
   chatId: string,
-  opts: { mode?: string },
+  opts: { mode?: string; characterId?: string },
   onToken: (content: string) => void,
   onDone: (message: Message) => void,
   onError: (error: string) => void,
@@ -838,7 +856,7 @@ export function generateResponse(
 
   controller.signal.addEventListener("abort", () => xhr.abort());
 
-  xhr.send(JSON.stringify({ mode: opts.mode }));
+  xhr.send(JSON.stringify({ mode: opts.mode, characterId: opts.characterId }));
 
   return controller;
 }

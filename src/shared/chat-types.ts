@@ -50,6 +50,8 @@ export interface Message {
   swipeIndex?: number
   /** Total number of swipe alternatives (assistant messages only) */
   swipeCount?: number
+  /** Which character spoke this message (assistant messages in group chats) */
+  characterId?: string | null
   /** Bookmark on this message, if any */
   bookmark: Bookmark | null
 }
@@ -84,6 +86,12 @@ export interface GenerationPreset {
   stopSequences: string[]
 }
 
+export interface ChatCharacter {
+  id: string
+  name: string
+  portraitUrl: string
+}
+
 export interface Chat {
   id: string
   title: string
@@ -100,6 +108,8 @@ export interface Chat {
   bookmarkCount: number
   wordCount: number
   tags: string[]
+  /** All characters in this chat (includes primary). Empty for old chats without chat_characters rows. */
+  characters: ChatCharacter[]
 }
 
 export interface ChatListItem {
@@ -210,7 +220,23 @@ export interface ChatRoleplayProps {
   /** Called when user exports the chat */
   onExportChat?: (chatId: string, scope: ExportScope, format: ExportFormat) => void
 
+  // Group chat
+  /** The character currently selected to speak next (group chats only) */
+  pendingCharacterId?: string
+  /** The character currently streaming a response */
+  generatingCharacter?: ChatCharacter
+  /** Called when user selects a character to speak next */
+  onSelectCharacter?: (characterId: string) => void
+
   // Sidebar
   /** Called when user toggles the scene sidebar */
   onToggleSidebar?: () => void
+
+  // Group chat participant management
+  /** All characters available to add (for the picker) */
+  allCharacters?: { id: string; name: string; portraitUrl: string }[]
+  /** Called when user adds a character to the group */
+  onAddCharacter?: (characterId: string) => void
+  /** Called when user removes a character from the group */
+  onRemoveCharacter?: (characterId: string) => void
 }
