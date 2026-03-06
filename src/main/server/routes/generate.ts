@@ -232,6 +232,7 @@ export async function generateRoutes(app: FastifyInstance) {
               `This is a group roleplay. You are ONLY ${charName}. You must NEVER speak as, act as, or write the actions/thoughts of any other character.`,
               `Other participants present: ${otherParticipantNames.join(", ")}. Their messages appear prefixed with [Name]: in the chat history — these are for context only.`,
               `IMPORTANT: Do NOT use the physical appearance, mannerisms, speech patterns, or traits of ${otherParticipantNames.join(" or ")}. Stay strictly within ${charName}'s established character.`,
+              `The scene is already in progress. You are already present. Do NOT re-introduce yourself or greet as if the scene is just beginning — respond naturally to what has already happened.`,
             ].join("\n"),
           });
         }
