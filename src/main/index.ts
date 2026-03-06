@@ -6,6 +6,10 @@ const isDev = !app.isPackaged;
 
 let mainWindow: BrowserWindow | null = null;
 
+if (process.platform === "win32") {
+  app.setAppUserModelId("com.mnemochat.app");
+}
+
 ipcMain.on("window:minimize", () => mainWindow?.minimize());
 ipcMain.on("window:maximize", () => {
   if (mainWindow?.isMaximized()) {
@@ -17,10 +21,17 @@ ipcMain.on("window:maximize", () => {
 ipcMain.on("window:close", () => mainWindow?.close());
 
 async function createWindow() {
+  const iconPath = path.join(
+    __dirname,
+    "assets",
+    process.platform === "win32" ? "icon.ico" : "icon.png",
+  );
+
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
     frame: false,
+    icon: iconPath,
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,

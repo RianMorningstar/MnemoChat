@@ -6,8 +6,10 @@
   "private": true,
   "main": "dist/main/main/index.js",
   "scripts": {
-    "dev": "tsc -p tsconfig.main.json && concurrently -k -n electron,tsc,vite \"cross-env ELECTRON_DISABLE_SANDBOX=1 electronmon .\" \"tsc -p tsconfig.main.json -w\" \"vite --config vite.config.ts\"",
-    "build": "tsc -p tsconfig.main.json && vite build --config vite.config.ts",
+    "gen:icons": "node scripts/generate-icons.mjs",
+    "copy:main-assets": "node scripts/copy-main-assets.mjs",
+    "dev": "npm run gen:icons && tsc -p tsconfig.main.json && npm run copy:main-assets && concurrently -k -n electron,tsc,vite \"cross-env ELECTRON_DISABLE_SANDBOX=1 electronmon .\" \"tsc -p tsconfig.main.json -w\" \"vite --config vite.config.ts\"",
+    "build": "npm run gen:icons && tsc -p tsconfig.main.json && npm run copy:main-assets && vite build --config vite.config.ts",
     "package": "npm run build && electron-builder",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate"
@@ -29,6 +31,7 @@
     "tailwindcss": "^4.2.1"
   },
   "devDependencies": {
+    "@resvg/resvg-js": "^2.6.2",
     "@types/better-sqlite3": "^7.6.13",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
@@ -39,6 +42,7 @@
     "electron": "^34.2.0",
     "electron-builder": "^25.1.8",
     "electronmon": "^2.0.4",
+    "png-to-ico": "^3.0.1",
     "typescript": "^5.7.3",
     "vite": "^6.1.0"
   },
@@ -55,13 +59,16 @@
       }
     ],
     "win": {
-      "target": "nsis"
+      "target": "nsis",
+      "icon": "build-resources/icon.ico"
     },
     "mac": {
-      "target": "dmg"
+      "target": "dmg",
+      "icon": "build-resources/icon.png"
     },
     "linux": {
-      "target": "AppImage"
+      "target": "AppImage",
+      "icon": "build-resources/icon.png"
     },
     "directories": {
       "output": "release"
