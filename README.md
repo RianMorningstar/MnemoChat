@@ -6,7 +6,7 @@ A desktop app for local AI roleplay and collaborative storytelling. Built on top
 
 ## What it does
 
-MnemoChat is built around character cards — the same format used by tools like SillyTavern and Chub. You can import existing `.png` character cards, build your own from scratch, or browse the Discover feed to pull in community characters.
+MnemoChat is built around character cards — the same format used by tools like SillyTavern. You can import existing `.png` character cards, build your own from scratch, or browse the Discover feed to pull in characters from [mnemo.studio](https://mnemo.studio), our companion platform for sharing and discovering characters.
 
 Once you have a character set up, you start a chat. The app handles prompt formatting, context management, token budgeting, and streaming responses. You can switch models mid-conversation, tweak generation settings, bookmark messages, and export logs when you're done.
 
@@ -25,7 +25,7 @@ There's also a story/projects section for organizing longer-form writing into sc
 - Chat export to `.txt`, `.md`, or `.json`
 - Persona management — set how you appear to the character across chats
 - Library with collections, sorting, and grid density options
-- Discover feed (featured, trending, new, following, recommended tabs) backed by public API
+- Discover feed (featured, trending, new, following, recommended tabs) backed by [mnemo.studio](https://mnemo.studio)
 - Story projects with scene editor for structured long-form writing
 - Dashboard with stats and recent activity at a glance
 - Connection manager for multiple Ollama endpoints or OpenAI-compatible APIs
@@ -96,6 +96,6 @@ drizzle/          SQL migration files
 ## Notes
 
 - Character `.png` import works by reading embedded JSON metadata from the PNG's tEXt chunk (standard card format). Drag a card onto the Library page to import it.
-- The Discover feed pulls from the Chub public API. NSFW content is gated behind a toggle in the account section.
+- The Discover feed pulls from [mnemo.studio](https://mnemo.studio). Sign in with your mnemo.studio API token (Settings → API token on the site) to unlock personalized recommendations, favorites sync, and the following feed. NSFW content is gated behind a toggle and requires being signed in.
 - Generation presets are stored per-user in the database, not per-character — they're more like sampler profiles you switch between.
 - The story/scene editor is still pretty early. The core structure works but it's missing some of the export polish I want to add.
