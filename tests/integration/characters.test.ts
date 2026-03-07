@@ -11,6 +11,7 @@ vi.mock("@main/db", async () => {
 
 import Fastify, { type FastifyInstance } from "fastify";
 import { characterRoutes } from "../../src/main/server/routes/characters";
+import { libraryLorebookRoutes } from "../../src/main/server/routes/library-lorebooks";
 
 describe("character routes", () => {
   let app: FastifyInstance;
@@ -135,5 +136,94 @@ describe("character routes", () => {
     expect(duped.statusCode).toBe(200);
     expect(duped.json().name).toBe("Original (Copy)");
     expect(duped.json().id).not.toBe(id);
+  });
+});
+
+describe("character-lorebook attachment routes", () => {
+  let app: FastifyInstance;
+  let charId: string;
+  let lorebookId: string;
+
+  beforeAll(async () => {
+    app = Fastify();
+    await characterRoutes(app);
+    await libraryLorebookRoutes(app);
+    await app.ready();
+
+    const charRes = await app.inject({
+      method: "POST",
+      url: "/api/characters",
+      payload: { name: "AttachChar" },
+    });
+    charId = charRes.json().id;
+
+    const lbRes = await app.inject({
+      method: "POST",
+      url: "/api/lorebooks",
+      payload: { name: "TestLorebook", tags: ["fantasy"] },
+    });
+    lorebookId = lbRes.json().id;
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  it("GET /api/characters/:id/lorebooks returns [] initially", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: `/api/characters/${charId}/lorebooks`,
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toEqual([]);
+  });
+
+  it("POST /api/characters/:id/lorebooks/:lorebookId attaches a lorebook", async () => {
+    const res = await app.inject({
+      method: "POST",
+      url: `/api/characters/${charId}/lorebooks/${lorebookId}`,
+    });
+    expect(res.statusCode).toBe(201);
+    expect(res.json().ok).toBe(true);
+  });
+
+  it("GET /api/characters/:id/lorebooks returns the attached lorebook", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: `/api/characters/${charId}/lorebooks`,
+    });
+    expect(res.statusCode).toBe(200);
+    const list = res.json();
+    expect(list).toHaveLength(1);
+    expect(list[0].id).toBe(lorebookId);
+    expect(list[0].name).toBe("TestLorebook");
+    expect(Array.isArray(list[0].tags)).toBe(true);
+  });
+
+  it("POST same pair twice is idempotent (still one attachment)", async () => {
+    await app.inject({
+      method: "POST",
+      url: `/api/characters/${charId}/lorebooks/${lorebookId}`,
+    });
+    const res = await app.inject({
+      method: "GET",
+      url: `/api/characters/${charId}/lorebooks`,
+    });
+    expect(res.json()).toHaveLength(1);
+  });
+
+  it("DELETE /api/characters/:id/lorebooks/:lorebookId detaches", async () => {
+    const del = await app.inject({
+      method: "DELETE",
+      url: `/api/characters/${charId}/lorebooks/${lorebookId}`,
+    });
+    expect(del.statusCode).toBe(200);
+    expect(del.json().ok).toBe(true);
+
+    const list = await app.inject({
+      method: "GET",
+      url: `/api/characters/${charId}/lorebooks`,
+    });
+    expect(list.json()).toEqual([]);
   });
 });
