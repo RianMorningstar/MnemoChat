@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ArrowLeft, Save } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Character, LorebookEntry } from "@shared/character-types";
+import type { LibraryLorebook } from "@shared/library-types";
 import { BasicTab } from "./BasicTab";
 import { PromptEngineeringTab } from "./PromptEngineeringTab";
 import { LorebookTab } from "./LorebookTab";
@@ -12,12 +13,16 @@ type TabId = "basic" | "prompts" | "lorebook" | "meta";
 interface CharacterEditorProps {
   character: Character;
   lorebookEntries: LorebookEntry[];
+  attachedLorebooks: LibraryLorebook[];
+  availableLorebooks: LibraryLorebook[];
   onSave: (updates: Partial<Character>) => void;
   onBack: () => void;
   onCreateLorebookEntry: () => void;
   onUpdateLorebookEntry: (id: string, updates: Partial<LorebookEntry>) => void;
   onDeleteLorebookEntry: (id: string) => void;
   onToggleLorebookEntry: (id: string) => void;
+  onAttachLorebook: (lorebookId: string) => void;
+  onDetachLorebook: (lorebookId: string) => void;
 }
 
 const TABS: { id: TabId; label: string }[] = [
@@ -30,12 +35,16 @@ const TABS: { id: TabId; label: string }[] = [
 export function CharacterEditor({
   character,
   lorebookEntries,
+  attachedLorebooks,
+  availableLorebooks,
   onSave,
   onBack,
   onCreateLorebookEntry,
   onUpdateLorebookEntry,
   onDeleteLorebookEntry,
   onToggleLorebookEntry,
+  onAttachLorebook,
+  onDetachLorebook,
 }: CharacterEditorProps) {
   const [activeTab, setActiveTab] = useState<TabId>("basic");
   const [draft, setDraft] = useState<Partial<Character>>({});
@@ -105,9 +114,9 @@ export function CharacterEditor({
             )}
           >
             {tab.label}
-            {tab.id === "lorebook" && lorebookEntries.length > 0 && (
+            {tab.id === "lorebook" && (lorebookEntries.length + attachedLorebooks.length) > 0 && (
               <span className="ml-1.5 rounded-full bg-zinc-700 px-1.5 py-0.5 text-[10px] text-zinc-300">
-                {lorebookEntries.length}
+                {lorebookEntries.length + attachedLorebooks.length}
               </span>
             )}
             {activeTab === tab.id && (
@@ -128,10 +137,14 @@ export function CharacterEditor({
         {activeTab === "lorebook" && (
           <LorebookTab
             entries={lorebookEntries}
+            attachedLorebooks={attachedLorebooks}
+            availableLorebooks={availableLorebooks}
             onCreate={onCreateLorebookEntry}
             onUpdate={onUpdateLorebookEntry}
             onDelete={onDeleteLorebookEntry}
             onToggle={onToggleLorebookEntry}
+            onAttach={onAttachLorebook}
+            onDetach={onDetachLorebook}
           />
         )}
         {activeTab === "meta" && (

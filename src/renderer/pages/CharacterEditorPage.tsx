@@ -9,23 +9,37 @@ import {
   updateLorebookEntry,
   deleteLorebookEntry,
   toggleLorebookEntry,
+  getLibraryLorebooks,
+  getCharacterAttachedLorebooks,
+  attachLorebookToCharacter,
+  detachLorebookFromCharacter,
 } from "@/lib/api";
 import type { Character, LorebookEntry } from "@shared/character-types";
+import type { LibraryLorebook } from "@shared/library-types";
 
 export function CharacterEditorPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [character, setCharacter] = useState<Character | null>(null);
   const [lorebookEntries, setLorebookEntries] = useState<LorebookEntry[]>([]);
+  const [attachedLorebooks, setAttachedLorebooks] = useState<LibraryLorebook[]>([]);
+  const [allLorebooks, setAllLorebooks] = useState<LibraryLorebook[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) return;
-    Promise.all([getCharacter(id), getLorebookEntries(id)])
-      .then(([char, entries]) => {
+    Promise.all([
+      getCharacter(id),
+      getLorebookEntries(id),
+      getCharacterAttachedLorebooks(id),
+      getLibraryLorebooks(),
+    ])
+      .then(([char, entries, attached, all]) => {
         setCharacter(char);
         setLorebookEntries(entries);
+        setAttachedLorebooks(attached);
+        setAllLorebooks(all);
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
@@ -91,6 +105,27 @@ export function CharacterEditorPage() {
     }
   }, []);
 
+  const handleAttachLorebook = useCallback(async (lorebookId: string) => {
+    if (!id) return;
+    try {
+      await attachLorebookToCharacter(id, lorebookId);
+      const attached = await getCharacterAttachedLorebooks(id);
+      setAttachedLorebooks(attached);
+    } catch (err) {
+      console.error("Failed to attach lorebook:", err);
+    }
+  }, [id]);
+
+  const handleDetachLorebook = useCallback(async (lorebookId: string) => {
+    if (!id) return;
+    try {
+      await detachLorebookFromCharacter(id, lorebookId);
+      setAttachedLorebooks((prev) => prev.filter((l) => l.id !== lorebookId));
+    } catch (err) {
+      console.error("Failed to detach lorebook:", err);
+    }
+  }, [id]);
+
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center">
@@ -119,12 +154,16 @@ export function CharacterEditorPage() {
     <CharacterEditor
       character={character}
       lorebookEntries={lorebookEntries}
+      attachedLorebooks={attachedLorebooks}
+      availableLorebooks={allLorebooks}
       onSave={handleSave}
       onBack={() => navigate("/characters")}
       onCreateLorebookEntry={handleCreateEntry}
       onUpdateLorebookEntry={handleUpdateEntry}
       onDeleteLorebookEntry={handleDeleteEntry}
       onToggleLorebookEntry={handleToggleEntry}
+      onAttachLorebook={handleAttachLorebook}
+      onDetachLorebook={handleDetachLorebook}
     />
   );
 }

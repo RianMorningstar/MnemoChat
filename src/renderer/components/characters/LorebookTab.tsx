@@ -1,14 +1,19 @@
 import { useState } from "react";
-import { Plus, Trash2, ChevronDown, ChevronRight } from "lucide-react";
+import { Plus, Trash2, ChevronDown, ChevronRight, BookOpen, X, Link } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { LorebookEntry, InsertionPosition, LorebookLogic } from "@shared/character-types";
+import type { LibraryLorebook } from "@shared/library-types";
 
 interface LorebookTabProps {
   entries: LorebookEntry[];
+  attachedLorebooks: LibraryLorebook[];
+  availableLorebooks: LibraryLorebook[];
   onCreate: () => void;
   onUpdate: (id: string, updates: Partial<LorebookEntry>) => void;
   onDelete: (id: string) => void;
   onToggle: (id: string) => void;
+  onAttach: (lorebookId: string) => void;
+  onDetach: (lorebookId: string) => void;
 }
 
 const INSERTION_OPTIONS: { value: InsertionPosition; label: string }[] = [
@@ -27,19 +32,90 @@ const LOGIC_OPTIONS: { value: LorebookLogic; label: string }[] = [
 
 export function LorebookTab({
   entries,
+  attachedLorebooks,
+  availableLorebooks,
   onCreate,
   onUpdate,
   onDelete,
   onToggle,
+  onAttach,
+  onDetach,
 }: LorebookTabProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
+
+  const attachedIds = new Set(attachedLorebooks.map((l) => l.id));
+  const unattached = availableLorebooks.filter((l) => !attachedIds.has(l.id));
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      {/* Attached Lorebooks section */}
+      <div>
+        <div className="mb-3 flex items-center justify-between">
+          <h3 className="text-sm font-medium text-zinc-300">Attached Lorebooks</h3>
+          <div className="relative">
+            <button
+              onClick={() => setPickerOpen((p) => !p)}
+              disabled={unattached.length === 0}
+              className="flex items-center gap-1.5 rounded-md bg-zinc-700 px-3 py-1.5 text-xs font-medium text-zinc-200 hover:bg-zinc-600 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <Link className="h-3 w-3" />
+              Attach Lorebook
+            </button>
+            {pickerOpen && unattached.length > 0 && (
+              <div className="absolute right-0 top-full z-20 mt-1 w-60 rounded-lg border border-zinc-700 bg-zinc-800 py-1 shadow-xl">
+                {unattached.map((lb) => (
+                  <button
+                    key={lb.id}
+                    onClick={() => { onAttach(lb.id); setPickerOpen(false); }}
+                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-zinc-300 hover:bg-zinc-700"
+                  >
+                    <BookOpen className="h-3.5 w-3.5 shrink-0 text-indigo-400" />
+                    <span className="truncate">{lb.name}</span>
+                    <span className="ml-auto text-[10px] text-zinc-500">{lb.entryCount} entries</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {attachedLorebooks.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-zinc-700 p-4 text-center">
+            <p className="text-xs text-zinc-500">No lorebooks attached. Attach a library lorebook to include its entries during chat.</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {attachedLorebooks.map((lb) => (
+              <div key={lb.id} className="flex items-center gap-3 rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2">
+                <BookOpen className="h-4 w-4 shrink-0 text-indigo-400" />
+                <span className="min-w-0 flex-1 truncate text-sm text-zinc-200">{lb.name}</span>
+                <span className="text-xs text-zinc-500">{lb.entryCount} entries</span>
+                <button
+                  onClick={() => onDetach(lb.id)}
+                  className="rounded p-0.5 text-zinc-500 hover:bg-red-900/20 hover:text-red-400"
+                  title="Detach"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Divider */}
+      <div className="border-t border-zinc-800" />
+
+      {/* Character entries section */}
+      <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-zinc-400">
-          {entries.length} entr{entries.length === 1 ? "y" : "ies"}
-        </p>
+        <h3 className="text-sm font-medium text-zinc-300">
+          Character Entries
+          <span className="ml-2 text-zinc-500 font-normal">
+            {entries.length} entr{entries.length === 1 ? "y" : "ies"}
+          </span>
+        </h3>
         <button
           onClick={onCreate}
           className="flex items-center gap-1.5 rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-500"
@@ -258,6 +334,7 @@ export function LorebookTab({
           })}
         </div>
       )}
+      </div>
     </div>
   );
 }
