@@ -8,7 +8,7 @@
   "scripts": {
     "gen:icons": "node scripts/generate-icons.mjs",
     "copy:main-assets": "node scripts/copy-main-assets.mjs",
-    "dev": "npm run gen:icons && tsc -p tsconfig.main.json && npm run copy:main-assets && concurrently -k -n electron,tsc,vite \"cross-env ELECTRON_DISABLE_SANDBOX=1 electronmon .\" \"tsc -p tsconfig.main.json -w\" \"vite --config vite.config.ts\"",
+    "dev": "npm run rebuild:sqlite && npm run gen:icons && tsc -p tsconfig.main.json && npm run copy:main-assets && concurrently -k -n electron,tsc,vite \"cross-env ELECTRON_DISABLE_SANDBOX=1 electronmon .\" \"tsc -p tsconfig.main.json -w\" \"vite --config vite.config.ts\"",
     "build": "npm run gen:icons && tsc -p tsconfig.main.json && npm run copy:main-assets && vite build --config vite.config.ts",
     "package": "npm run build && electron-builder",
     "db:generate": "drizzle-kit generate",
