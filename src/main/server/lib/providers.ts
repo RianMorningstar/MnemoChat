@@ -16,13 +16,17 @@ export interface ProviderPreset {
   stopSequences: string[];
 }
 
-export function buildProviderUrl(type: ProviderType, endpoint: string): string {
+export function buildProviderUrl(type: ProviderType, endpoint: string, model?: string): string {
   const base = endpoint.replace(/\/+$/, "");
   switch (type) {
     case "ollama":
       return `${base}/api/chat`;
     case "anthropic":
       return `${base}/v1/messages`;
+    case "gemini":
+      return `${base}/v1beta/models/${model}:streamGenerateContent?alt=sse`;
+    case "openrouter":
+    case "mistral":
     case "openai":
     case "lm-studio":
     case "groq":
@@ -37,6 +41,15 @@ export function buildProviderHeaders(
 ): Record<string, string> {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   switch (type) {
+    case "openrouter":
+      if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;
+      headers["HTTP-Referer"] = "https://mnemochat.app";
+      headers["X-Title"] = "MnemoChat";
+      break;
+    case "gemini":
+      if (apiKey) headers["x-goog-api-key"] = apiKey;
+      break;
+    case "mistral":
     case "openai":
     case "lm-studio":
     case "groq":
@@ -96,6 +109,43 @@ export function buildProviderRequestBody(
       return body;
     }
 
+    case "gemini": {
+      const systemParts = messages.filter((m) => m.role === "system").map((m) => m.content);
+      const nonSystem = messages.filter((m) => m.role !== "system");
+      const merged: { role: "user" | "model"; parts: { text: string }[] }[] = [];
+      for (const m of nonSystem) {
+        const geminiRole = m.role === "assistant" ? "model" : "user";
+        const last = merged[merged.length - 1];
+        if (last && last.role === geminiRole) {
+          last.parts[0].text += "\n" + m.content;
+        } else {
+          merged.push({ role: geminiRole as "user" | "model", parts: [{ text: m.content }] });
+        }
+      }
+      const body: Record<string, unknown> = {
+        contents: merged,
+        generationConfig: {
+          temperature,
+          maxOutputTokens: maxTokens,
+          ...(preset?.topPEnabled && preset.topP != null ? { topP: preset.topP } : {}),
+          ...(preset?.topKEnabled && preset.topK != null ? { topK: preset.topK } : {}),
+          ...(stops.length > 0 ? { stopSequences: stops } : {}),
+        },
+        safetySettings: [
+          { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+          { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+          { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+          { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" },
+        ],
+      };
+      if (systemParts.length > 0) {
+        body.systemInstruction = { parts: [{ text: systemParts.join("\n\n") }] };
+      }
+      return body;
+    }
+
+    case "openrouter":
+    case "mistral":
     case "openai":
     case "lm-studio":
     case "groq":
@@ -134,7 +184,7 @@ export function parseStreamLine(
     }
   }
 
-  // SSE format: "data: {...}" or "data: [DONE]" (OpenAI / Groq / LM Studio / Anthropic)
+  // SSE format: "data: {...}" or "data: [DONE]"
   if (!line.startsWith("data:")) return null;
   const raw = line.slice(5).trim();
   if (raw === "[DONE]") return { done: true };
@@ -151,7 +201,17 @@ export function parseStreamLine(
       return null;
     }
 
-    // OpenAI / Groq / LM Studio
+    if (type === "gemini") {
+      const candidates = chunk.candidates as
+        | Array<{ content?: { parts?: Array<{ text?: string }> }; finishReason?: string }>
+        | undefined;
+      if (!candidates?.[0]) return null;
+      if (candidates[0].finishReason) return { done: true };
+      const text = candidates[0].content?.parts?.[0]?.text;
+      return text ? { text } : null;
+    }
+
+    // OpenAI / Groq / LM Studio / OpenRouter / Mistral
     const choices = chunk.choices as
       | Array<{ delta?: { content?: string }; finish_reason?: string | null }>
       | undefined;

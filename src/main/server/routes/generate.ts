@@ -426,7 +426,7 @@ export async function generateRoutes(app: FastifyInstance) {
         const timeoutSignal = AbortSignal.timeout(120_000);
         const combinedSignal = AbortSignal.any([abortController.signal, timeoutSignal]);
 
-        const providerRes = await fetch(buildProviderUrl(providerType, connection.endpoint), {
+        const providerRes = await fetch(buildProviderUrl(providerType, connection.endpoint, chat.modelId), {
           method: "POST",
           headers: buildProviderHeaders(providerType, connection.apiKey ?? null),
           body: JSON.stringify(

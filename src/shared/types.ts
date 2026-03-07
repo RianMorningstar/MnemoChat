@@ -24,7 +24,7 @@ export type ContentTier = "sfw" | "nsfw";
 export type ConnectionState = "connected" | "unreachable" | "unknown";
 
 /** Provider backend type */
-export type ProviderType = "ollama" | "openai" | "anthropic" | "lm-studio" | "groq";
+export type ProviderType = "ollama" | "openai" | "anthropic" | "lm-studio" | "groq" | "openrouter" | "gemini" | "mistral";
 
 /** Default endpoint URL per provider */
 export const PROVIDER_DEFAULT_ENDPOINTS: Record<ProviderType, string> = {
@@ -33,6 +33,9 @@ export const PROVIDER_DEFAULT_ENDPOINTS: Record<ProviderType, string> = {
   openai: "https://api.openai.com",
   groq: "https://api.groq.com/openai",
   anthropic: "https://api.anthropic.com",
+  openrouter: "https://openrouter.ai/api",
+  gemini: "https://generativelanguage.googleapis.com",
+  mistral: "https://api.mistral.ai",
 };
 
 /** Whether a provider requires an API key */
@@ -42,6 +45,9 @@ export const PROVIDER_REQUIRES_API_KEY: Record<ProviderType, boolean> = {
   openai: true,
   groq: true,
   anthropic: true,
+  openrouter: true,
+  gemini: true,
+  mistral: true,
 };
 
 /** Human-readable provider labels */
@@ -51,6 +57,9 @@ export const PROVIDER_LABELS: Record<ProviderType, string> = {
   openai: "OpenAI",
   groq: "Groq",
   anthropic: "Anthropic",
+  openrouter: "OpenRouter",
+  gemini: "Google Gemini",
+  mistral: "Mistral",
 };
 
 /** Auto-derived model capability tags */

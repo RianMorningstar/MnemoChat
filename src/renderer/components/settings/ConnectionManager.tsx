@@ -14,7 +14,7 @@ import {
 } from "@/lib/api";
 import { checkProviderHealth } from "@/lib/ollama";
 
-const PROVIDER_OPTIONS: ProviderType[] = ["ollama", "lm-studio", "openai", "groq", "anthropic"];
+const PROVIDER_OPTIONS: ProviderType[] = ["ollama", "lm-studio", "openai", "openrouter", "groq", "anthropic", "gemini", "mistral"];
 
 interface ProfileStatus {
   state: ConnectionState;

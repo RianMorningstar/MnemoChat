@@ -13,7 +13,7 @@ import {
   PROVIDER_REQUIRES_API_KEY,
 } from "@shared/types";
 
-const PROVIDER_OPTIONS: ProviderType[] = ["ollama", "lm-studio", "openai", "groq", "anthropic"];
+const PROVIDER_OPTIONS: ProviderType[] = ["ollama", "lm-studio", "openai", "openrouter", "groq", "anthropic", "gemini", "mistral"];
 
 interface ConnectOllamaStepProps {
   connectionState: ConnectionState;

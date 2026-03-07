@@ -29,13 +29,17 @@ export async function ollamaProxyRoutes(app: FastifyInstance) {
         if (providerType === "ollama") {
           res = await fetch(`${endpoint}/api/tags`, { signal: controller.signal });
         } else if (providerType === "anthropic") {
-          // Anthropic has no cheap health check — try fetching the base URL
           res = await fetch(`${endpoint}/v1/models`, {
             headers: { "x-api-key": apiKey || "", "anthropic-version": "2023-06-01" },
             signal: controller.signal,
           });
+        } else if (providerType === "gemini") {
+          res = await fetch(`${endpoint}/v1beta/models`, {
+            headers: { "x-goog-api-key": apiKey || "" },
+            signal: controller.signal,
+          });
         } else {
-          // OpenAI-compatible (openai, groq, lm-studio)
+          // OpenAI-compatible (openai, groq, lm-studio, openrouter, mistral)
           res = await fetch(`${endpoint}/v1/models`, {
             headers: bearerHeaders(apiKey),
             signal: controller.signal,
@@ -75,7 +79,25 @@ export async function ollamaProxyRoutes(app: FastifyInstance) {
           return { models: data.models || [] };
         }
 
-        // OpenAI-compatible: openai, groq, lm-studio
+        if (providerType === "gemini") {
+          const res = await fetch(`${endpoint}/v1beta/models`, {
+            headers: { "x-goog-api-key": apiKey || "" },
+          });
+          if (!res.ok) return { models: [] };
+          const data = (await res.json()) as {
+            models?: Array<{ name: string; displayName?: string }>;
+          };
+          const models = (data.models || [])
+            .filter((m) => m.name.startsWith("models/gemini"))
+            .map((m) => ({
+              name: m.name.replace(/^models\//, ""),
+              size: 0,
+              details: { family: "gemini", parameter_size: "Cloud" },
+            }));
+          return { models };
+        }
+
+        // OpenAI-compatible: openai, groq, lm-studio, openrouter, mistral
         const res = await fetch(`${endpoint}/v1/models`, {
           headers: bearerHeaders(apiKey),
         });

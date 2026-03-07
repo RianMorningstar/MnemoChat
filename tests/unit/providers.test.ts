@@ -63,6 +63,24 @@ describe("buildProviderUrl", () => {
       "http://localhost:11434/api/chat"
     );
   });
+
+  it("routes openrouter to /v1/chat/completions", () => {
+    expect(buildProviderUrl("openrouter", "https://openrouter.ai/api")).toBe(
+      "https://openrouter.ai/api/v1/chat/completions"
+    );
+  });
+
+  it("routes gemini to /v1beta/models/{model}:streamGenerateContent", () => {
+    expect(buildProviderUrl("gemini", "https://generativelanguage.googleapis.com", "gemini-pro")).toBe(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:streamGenerateContent?alt=sse"
+    );
+  });
+
+  it("routes mistral to /v1/chat/completions", () => {
+    expect(buildProviderUrl("mistral", "https://api.mistral.ai")).toBe(
+      "https://api.mistral.ai/v1/chat/completions"
+    );
+  });
 });
 
 // ── buildProviderHeaders ────────────────────────────────────────────────────
@@ -100,6 +118,31 @@ describe("buildProviderHeaders", () => {
     const h = buildProviderHeaders("anthropic", null);
     expect(h["anthropic-version"]).toBe("2023-06-01");
     expect(h["x-api-key"]).toBeUndefined();
+  });
+
+  it("openrouter sets Bearer + HTTP-Referer + X-Title", () => {
+    const h = buildProviderHeaders("openrouter", "or-key");
+    expect(h["Authorization"]).toBe("Bearer or-key");
+    expect(h["HTTP-Referer"]).toBe("https://mnemochat.app");
+    expect(h["X-Title"]).toBe("MnemoChat");
+  });
+
+  it("openrouter still sets referer headers when apiKey is null", () => {
+    const h = buildProviderHeaders("openrouter", null);
+    expect(h["Authorization"]).toBeUndefined();
+    expect(h["HTTP-Referer"]).toBe("https://mnemochat.app");
+    expect(h["X-Title"]).toBe("MnemoChat");
+  });
+
+  it("gemini sets x-goog-api-key", () => {
+    const h = buildProviderHeaders("gemini", "goog-key");
+    expect(h["x-goog-api-key"]).toBe("goog-key");
+    expect(h["Authorization"]).toBeUndefined();
+  });
+
+  it("mistral sets Authorization Bearer header", () => {
+    const h = buildProviderHeaders("mistral", "ms-key");
+    expect(h["Authorization"]).toBe("Bearer ms-key");
   });
 });
 
@@ -216,6 +259,80 @@ describe("buildProviderRequestBody (anthropic)", () => {
   });
 });
 
+describe("buildProviderRequestBody (openrouter / mistral)", () => {
+  it("openrouter uses same format as openai", () => {
+    const body = buildProviderRequestBody("openrouter", "openai/gpt-4o", MESSAGES, PRESET) as Record<string, unknown>;
+    expect(body.model).toBe("openai/gpt-4o");
+    expect(body.max_tokens).toBe(256);
+    expect(body.stream).toBe(true);
+    expect(body.options).toBeUndefined();
+  });
+
+  it("mistral uses same format as openai", () => {
+    const body = buildProviderRequestBody("mistral", "mistral-large-latest", MESSAGES, PRESET) as Record<string, unknown>;
+    expect(body.model).toBe("mistral-large-latest");
+    expect(body.max_tokens).toBe(256);
+    expect(body.stream).toBe(true);
+  });
+});
+
+describe("buildProviderRequestBody (gemini)", () => {
+  it("transforms messages to contents with parts", () => {
+    const body = buildProviderRequestBody("gemini", "gemini-pro", MESSAGES, PRESET) as Record<string, unknown>;
+    const contents = body.contents as Array<{ role: string; parts: { text: string }[] }>;
+    expect(contents).toHaveLength(2);
+    expect(contents[0]).toEqual({ role: "user", parts: [{ text: "Hello!" }] });
+    expect(contents[1]).toEqual({ role: "model", parts: [{ text: "Hi there!" }] });
+  });
+
+  it("extracts system messages to systemInstruction", () => {
+    const body = buildProviderRequestBody("gemini", "gemini-pro", MESSAGES, PRESET) as Record<string, unknown>;
+    expect(body.systemInstruction).toEqual({ parts: [{ text: "You are a helpful assistant." }] });
+  });
+
+  it("omits systemInstruction when there are no system messages", () => {
+    const msgs: ProviderMessage[] = [
+      { role: "user", content: "Hi" },
+      { role: "assistant", content: "Hello" },
+    ];
+    const body = buildProviderRequestBody("gemini", "gemini-pro", msgs, PRESET) as Record<string, unknown>;
+    expect(body.systemInstruction).toBeUndefined();
+  });
+
+  it("merges consecutive same-role messages", () => {
+    const msgs: ProviderMessage[] = [
+      { role: "user", content: "a" },
+      { role: "user", content: "b" },
+      { role: "assistant", content: "c" },
+    ];
+    const body = buildProviderRequestBody("gemini", "gemini-pro", msgs, PRESET) as Record<string, unknown>;
+    const contents = body.contents as Array<{ role: string; parts: { text: string }[] }>;
+    expect(contents).toHaveLength(2);
+    expect(contents[0].parts[0].text).toBe("a\nb");
+  });
+
+  it("includes generationConfig with preset values", () => {
+    const body = buildProviderRequestBody("gemini", "gemini-pro", MESSAGES, PRESET) as Record<string, unknown>;
+    const config = body.generationConfig as Record<string, unknown>;
+    expect(config.temperature).toBe(0.8);
+    expect(config.maxOutputTokens).toBe(256);
+    expect(config.topP).toBe(0.95);
+    expect(config.topK).toBeUndefined(); // topKEnabled is false
+  });
+
+  it("includes safetySettings set to BLOCK_NONE", () => {
+    const body = buildProviderRequestBody("gemini", "gemini-pro", MESSAGES, PRESET) as Record<string, unknown>;
+    const safety = body.safetySettings as Array<{ category: string; threshold: string }>;
+    expect(safety).toHaveLength(4);
+    expect(safety.every((s) => s.threshold === "BLOCK_NONE")).toBe(true);
+  });
+
+  it("does not include model in body", () => {
+    const body = buildProviderRequestBody("gemini", "gemini-pro", MESSAGES, PRESET) as Record<string, unknown>;
+    expect(body.model).toBeUndefined();
+  });
+});
+
 // ── parseStreamLine ─────────────────────────────────────────────────────────
 
 describe("parseStreamLine (ollama)", () => {
@@ -300,5 +417,49 @@ describe("parseStreamLine (anthropic)", () => {
 
   it("returns done on [DONE]", () => {
     expect(parseStreamLine("anthropic", "data: [DONE]")).toEqual({ done: true });
+  });
+});
+
+describe("parseStreamLine (openrouter)", () => {
+  it("uses same OpenAI format", () => {
+    const line = `data: ${JSON.stringify({ choices: [{ delta: { content: "hi" }, finish_reason: null }] })}`;
+    expect(parseStreamLine("openrouter", line)).toEqual({ text: "hi" });
+  });
+
+  it("returns done on [DONE]", () => {
+    expect(parseStreamLine("openrouter", "data: [DONE]")).toEqual({ done: true });
+  });
+});
+
+describe("parseStreamLine (mistral)", () => {
+  it("uses same OpenAI format", () => {
+    const line = `data: ${JSON.stringify({ choices: [{ delta: { content: "bonjour" }, finish_reason: null }] })}`;
+    expect(parseStreamLine("mistral", line)).toEqual({ text: "bonjour" });
+  });
+});
+
+describe("parseStreamLine (gemini)", () => {
+  it("extracts text from candidates[0].content.parts[0].text", () => {
+    const line = `data: ${JSON.stringify({ candidates: [{ content: { parts: [{ text: "Hello" }] } }] })}`;
+    expect(parseStreamLine("gemini", line)).toEqual({ text: "Hello" });
+  });
+
+  it("returns done when finishReason is set", () => {
+    const line = `data: ${JSON.stringify({ candidates: [{ content: { parts: [{ text: "" }] }, finishReason: "STOP" }] })}`;
+    expect(parseStreamLine("gemini", line)).toEqual({ done: true });
+  });
+
+  it("returns null when candidates is empty", () => {
+    const line = `data: ${JSON.stringify({ candidates: [] })}`;
+    expect(parseStreamLine("gemini", line)).toBeNull();
+  });
+
+  it("returns null for non-data lines", () => {
+    expect(parseStreamLine("gemini", "event: ping")).toBeNull();
+  });
+
+  it("returns null when content has no text", () => {
+    const line = `data: ${JSON.stringify({ candidates: [{ content: { parts: [{}] } }] })}`;
+    expect(parseStreamLine("gemini", line)).toBeNull();
   });
 });
