@@ -83,14 +83,69 @@ export function wordCount(text: string): number {
   return text.trim() ? text.trim().split(/\s+/).length : 0;
 }
 
+export interface MacroContext {
+  charName: string;
+  userName: string;
+  personaDescription?: string;
+  modelName?: string;
+  charDescription?: string;
+  charPersonality?: string;
+  charScenario?: string;
+  currentInput?: string;
+  messages?: Array<{ role: string; content: string; timestamp?: string }>;
+}
+
+export function formatDuration(ms: number): string {
+  const seconds = Math.floor(ms / 1000);
+  if (seconds < 60) return "just now";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes} minute${minutes === 1 ? "" : "s"} ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} hour${hours === 1 ? "" : "s"} ago`;
+  const days = Math.floor(hours / 24);
+  return `${days} day${days === 1 ? "" : "s"} ago`;
+}
+
 export function substituteVars(
   text: string,
-  charName: string,
-  userName: string
+  ctx: MacroContext
 ): string {
+  const now = new Date();
+
+  // Find last messages by role for message-derived macros
+  const msgs = ctx.messages || [];
+  const lastMsg = msgs.length > 0 ? msgs[msgs.length - 1] : undefined;
+  const lastUserMsg = [...msgs].reverse().find((m) => m.role === "user");
+  const lastCharMsg = [...msgs].reverse().find((m) => m.role === "assistant");
+
+  // Compute idle duration
+  let idleDuration = "";
+  if (lastUserMsg?.timestamp) {
+    const elapsed = now.getTime() - new Date(lastUserMsg.timestamp).getTime();
+    idleDuration = elapsed > 0 ? formatDuration(elapsed) : "just now";
+  }
+
   return text
-    .replace(/\{\{char\}\}/gi, charName)
-    .replace(/\{\{user\}\}/gi, userName);
+    .replace(/\{\{char\}\}/gi, ctx.charName)
+    .replace(/\{\{user\}\}/gi, ctx.userName)
+    .replace(/\{\{persona\}\}/gi, ctx.personaDescription || "")
+    .replace(/\{\{date\}\}/gi, now.toLocaleDateString())
+    .replace(/\{\{time\}\}/gi, now.toLocaleTimeString())
+    .replace(/\{\{isodate\}\}/gi, now.toISOString().slice(0, 10))
+    .replace(/\{\{isotime\}\}/gi, now.toTimeString().slice(0, 5))
+    .replace(/\{\{idle_duration\}\}/gi, idleDuration)
+    .replace(/\{\{lastMessage\}\}/gi, lastMsg?.content || "")
+    .replace(/\{\{lastUserMessage\}\}/gi, lastUserMsg?.content || "")
+    .replace(/\{\{lastCharMessage\}\}/gi, lastCharMsg?.content || "")
+    .replace(/\{\{input\}\}/gi, ctx.currentInput || "")
+    .replace(/\{\{model\}\}/gi, ctx.modelName || "")
+    .replace(/\{\{description\}\}/gi, ctx.charDescription || "")
+    .replace(/\{\{personality\}\}/gi, ctx.charPersonality || "")
+    .replace(/\{\{scenario\}\}/gi, ctx.charScenario || "")
+    .replace(/\{\{random::([^}]+)\}\}/gi, (_match, options: string) => {
+      const choices = options.split(",").map((s) => s.trim());
+      return choices[Math.floor(Math.random() * choices.length)] || "";
+    });
 }
 
 export function buildSystemMessage(char: {
