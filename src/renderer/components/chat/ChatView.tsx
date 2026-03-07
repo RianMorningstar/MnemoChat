@@ -14,6 +14,7 @@ import {
   Plus,
   Trash2,
   GitBranch,
+  Image,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { ChatRoleplayProps, ExportScope, ExportFormat } from '@shared/chat-types'
@@ -24,6 +25,7 @@ import { ChatComposer } from './ChatComposer'
 import { SceneSidebar } from './SceneSidebar'
 import { GroupCharacterStrip } from './GroupCharacterStrip'
 import { BranchPanel } from './BranchPanel'
+import { SpritePanel } from './SpritePanel'
 
 export function ChatView({
   chat,
@@ -83,6 +85,7 @@ export function ChatView({
 }: ChatRoleplayProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [branchPanelOpen, setBranchPanelOpen] = useState(false)
+  const [spritePanelOpen, setSpritePanelOpen] = useState(false)
   const [chatListOpen, setChatListOpen] = useState(false)
   const [modelMenuOpen, setModelMenuOpen] = useState(false)
   const [exportMenuOpen, setExportMenuOpen] = useState(false)
@@ -245,6 +248,18 @@ export function ChatView({
 
         <div className="flex-1" />
 
+        {/* Sprite panel toggle */}
+        <button
+          onClick={() => setSpritePanelOpen(!spritePanelOpen)}
+          className={cn(
+            'rounded-md p-1.5 transition-colors hover:bg-zinc-800',
+            spritePanelOpen ? 'text-indigo-400' : 'text-zinc-500 hover:text-zinc-300'
+          )}
+          title={spritePanelOpen ? 'Hide sprites' : 'Show sprites'}
+        >
+          <Image className="h-4 w-4" />
+        </button>
+
         {/* Export */}
         <div className="relative">
           <button
@@ -337,6 +352,29 @@ export function ChatView({
 
       {/* Main area */}
       <div className="flex min-h-0 flex-1">
+        {/* Sprite panel */}
+        {spritePanelOpen && (() => {
+          // Derive expression and character from last assistant message
+          const lastAssistant = [...messages].reverse().find(m => m.role === 'assistant')
+          const spriteCharId = lastAssistant?.characterId || chat.characterId
+          const spriteCharName = (() => {
+            if (lastAssistant?.characterId && chat.characters?.length > 1) {
+              const c = chat.characters.find(ch => ch.id === lastAssistant.characterId)
+              if (c) return c.name
+            }
+            return chat.characterName
+          })()
+          return (
+            <SpritePanel
+              characterId={spriteCharId}
+              characterName={spriteCharName}
+              expression={lastAssistant?.expression ?? null}
+              defaultExpression="neutral"
+              onClose={() => setSpritePanelOpen(false)}
+            />
+          )
+        })()}
+
         {/* Chat list panel */}
         {chatListOpen && (
           <div className="flex w-72 shrink-0 flex-col border-r border-zinc-800 bg-zinc-900">

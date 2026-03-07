@@ -9,6 +9,7 @@ import {
   lorebookCharacters,
 } from "../../db/schema";
 import { eq, sql, and } from "drizzle-orm";
+import { deleteAllSprites } from "../lib/sprite-storage";
 
 function generateId(): string {
   return crypto.randomUUID();
@@ -187,6 +188,7 @@ export async function characterRoutes(app: FastifyInstance) {
         .delete(lorebookEntries)
         .where(eq(lorebookEntries.characterId, id));
       await db.delete(characters).where(eq(characters.id, id));
+      deleteAllSprites(id);
       return { ok: true };
     }
   );
@@ -337,6 +339,7 @@ export async function characterRoutes(app: FastifyInstance) {
         .delete(lorebookCharacters)
         .where(eq(lorebookCharacters.characterId, id));
       await db.delete(characters).where(eq(characters.id, id));
+      deleteAllSprites(id);
     }
 
     return { ok: true, deleted: ids.length };

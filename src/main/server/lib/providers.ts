@@ -69,7 +69,8 @@ export function buildProviderRequestBody(
   type: ProviderType,
   model: string,
   messages: ProviderMessage[],
-  preset: ProviderPreset | null
+  preset: ProviderPreset | null,
+  stream = true,
 ): unknown {
   const temperature = preset?.temperature ?? 0.8;
   const maxTokens = preset?.maxNewTokens ?? 512;
@@ -83,7 +84,7 @@ export function buildProviderRequestBody(
       if (preset?.repetitionPenalty != null) options.repeat_penalty = preset.repetitionPenalty;
       options.num_predict = maxTokens;
       if (stops.length > 0) options.stop = stops;
-      return { model, messages, stream: true, options };
+      return { model, messages, stream, options };
     }
 
     case "anthropic": {
@@ -103,7 +104,7 @@ export function buildProviderRequestBody(
       const body: Record<string, unknown> = {
         model,
         messages: merged,
-        stream: true,
+        stream,
         max_tokens: maxTokens,
         temperature,
       };
@@ -155,7 +156,7 @@ export function buildProviderRequestBody(
       const body: Record<string, unknown> = {
         model,
         messages,
-        stream: true,
+        stream,
         temperature,
         max_tokens: maxTokens,
       };
@@ -223,4 +224,44 @@ export function parseStreamLine(
   } catch {
     return null;
   }
+}
+
+/**
+ * Build a non-streaming URL for a provider.
+ * Most providers use the same URL; Gemini needs a different endpoint.
+ */
+export function buildProviderSyncUrl(type: ProviderType, endpoint: string, model?: string): string {
+  if (type === "gemini") {
+    const base = endpoint.replace(/\/+$/, "");
+    return `${base}/v1beta/models/${model}:generateContent`;
+  }
+  return buildProviderUrl(type, endpoint, model);
+}
+
+/**
+ * Extract text content from a non-streaming provider response body.
+ */
+export function parseNonStreamingResponse(type: ProviderType, body: unknown): string | null {
+  const data = body as Record<string, unknown>;
+
+  if (type === "ollama") {
+    const msg = (data.message as { content?: string }) || {};
+    return msg.content?.trim() || null;
+  }
+
+  if (type === "anthropic") {
+    const content = data.content as Array<{ type: string; text?: string }> | undefined;
+    return content?.[0]?.text?.trim() || null;
+  }
+
+  if (type === "gemini") {
+    const candidates = data.candidates as
+      | Array<{ content?: { parts?: Array<{ text?: string }> } }>
+      | undefined;
+    return candidates?.[0]?.content?.parts?.[0]?.text?.trim() || null;
+  }
+
+  // OpenAI / Groq / LM Studio / OpenRouter / Mistral
+  const choices = data.choices as Array<{ message?: { content?: string } }> | undefined;
+  return choices?.[0]?.message?.content?.trim() || null;
 }

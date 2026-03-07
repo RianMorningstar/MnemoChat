@@ -50,6 +50,7 @@ export const characters = sqliteTable("characters", {
   authorNoteDepth: integer("author_note_depth").default(4),
   quickReplies: text("quick_replies"),
   regexSubstitutions: text("regex_substitutions"),
+  defaultExpression: text("default_expression").default("neutral"),
 });
 
 export const chats = sqliteTable("chats", {
@@ -91,6 +92,8 @@ export const messages = sqliteTable("messages", {
   parentId: text("parent_id"),
   /** Position among siblings sharing the same parent (0 = original, 1+ = forks) */
   branchPosition: integer("branch_position").default(0),
+  /** Classified expression/emotion for sprite display */
+  expression: text("expression"),
 });
 
 export const swipeAlternatives = sqliteTable("swipe_alternatives", {
