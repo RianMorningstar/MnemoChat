@@ -25,6 +25,7 @@ import type {
   Scene,
   ContentBlock,
 } from "@shared/types";
+import type { SpriteInfo } from "@shared/expression-types";
 
 async function json<T>(res: Response): Promise<T> {
   if (!res.ok) throw new Error(`API ${res.status}: ${res.statusText}`);
@@ -989,4 +990,59 @@ export async function generatePdf(
   });
   if (!res.ok) throw new Error(`API ${res.status}: ${res.statusText}`);
   return res.blob();
+}
+
+// ── Sprites / Expressions ──────────────────────────────
+
+export async function getCharacterSprites(characterId: string): Promise<SpriteInfo[]> {
+  const res = await fetch(`${API_BASE}/api/sprites/${characterId}`);
+  return json(res);
+}
+
+export function getSpriteUrl(characterId: string, expression: string): string {
+  return `${API_BASE}/api/sprites/${characterId}/${expression}`;
+}
+
+export async function uploadSprite(characterId: string, expression: string, file: File): Promise<void> {
+  const form = new FormData();
+  form.append("file", file);
+  const res = await fetch(`${API_BASE}/api/sprites/${characterId}/${expression}`, {
+    method: "POST",
+    body: form,
+  });
+  if (!res.ok) throw new Error(`API ${res.status}: ${res.statusText}`);
+}
+
+export async function uploadSpriteZip(characterId: string, file: File): Promise<string[]> {
+  const form = new FormData();
+  form.append("file", file);
+  const res = await fetch(`${API_BASE}/api/sprites/${characterId}/bulk`, {
+    method: "POST",
+    body: form,
+  });
+  const data = await json<{ imported: string[] }>(res);
+  return data.imported;
+}
+
+export async function deleteSprite(characterId: string, expression: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/sprites/${characterId}/${expression}`, { method: "DELETE" });
+  if (!res.ok) throw new Error(`API ${res.status}: ${res.statusText}`);
+}
+
+export async function deleteAllSprites(characterId: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/sprites/${characterId}`, { method: "DELETE" });
+  if (!res.ok) throw new Error(`API ${res.status}: ${res.statusText}`);
+}
+
+export async function classifyMessageExpression(
+  chatId: string,
+  messageId: string,
+  content: string,
+): Promise<{ expression: string | null }> {
+  const res = await fetch(`${API_BASE}/api/chats/${chatId}/classify-expression`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ messageId, content }),
+  });
+  return json(res);
 }

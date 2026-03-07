@@ -63,6 +63,8 @@ export interface Message {
   parentId?: string | null
   /** Position among siblings sharing the same parent (0 = original, 1+ = forks) */
   branchPosition?: number
+  /** Classified expression/emotion for sprite display */
+  expression?: string | null
 }
 
 export interface SceneDirection {

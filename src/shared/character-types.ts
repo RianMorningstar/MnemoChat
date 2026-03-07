@@ -60,6 +60,7 @@ export interface Character {
   authorNoteDepth?: number;
   quickReplies?: QuickReply[] | null;
   regexSubstitutions?: RegexSubstitution[] | null;
+  defaultExpression?: string;
 }
 
 export interface LorebookEntry {

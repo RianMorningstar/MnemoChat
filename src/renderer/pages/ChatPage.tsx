@@ -36,6 +36,7 @@ import {
   updateChatCharacter,
   getCharacter,
   getGlobalQuickReplies,
+  classifyMessageExpression,
 } from "@/lib/api";
 import { getSiblingLeafId } from "@/lib/branch-utils";
 import { pickNextCharacter } from "@/lib/group-utils";
@@ -269,6 +270,23 @@ export function ChatPage() {
         setStreamingContent("");
         setGeneratingCharacterId(null);
         await refreshMessages();
+
+        // Non-blocking expression classification for the newly generated message
+        getMessages(targetChatId).then(({ messages: latestMsgs }) => {
+          const lastAssistant = [...latestMsgs].reverse().find(m => m.role === 'assistant');
+          if (lastAssistant && !lastAssistant.expression && lastAssistant.content) {
+            classifyMessageExpression(targetChatId, lastAssistant.id, lastAssistant.content)
+              .then(({ expression }) => {
+                if (expression) {
+                  setMessages(prev => prev.map(m =>
+                    m.id === lastAssistant.id ? { ...m, expression } : m
+                  ));
+                }
+              })
+              .catch(err => console.error('[expression] Classification failed:', err));
+          }
+        });
+
         // Auto-advance to next character (group chats only)
         if (characters.length > 1 && characterId) {
           const strategy = chat?.replyStrategy ?? 'round_robin';

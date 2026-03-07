@@ -3,7 +3,9 @@ import {
   buildProviderUrl,
   buildProviderHeaders,
   buildProviderRequestBody,
+  buildProviderSyncUrl,
   parseStreamLine,
+  parseNonStreamingResponse,
   type ProviderMessage,
   type ProviderPreset,
 } from "../../src/main/server/lib/providers";
@@ -507,5 +509,105 @@ describe("parseStreamLine (gemini)", () => {
   it("returns null when content has no text", () => {
     const line = `data: ${JSON.stringify({ candidates: [{ content: { parts: [{}] } }] })}`;
     expect(parseStreamLine("gemini", line)).toBeNull();
+  });
+});
+
+// ── buildProviderSyncUrl ──────────────────────────────────────────────────
+
+describe("buildProviderSyncUrl", () => {
+  it("returns generateContent URL for gemini (not streaming)", () => {
+    expect(buildProviderSyncUrl("gemini", "https://generativelanguage.googleapis.com", "gemini-pro")).toBe(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent"
+    );
+  });
+
+  it("delegates to buildProviderUrl for non-gemini providers", () => {
+    expect(buildProviderSyncUrl("ollama", "http://localhost:11434")).toBe("http://localhost:11434/api/chat");
+    expect(buildProviderSyncUrl("openai", "https://api.openai.com")).toBe("https://api.openai.com/v1/chat/completions");
+    expect(buildProviderSyncUrl("anthropic", "https://api.anthropic.com")).toBe("https://api.anthropic.com/v1/messages");
+  });
+});
+
+// ── buildProviderRequestBody stream parameter ─────────────────────────────
+
+describe("buildProviderRequestBody stream parameter", () => {
+  it("ollama sets stream: false when stream=false", () => {
+    const body = buildProviderRequestBody("ollama", "llama3", MESSAGES, null, false) as Record<string, unknown>;
+    expect(body.stream).toBe(false);
+  });
+
+  it("openai sets stream: false when stream=false", () => {
+    const body = buildProviderRequestBody("openai", "gpt-4o", MESSAGES, null, false) as Record<string, unknown>;
+    expect(body.stream).toBe(false);
+  });
+
+  it("anthropic sets stream: false when stream=false", () => {
+    const body = buildProviderRequestBody("anthropic", "claude-sonnet-4-6", MESSAGES, null, false) as Record<string, unknown>;
+    expect(body.stream).toBe(false);
+  });
+
+  it("defaults to stream: true when not specified", () => {
+    const body = buildProviderRequestBody("openai", "gpt-4o", MESSAGES, null) as Record<string, unknown>;
+    expect(body.stream).toBe(true);
+  });
+});
+
+// ── parseNonStreamingResponse ─────────────────────────────────────────────
+
+describe("parseNonStreamingResponse", () => {
+  it("extracts text from ollama response", () => {
+    const body = { message: { content: "  joy  " } };
+    expect(parseNonStreamingResponse("ollama", body)).toBe("joy");
+  });
+
+  it("returns null for ollama with empty message", () => {
+    expect(parseNonStreamingResponse("ollama", { message: {} })).toBeNull();
+    expect(parseNonStreamingResponse("ollama", {})).toBeNull();
+  });
+
+  it("extracts text from anthropic response", () => {
+    const body = { content: [{ type: "text", text: " neutral " }] };
+    expect(parseNonStreamingResponse("anthropic", body)).toBe("neutral");
+  });
+
+  it("returns null for anthropic with empty content array", () => {
+    expect(parseNonStreamingResponse("anthropic", { content: [] })).toBeNull();
+  });
+
+  it("extracts text from gemini response", () => {
+    const body = { candidates: [{ content: { parts: [{ text: " anger " }] } }] };
+    expect(parseNonStreamingResponse("gemini", body)).toBe("anger");
+  });
+
+  it("returns null for gemini with no candidates", () => {
+    expect(parseNonStreamingResponse("gemini", { candidates: [] })).toBeNull();
+  });
+
+  it("extracts text from openai response", () => {
+    const body = { choices: [{ message: { content: " surprise " } }] };
+    expect(parseNonStreamingResponse("openai", body)).toBe("surprise");
+  });
+
+  it("works for groq (same format as openai)", () => {
+    const body = { choices: [{ message: { content: "joy" } }] };
+    expect(parseNonStreamingResponse("groq", body)).toBe("joy");
+  });
+
+  it("works for openrouter (same format as openai)", () => {
+    const body = { choices: [{ message: { content: "sadness" } }] };
+    expect(parseNonStreamingResponse("openrouter", body)).toBe("sadness");
+  });
+
+  it("works for mistral (same format as openai)", () => {
+    const body = { choices: [{ message: { content: "fear" } }] };
+    expect(parseNonStreamingResponse("mistral", body)).toBe("fear");
+  });
+
+  it("returns null for openai with empty choices", () => {
+    expect(parseNonStreamingResponse("openai", { choices: [] })).toBeNull();
+  });
+
+  it("returns null for openai with missing message content", () => {
+    expect(parseNonStreamingResponse("openai", { choices: [{ message: {} }] })).toBeNull();
   });
 });

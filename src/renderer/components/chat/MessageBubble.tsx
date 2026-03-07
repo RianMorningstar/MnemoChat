@@ -185,6 +185,11 @@ export function MessageBubble({
                       minute: '2-digit',
                     })}
                   </span>
+                  {message.expression && (
+                    <span className="rounded-full bg-indigo-500/10 px-1.5 py-0.5 text-indigo-400">
+                      {message.expression}
+                    </span>
+                  )}
                 </div>
               )}
             </div>
