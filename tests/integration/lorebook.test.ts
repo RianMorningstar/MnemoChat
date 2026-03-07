@@ -147,4 +147,70 @@ describe("lorebook routes", () => {
     });
     expect(res.statusCode).toBe(404);
   });
+
+  it("POST creates entry with default logic, probability, and scanDepth", async () => {
+    const res = await app.inject({
+      method: "POST",
+      url: `/api/characters/${charId}/lorebook`,
+      payload: { keywords: ["defaults-test"], content: "Defaults check" },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.logic).toBe("AND_ANY");
+    expect(body.probability).toBe(100);
+    expect(body.scanDepth).toBe(0);
+  });
+
+  it("POST respects explicit logic, probability, and scanDepth values", async () => {
+    const res = await app.inject({
+      method: "POST",
+      url: `/api/characters/${charId}/lorebook`,
+      payload: {
+        keywords: ["explicit-test"],
+        content: "Explicit values",
+        logic: "AND_ALL",
+        probability: 75,
+        scanDepth: 5,
+      },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.logic).toBe("AND_ALL");
+    expect(body.probability).toBe(75);
+    expect(body.scanDepth).toBe(5);
+  });
+
+  it("PUT updates logic, probability, and scanDepth", async () => {
+    const created = await app.inject({
+      method: "POST",
+      url: `/api/characters/${charId}/lorebook`,
+      payload: { keywords: ["update-advanced"], content: "To update" },
+    });
+    const { id } = created.json();
+
+    const res = await app.inject({
+      method: "PUT",
+      url: `/api/lorebook/${id}`,
+      payload: { logic: "NOT_ANY", probability: 50, scanDepth: 3 },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.logic).toBe("NOT_ANY");
+    expect(body.probability).toBe(50);
+    expect(body.scanDepth).toBe(3);
+  });
+
+  it("GET returns new fields for existing entries", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: `/api/characters/${charId}/lorebook`,
+    });
+    const entries = res.json();
+    expect(entries.length).toBeGreaterThan(0);
+    for (const entry of entries) {
+      expect(typeof entry.logic).toBe("string");
+      expect(typeof entry.probability).toBe("number");
+      expect(typeof entry.scanDepth).toBe("number");
+    }
+  });
 });

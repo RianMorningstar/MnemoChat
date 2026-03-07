@@ -93,6 +93,10 @@ export async function extractCharacterFromPng(file: File): Promise<ParsedCharact
   return null;
 }
 
+export function parseCharacterJson(json: unknown): ParsedCharacterCard {
+  return parseCharaJson(json as Record<string, unknown>);
+}
+
 function parseCharaJson(json: Record<string, unknown>): ParsedCharacterCard {
   // V2/V3 have a "data" wrapper, V1 is flat
   const data = (json.data as CharaCardData) || (json as unknown as CharaCardData);

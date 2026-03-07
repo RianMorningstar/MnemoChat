@@ -556,6 +556,38 @@ export async function exportLorebook(id: string): Promise<unknown> {
   return json(res);
 }
 
+export async function importLorebook(data: {
+  name: string;
+  tags?: string[];
+  coverColor?: string;
+  entries?: unknown[];
+}): Promise<LibraryLorebook> {
+  const res = await fetch(`${API_BASE}/api/lorebooks/import`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  return json<LibraryLorebook>(res);
+}
+
+// Character-centric lorebook attachment
+export async function getCharacterAttachedLorebooks(characterId: string): Promise<LibraryLorebook[]> {
+  const res = await fetch(`${API_BASE}/api/characters/${characterId}/lorebooks`);
+  return json(res);
+}
+
+export async function attachLorebookToCharacter(characterId: string, lorebookId: string): Promise<void> {
+  await fetch(`${API_BASE}/api/characters/${characterId}/lorebooks/${lorebookId}`, {
+    method: "POST",
+  });
+}
+
+export async function detachLorebookFromCharacter(characterId: string, lorebookId: string): Promise<void> {
+  await fetch(`${API_BASE}/api/characters/${characterId}/lorebooks/${lorebookId}`, {
+    method: "DELETE",
+  });
+}
+
 // Discover
 import type { DiscoverQuery, DiscoverCardsResponse } from "@shared/library-types";
 

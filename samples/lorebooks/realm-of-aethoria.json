@@ -1,0 +1,87 @@
+{
+  "name": "Realm of Aethoria",
+  "tags": ["fantasy", "world-lore", "magic", "elara-dawnwhisper"],
+  "coverColor": "indigo",
+  "entries": [
+    {
+      "keywords": ["rift", "rifts", "rift anomaly", "rift anomalies", "tear", "tears in"],
+      "content": "THE RIFTS: Rifts are unstable tears in the boundary between the material plane and the Aetheric Deep — a vast, formless reservoir of raw magical energy. They appear as vertical slashes in the air roughly one to three meters tall, edged with a faint iridescent light and accompanied by a low audible hum. Objects and living creatures that pass through unprepared suffer aetheric displacement — disorientation, sensory distortion, and in severe cases, partial unraveling of biological matter. The Aethorian Conclave has catalogued 34 active Rifts across the Realm. Three appeared in the last season alone. No mechanism for closing them has been discovered. Proximity causes magical workings to behave erratically.",
+      "insertionPosition": "before_character",
+      "priority": 90,
+      "enabled": true,
+      "logic": "AND_ANY",
+      "probability": 100,
+      "scanDepth": 0
+    },
+    {
+      "keywords": ["conclave", "aethorian conclave", "the conclave"],
+      "content": "THE AETHORIAN CONCLAVE: The Conclave is the governing body of magical scholarship in the Realm of Aethoria. Founded roughly 800 years ago following the Sundering War, its mandate is to catalog, regulate, and preserve knowledge of magic. It maintains libraries in five cities, fields a corps of field researchers, and issues licenses for high-order spellcasting. In practice, it is a deeply bureaucratic institution riven by internal politics between three factions: the Archivists (preservation first), the Interventionists (active use of magic for civic benefit), and the Containment Order (magical practice is inherently dangerous and must be controlled). Elara is nominally aligned with the Archivists but increasingly sympathetic to the Interventionist position given the Rift crisis.",
+      "insertionPosition": "before_character",
+      "priority": 80,
+      "enabled": true,
+      "logic": "AND_ANY",
+      "probability": 100,
+      "scanDepth": 0
+    },
+    {
+      "keywords": ["ley line", "ley lines", "ley-line", "aetheric current", "aetheric field"],
+      "content": "LEY LINES AND THE AETHERIC FIELD: Ley lines are channels of concentrated aetheric energy running beneath the surface of the Realm, forming a global network that mages have mapped for centuries. Convergence points — where three or more ley lines cross — are sites of intense magical activity and are often locations of ancient settlements, sacred sites, or (increasingly) Rift appearances. All spellcasting draws on the ambient aetheric field; proximity to a ley line amplifies it significantly. The field can be measured with attuned instruments. Elara's brass compass is calibrated to detect field strength and direction.",
+      "insertionPosition": "after_character",
+      "priority": 75,
+      "enabled": true,
+      "logic": "AND_ANY",
+      "probability": 100,
+      "scanDepth": 0
+    },
+    {
+      "keywords": ["sundering", "sundering war", "the sundering"],
+      "content": "THE SUNDERING WAR: A magical catastrophe that occurred approximately 820 years ago, triggered by a coordinated ritual performed by a coalition of mages attempting to permanently bind a god-entity called the Hollow. The ritual failed catastrophically, killing most of the participants and tearing open the first known Rifts. The backlash reshaped three major regions of the Realm and annihilated two cities entirely. The Sundering is the foundational event of modern Aethorian history — the reason the Conclave was formed, the reason certain magical disciplines were banned, and the reason ley line cartography is considered vital. Most scholars believe the current Rift acceleration is connected to the Sundering's unresolved aftereffects.",
+      "insertionPosition": "before_character",
+      "priority": 70,
+      "enabled": true,
+      "logic": "AND_ANY",
+      "probability": 100,
+      "scanDepth": 0
+    },
+    {
+      "keywords": ["cast", "casting", "spell", "spellwork", "working", "magic", "enchant", "channel"],
+      "content": "MAGIC IN THE REALM: Magic in Aethoria operates by drawing aetheric energy from the field, shaping it through intent and gesture (or inscription for more complex workings), and releasing it toward an effect. The three recognized disciplines are: Evocation (direct energy expression — light, force, heat), Inscription (encoding effects into objects or spaces for delayed release), and Resonance (attunement to existing magical structures — ley lines, Rifts, enchanted objects). There is a fourth discipline the Conclave officially does not recognize: Deep Drawing, which pulls energy directly from the Aetheric Deep rather than the ambient field. It is significantly more powerful and significantly more dangerous, associated with the Sundering. Near Rifts, all spellcasting becomes unpredictable.",
+      "insertionPosition": "after_character",
+      "priority": 65,
+      "enabled": true,
+      "logic": "AND_ANY",
+      "probability": 100,
+      "scanDepth": 0
+    },
+    {
+      "keywords": ["hollow", "god-entity", "the hollow", "bound god"],
+      "content": "THE HOLLOW: An entity of unknown origin described in pre-Sundering texts as 'the absence between worlds' — not a god of something but a god of negation. The ritual coalition believed binding it would end a series of planar incursions that had plagued the Realm for decades. Contemporary scholars debate whether the Hollow was real, metaphorical (a personification of the Aetheric Deep's destructive potential), or something the ritual itself created. The Containment Order believes it was real, was incompletely bound rather than destroyed, and that the Rifts are evidence of it slowly working free. This theory is classified within the Conclave as a Level Three Concern — not officially endorsed, not officially dismissed.",
+      "insertionPosition": "before_character",
+      "priority": 85,
+      "enabled": true,
+      "logic": "AND_ALL",
+      "probability": 100,
+      "scanDepth": 0
+    },
+    {
+      "keywords": ["quiet", "calm", "peaceful", "nothing strange", "ordinary", "normal day"],
+      "content": "AMBIENT AETHORIA: The Realm of Aethoria is a continent of mixed biomes — temperate forests, high plains, a northern mountain range called the Greywarden Spine, and a southern coastal region known as the Salted Reach. Most people live in cities connected by merchant roads. Magic is common enough to be familiar but not so ubiquitous as to be mundane — a mage is a notable presence in a small town, unremarkable in a city. The dominant religions center on the Fourfold Accord, a philosophical framework rather than a theistic structure. Daily life for most people involves no contact with the Conclave, no Rift exposure, and no significant magical incident. The crisis is known but feels distant to those far from convergence points.",
+      "insertionPosition": "after_character",
+      "priority": 30,
+      "enabled": true,
+      "logic": "NOT_ANY",
+      "probability": 80,
+      "scanDepth": 3
+    },
+    {
+      "keywords": ["moonwood", "moonwood branch", "wand", "elara's wand"],
+      "content": "MOONWOOD: A rare timber harvested only from trees that have fallen naturally near ley line convergences — cutting a living moonwood is considered an act of desecration. The wood retains a faint luminescence and has an unusual affinity for Resonance-type workings. Wands carved from moonwood do not amplify raw power but significantly improve the precision of attuned spells — effectively reducing the 'noise' in complex workings. Elara's wand was a gift from her first mentor and is considerably more valuable than it appears.",
+      "insertionPosition": "after_character",
+      "priority": 50,
+      "enabled": true,
+      "logic": "AND_ANY",
+      "probability": 75,
+      "scanDepth": 4
+    }
+  ]
+}

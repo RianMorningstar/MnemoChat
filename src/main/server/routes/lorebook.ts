@@ -44,6 +44,9 @@ export async function lorebookRoutes(app: FastifyInstance) {
           (body.insertionPosition as string) || "before_character",
         priority: (body.priority as number) ?? 50,
         enabled: 1,
+        logic: (body.logic as string) || "AND_ANY",
+        probability: (body.probability as number) ?? 100,
+        scanDepth: (body.scanDepth as number) ?? 0,
       };
 
       await db.insert(lorebookEntries).values(record);
@@ -70,6 +73,9 @@ export async function lorebookRoutes(app: FastifyInstance) {
         updates.insertionPosition = body.insertionPosition;
       if ("priority" in body) updates.priority = body.priority;
       if ("enabled" in body) updates.enabled = body.enabled ? 1 : 0;
+      if ("logic" in body) updates.logic = body.logic;
+      if ("probability" in body) updates.probability = body.probability;
+      if ("scanDepth" in body) updates.scanDepth = body.scanDepth;
 
       if (Object.keys(updates).length === 0) {
         return reply.status(400).send({ error: "No fields to update" });

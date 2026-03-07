@@ -129,6 +129,9 @@ export const lorebookEntries = sqliteTable("lorebook_entries", {
   insertionPosition: text("insertion_position").default("before_character"),
   priority: integer("priority").default(50),
   enabled: integer("enabled").default(1),
+  logic: text("logic").notNull().default("AND_ANY"),
+  probability: integer("probability").notNull().default(100),
+  scanDepth: integer("scan_depth").notNull().default(0),
 });
 
 export const personas = sqliteTable("personas", {

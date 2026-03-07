@@ -2,6 +2,7 @@ import type { ContentTier } from "./types";
 
 export type SpecVersion = "v1" | "v2";
 export type InsertionPosition = "before_character" | "after_character" | "before_example" | "after_example";
+export type LorebookLogic = "AND_ANY" | "AND_ALL" | "NOT_ANY" | "NOT_ALL";
 export type SortOption = "name" | "created" | "lastChatted" | "tokenCount";
 
 export interface Character {
@@ -39,6 +40,9 @@ export interface LorebookEntry {
   insertionPosition: InsertionPosition;
   priority: number;
   enabled: boolean;
+  logic: LorebookLogic;
+  probability: number;
+  scanDepth: number;
 }
 
 export interface ImportPreview {

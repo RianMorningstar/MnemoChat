@@ -227,6 +227,66 @@ export async function libraryLorebookRoutes(app: FastifyInstance) {
     }
   );
 
+  // Import lorebook from JSON
+  app.post("/api/lorebooks/import", async (request, reply) => {
+    const body = request.body as {
+      name: string;
+      tags?: string[];
+      coverColor?: string;
+      entries?: Array<{
+        keywords: string[];
+        content: string;
+        insertionPosition?: string;
+        priority?: number;
+        enabled?: boolean;
+        logic?: string;
+        probability?: number;
+        scanDepth?: number;
+      }>;
+    };
+
+    const now = new Date().toISOString();
+    const lorebookId = generateId();
+
+    await db.insert(lorebooks).values({
+      id: lorebookId,
+      name: body.name || "Imported Lorebook",
+      tags: JSON.stringify(body.tags || []),
+      coverColor: body.coverColor || "zinc",
+      lastModified: now,
+      createdAt: now,
+    });
+
+    const entries = body.entries || [];
+    for (const e of entries) {
+      await db.insert(lorebookEntries).values({
+        id: generateId(),
+        characterId: "",
+        lorebookId,
+        keywords: JSON.stringify(e.keywords || []),
+        content: e.content ?? null,
+        insertionPosition: e.insertionPosition || "before_character",
+        priority: e.priority ?? 50,
+        enabled: e.enabled !== false ? 1 : 0,
+        logic: e.logic || "AND_ANY",
+        probability: e.probability ?? 100,
+        scanDepth: e.scanDepth ?? 0,
+      });
+    }
+
+    return reply.status(201).send({
+      id: lorebookId,
+      name: body.name || "Imported Lorebook",
+      tags: body.tags || [],
+      coverColor: body.coverColor || "zinc",
+      entryCount: entries.length,
+      attachedCharacterIds: [],
+      attachedCharacterNames: [],
+      lastModified: now,
+      createdAt: now,
+    });
+  });
+
   // Export lorebook as JSON
   app.get<{ Params: { id: string } }>(
     "/api/lorebooks/:id/export",

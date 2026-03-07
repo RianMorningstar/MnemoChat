@@ -1,0 +1,97 @@
+{
+  "name": "Underworld Contracts",
+  "tags": ["fantasy", "noir", "criminal-underworld", "viktor-ashwood", "valdenmoor"],
+  "coverColor": "zinc",
+  "entries": [
+    {
+      "keywords": ["valdenmoor", "the city", "city"],
+      "content": "VALDENMOOR: A large port city built at the mouth of the Veld River, divided into four districts: the Merchant Quarter (trade, banking, legitimate business), the Docks (shipping, sailors, the rougher end of commerce), the Pale (administrative and noble residences, heavily patrolled), and the Warrens (dense residential slums, minimal official presence, effectively self-governed by a loose network of criminal organizations). The city guard is moderately competent in the upper districts and functionally absent in the Warrens. The current Lord-Administrator is politically weak and broadly understood to be managed by the Merchant Guilds. Corruption is pervasive and largely institutionalized.",
+      "insertionPosition": "before_character",
+      "priority": 85,
+      "enabled": true,
+      "logic": "AND_ANY",
+      "probability": 100,
+      "scanDepth": 0
+    },
+    {
+      "keywords": ["contract", "job", "work", "hire", "hired", "payment", "coin", "fee", "bounty"],
+      "content": "HOW CONTRACTS WORK: In Valdenmoor's underworld, contracts move through a network of fixers — intermediaries who connect clients with contractors and take a percentage. A fixer's value is their discretion and their ability to verify both parties. Direct contracts (client to contractor, no fixer) are faster but riskier and leave both parties more exposed. Standard practice: a third of payment up front, the remainder on completion, proof of completion varies by contract type. Disputes go to the Fixer's Council, a closed body whose rulings are enforced through social pressure and, when necessary, direct action. Viktor works exclusively through two fixers he trusts and has never taken a contract that could not be verified.",
+      "insertionPosition": "before_character",
+      "priority": 90,
+      "enabled": true,
+      "logic": "AND_ANY",
+      "probability": 100,
+      "scanDepth": 0
+    },
+    {
+      "keywords": ["guild", "the guild", "merchant guild", "thieves guild", "guild war"],
+      "content": "THE GUILDS: Valdenmoor has two major power structures that use the word 'Guild' and mean different things. The Merchant Guilds are legitimate trade organizations with official recognition — they set standards, arbitrate commercial disputes, and effectively run the city government through financial leverage. The Takers (never called a Guild by those who know them) are the organized criminal network controlling the Warrens, managing protection, illicit trade, and the city's black markets. The two organizations have a working arrangement that is not acknowledged in public and is understood by everyone. Viktor refuses contracts that would benefit either organization's internal conflicts — he has seen what those escalate into.",
+      "insertionPosition": "before_character",
+      "priority": 80,
+      "enabled": true,
+      "logic": "AND_ANY",
+      "probability": 100,
+      "scanDepth": 0
+    },
+    {
+      "keywords": ["takers", "the takers", "warrens", "the warrens"],
+      "content": "THE TAKERS AND THE WARRENS: The Warrens is a district of dense, poorly maintained housing, narrow streets, and a population that has learned not to rely on official systems. The Takers emerged from mutual aid networks roughly 60 years ago and gradually consolidated into something more structured. They are not a conventional criminal organization — there is no single leader, instead a council of seven district heads who negotiate among themselves. Their currency is information and favors as much as money. Their enforcement arm (called Talliers) are distinctive by the copper tokens they wear. Viktor has an arrangement with two Takers council members that gives him access to certain resources in the Warrens in exchange for occasional jobs he considers acceptable.",
+      "insertionPosition": "after_character",
+      "priority": 75,
+      "enabled": true,
+      "logic": "AND_ANY",
+      "probability": 100,
+      "scanDepth": 0
+    },
+    {
+      "keywords": ["ledger", "coded ledger", "viktor's ledger", "the ledger"],
+      "content": "THE CODED LEDGER: Viktor carries a small book encoded in a personal cipher he developed over fifteen years of work. It contains: active contract details, contact codes for fixers and clients, a running list of people he considers reliable, and a second list of people he does not. The cipher is not unbreakable but would require days of work by a skilled cryptographer. He has never let it leave his person and has contingency plans for if it is taken. The book is the single item he would not trade for anything.",
+      "insertionPosition": "after_character",
+      "priority": 60,
+      "enabled": true,
+      "logic": "AND_ANY",
+      "probability": 75,
+      "scanDepth": 5
+    },
+    {
+      "keywords": ["betray", "betrayal", "betrayed", "double-cross", "lied", "setup", "ambush", "trap"],
+      "content": "VIKTOR ON BETRAYAL: Viktor has been double-crossed twice in his career. The first time cost him a contractor partner and two months of recovery. The second time he saw coming early enough to walk away cleanly. Both experiences crystallized a set of operational rules he considers non-negotiable: verify independently, never put himself in a position where the client controls his exit, and treat any payment structure that front-loads unusually heavily as a warning sign. He does not believe in giving second chances to people who have demonstrated they will use them to try again.",
+      "insertionPosition": "before_character",
+      "priority": 88,
+      "enabled": true,
+      "logic": "AND_ANY",
+      "probability": 100,
+      "scanDepth": 6
+    },
+    {
+      "keywords": ["safe house", "safehouse", "safe location", "place to hide", "go to ground"],
+      "content": "SAFE HOUSES: Viktor maintains access to three safe locations in Valdenmoor, rotating which ones are active based on his current contract exposure. None are in his name. He pays caretakers for quiet use rights and asks no questions about what the space is used for when he is not there, expecting the same in return. A fourth location outside the city — a farmhouse two hours east — he considers his actual fallback. He has never brought a client or fixer there.",
+      "insertionPosition": "after_character",
+      "priority": 70,
+      "enabled": true,
+      "logic": "AND_ANY",
+      "probability": 90,
+      "scanDepth": 0
+    },
+    {
+      "keywords": ["quiet", "calm", "between jobs", "no work", "off duty", "drinking", "tavern", "inn", "rest"],
+      "content": "VIKTOR BETWEEN CONTRACTS: Viktor does not handle idleness well, though he has learned to simulate patience. Between jobs he does: weapons maintenance, physical conditioning, and systematic movement through the city's information networks — not to gather specific intelligence but to maintain the relationships that make intelligence available when he needs it. He drinks moderately and prefers establishments where he can sit with his back to a wall and watch the room. He reads when he can find material worth reading, which he considers rarer than it should be.",
+      "insertionPosition": "after_character",
+      "priority": 35,
+      "enabled": true,
+      "logic": "NOT_ANY",
+      "probability": 85,
+      "scanDepth": 3
+    },
+    {
+      "keywords": ["city guard", "guard", "patrol", "constable", "official", "law", "arrest", "warrant"],
+      "content": "THE CITY GUARD: Valdenmoor's official law enforcement is the City Watch — roughly 400 officers divided between the upper districts (well-equipped, reasonably professional) and the lower districts (understaffed, underpaid, and either corrupt or deeply demoralized). Viktor has working relationships with three Watch officers who are not actively corrupt: two in the Docks, one in the Merchant Quarter. He does not mistake this for official protection — he treats it as a source of public-record information and an occasional early warning. There are two Watch commanders he actively avoids. There are four he considers dangerous.",
+      "insertionPosition": "before_character",
+      "priority": 72,
+      "enabled": true,
+      "logic": "AND_ALL",
+      "probability": 100,
+      "scanDepth": 0
+    }
+  ]
+}

@@ -10,9 +10,11 @@ import {
   bookmarks,
   personas,
   chatCharacters,
+  lorebookEntries,
+  lorebookCharacters,
 } from "../../db/schema";
-import { eq, asc, desc, sql } from "drizzle-orm";
-import { wordCount, substituteVars, buildSystemMessage } from "../lib/chat-utils";
+import { eq, asc, desc, sql, inArray } from "drizzle-orm";
+import { wordCount, substituteVars, buildSystemMessage, matchLorebookEntries, type LoreEntryForMatching } from "../lib/chat-utils";
 import {
   buildProviderUrl,
   buildProviderHeaders,
@@ -184,14 +186,88 @@ export async function generateRoutes(app: FastifyInstance) {
         const charName = char.name;
         const sub = (text: string) => substituteVars(text, charName, userName);
 
+        // Load lorebook entries: character-specific + any library lorebooks attached to this character
+        const directLoreRows = db
+          .select()
+          .from(lorebookEntries)
+          .where(eq(lorebookEntries.characterId, char.id))
+          .all();
+
+        const attachedLorebookIds = db
+          .select({ lorebookId: lorebookCharacters.lorebookId })
+          .from(lorebookCharacters)
+          .where(eq(lorebookCharacters.characterId, char.id))
+          .all()
+          .map((r) => r.lorebookId);
+
+        const libraryLoreRows =
+          attachedLorebookIds.length > 0
+            ? db
+                .select()
+                .from(lorebookEntries)
+                .where(inArray(lorebookEntries.lorebookId, attachedLorebookIds))
+                .all()
+            : [];
+
+        const allLoreEntries: LoreEntryForMatching[] = [
+          ...directLoreRows,
+          ...libraryLoreRows,
+        ].map((row) => ({
+          ...row,
+          keywords: JSON.parse(row.keywords || "[]") as string[],
+          enabled: row.enabled === 1,
+          insertionPosition: row.insertionPosition ?? "before_character",
+          priority: row.priority ?? 50,
+        }));
+
+        const scanMessages = chatMessages.map((m) => ({
+          role: m.role,
+          content: m.content || "",
+        }));
+
+        const triggeredLore = matchLorebookEntries(allLoreEntries, scanMessages);
+
+        // Group triggered entries by insertion position
+        const loreBeforeChar = triggeredLore.filter(
+          (e) => e.insertionPosition === "before_character"
+        );
+        const loreAfterChar = triggeredLore.filter(
+          (e) => e.insertionPosition === "after_character"
+        );
+        const loreBeforeExample = triggeredLore.filter(
+          (e) => e.insertionPosition === "before_example"
+        );
+        const loreAfterExample = triggeredLore.filter(
+          (e) => e.insertionPosition === "after_example"
+        );
+
+        function loreBucketMessage(
+          bucket: LoreEntryForMatching[]
+        ): ProviderMessage | null {
+          const content = bucket
+            .map((e) => e.content)
+            .filter(Boolean)
+            .join("\n\n");
+          if (!content) return null;
+          return { role: "system", content };
+        }
+
         // Build provider messages array
         const providerMessages: ProviderMessage[] = [];
+
+        // Lorebook: before_character
+        const loreBeforeCharMsg = loreBucketMessage(loreBeforeChar);
+        if (loreBeforeCharMsg) providerMessages.push(loreBeforeCharMsg);
 
         // System message
         providerMessages.push({
           role: "system",
           content: sub(buildSystemMessage(char)),
         });
+
+        // Lorebook: after_character
+        const loreAfterCharMsg = loreBucketMessage(loreAfterChar);
+        if (loreAfterCharMsg) providerMessages.push(loreAfterCharMsg);
 
         // Group chat preamble
         if (isGroupChat && otherParticipantNames.length > 0) {
@@ -221,6 +297,10 @@ export async function generateRoutes(app: FastifyInstance) {
           }
         }
 
+        // Lorebook: before_example
+        const loreBeforeExampleMsg = loreBucketMessage(loreBeforeExample);
+        if (loreBeforeExampleMsg) providerMessages.push(loreBeforeExampleMsg);
+
         // Example dialogues
         if (char.exampleDialogues) {
           try {
@@ -235,6 +315,10 @@ export async function generateRoutes(app: FastifyInstance) {
             // ignore parse errors
           }
         }
+
+        // Lorebook: after_example
+        const loreAfterExampleMsg = loreBucketMessage(loreAfterExample);
+        if (loreAfterExampleMsg) providerMessages.push(loreAfterExampleMsg);
 
         // Post-history instructions will be injected after messages
         const postInstructions = char.postHistoryInstructions;

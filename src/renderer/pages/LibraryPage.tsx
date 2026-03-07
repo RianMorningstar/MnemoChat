@@ -1,8 +1,12 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { cn } from "@/lib/utils";
 import { MyLibrary } from "@/components/library/MyLibrary";
 import { DiscoverFeed } from "@/components/library/DiscoverFeed";
+import {
+  ImportPreviewModal,
+  type ImportPreview,
+} from "@/components/library/ImportPreviewModal";
 import {
   getLibraryCharacters,
   getCollections,
@@ -15,6 +19,7 @@ import {
   deleteLibraryLorebook,
   duplicateLibraryLorebook,
   exportLorebook,
+  importLorebook,
   deletePersona,
   duplicatePersona,
   setDefaultPersona,
@@ -24,6 +29,10 @@ import {
   createCharacter,
   bulkDeleteCharacters,
 } from "@/lib/api";
+import {
+  extractCharacterFromPng,
+  parseCharacterJson,
+} from "@/lib/png-metadata";
 import type {
   LibraryCharacter,
   Collection,
@@ -61,15 +70,18 @@ export function LibraryPage() {
   const activeTab = (searchParams.get("tab") as LibraryTab) || "my-library";
   const setActiveTab = useCallback(
     (tab: LibraryTab) => {
-      setSearchParams((prev) => {
-        const next = new URLSearchParams(prev);
-        if (tab === "my-library") {
-          next.delete("tab");
-        } else {
-          next.set("tab", tab);
-        }
-        return next;
-      }, { replace: true });
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          if (tab === "my-library") {
+            next.delete("tab");
+          } else {
+            next.set("tab", tab);
+          }
+          return next;
+        },
+        { replace: true }
+      );
     },
     [setSearchParams]
   );
@@ -84,6 +96,18 @@ export function LibraryPage() {
   const [collections, setCollections] = useState<Collection[]>([]);
   const [lorebooks, setLorebooks] = useState<LibraryLorebook[]>([]);
   const [personas, setPersonas] = useState<Persona[]>([]);
+
+  // Import state
+  const [importPreview, setImportPreview] = useState<ImportPreview | null>(
+    null
+  );
+  const [importLoading, setImportLoading] = useState(false);
+  const pendingImportRef = useRef<
+    (() => Promise<{ id: string } | unknown>) | null
+  >(null);
+  const pendingTypeRef = useRef<"character" | "lorebook" | "persona" | null>(
+    null
+  );
 
   const fetchLibraryData = useCallback(async () => {
     try {
@@ -105,7 +129,6 @@ export function LibraryPage() {
   // Initial load
   useEffect(() => {
     async function init() {
-      // Load grid density from settings
       try {
         const setting = await getSetting("grid_density");
         if (setting?.value) {
@@ -120,13 +143,10 @@ export function LibraryPage() {
   }, [fetchLibraryData]);
 
   // Grid density persistence
-  const handleChangeGridDensity = useCallback(
-    (density: GridDensity) => {
-      setGridDensity(density);
-      setSetting("grid_density", density).catch(() => {});
-    },
-    []
-  );
+  const handleChangeGridDensity = useCallback((density: GridDensity) => {
+    setGridDensity(density);
+    setSetting("grid_density", density).catch(() => {});
+  }, []);
 
   // Character actions
   const handleChat = useCallback(
@@ -139,17 +159,14 @@ export function LibraryPage() {
     [navigate]
   );
 
-  const handleDelete = useCallback(
-    async (id: string) => {
-      try {
-        await deleteCharacter(id);
-        setLibraryCharacters((prev) => prev.filter((c) => c.id !== id));
-      } catch (err) {
-        console.error("Failed to delete character:", err);
-      }
-    },
-    []
-  );
+  const handleDelete = useCallback(async (id: string) => {
+    try {
+      await deleteCharacter(id);
+      setLibraryCharacters((prev) => prev.filter((c) => c.id !== id));
+    } catch (err) {
+      console.error("Failed to delete character:", err);
+    }
+  }, []);
 
   const handleDuplicate = useCallback(
     async (id: string) => {
@@ -164,42 +181,33 @@ export function LibraryPage() {
   );
 
   // Collection actions
-  const handleCreateCollection = useCallback(
-    async (name: string) => {
-      try {
-        const col = await createCollection({ name });
-        setCollections((prev) => [...prev, col]);
-      } catch (err) {
-        console.error("Failed to create collection:", err);
-      }
-    },
-    []
-  );
+  const handleCreateCollection = useCallback(async (name: string) => {
+    try {
+      const col = await createCollection({ name });
+      setCollections((prev) => [...prev, col]);
+    } catch (err) {
+      console.error("Failed to create collection:", err);
+    }
+  }, []);
 
-  const handleDeleteCollection = useCallback(
-    async (id: string) => {
-      try {
-        await deleteCollection(id);
-        setCollections((prev) => prev.filter((c) => c.id !== id));
-      } catch (err) {
-        console.error("Failed to delete collection:", err);
-      }
-    },
-    []
-  );
+  const handleDeleteCollection = useCallback(async (id: string) => {
+    try {
+      await deleteCollection(id);
+      setCollections((prev) => prev.filter((c) => c.id !== id));
+    } catch (err) {
+      console.error("Failed to delete collection:", err);
+    }
+  }, []);
 
   // Lorebook actions
-  const handleDeleteLorebook = useCallback(
-    async (id: string) => {
-      try {
-        await deleteLibraryLorebook(id);
-        setLorebooks((prev) => prev.filter((lb) => lb.id !== id));
-      } catch (err) {
-        console.error("Failed to delete lorebook:", err);
-      }
-    },
-    []
-  );
+  const handleDeleteLorebook = useCallback(async (id: string) => {
+    try {
+      await deleteLibraryLorebook(id);
+      setLorebooks((prev) => prev.filter((lb) => lb.id !== id));
+    } catch (err) {
+      console.error("Failed to delete lorebook:", err);
+    }
+  }, []);
 
   const handleDuplicateLorebook = useCallback(
     async (id: string) => {
@@ -231,17 +239,14 @@ export function LibraryPage() {
   }, []);
 
   // Persona actions
-  const handleDeletePersona = useCallback(
-    async (id: string) => {
-      try {
-        await deletePersona(id);
-        setPersonas((prev) => prev.filter((p) => p.id !== id));
-      } catch (err) {
-        console.error("Failed to delete persona:", err);
-      }
-    },
-    []
-  );
+  const handleDeletePersona = useCallback(async (id: string) => {
+    try {
+      await deletePersona(id);
+      setPersonas((prev) => prev.filter((p) => p.id !== id));
+    } catch (err) {
+      console.error("Failed to delete persona:", err);
+    }
+  }, []);
 
   const handleDuplicatePersona = useCallback(
     async (id: string) => {
@@ -272,42 +277,203 @@ export function LibraryPage() {
     [navigate]
   );
 
-  const handleCreatePersona = useCallback(
-    async () => {
-      try {
-        const persona = await createPersona({ name: "New Persona" });
-        navigate(`/personas/${persona.id}/edit`);
-      } catch (err) {
-        console.error("Failed to create persona:", err);
-      }
-    },
-    [navigate]
-  );
+  const handleCreatePersona = useCallback(async () => {
+    try {
+      const persona = await createPersona({ name: "New Persona" });
+      navigate(`/personas/${persona.id}/edit`);
+    } catch (err) {
+      console.error("Failed to create persona:", err);
+    }
+  }, [navigate]);
 
   // Refresh library after a discover import
   const handleDiscoverImport = useCallback(() => {
     fetchLibraryData();
   }, [fetchLibraryData]);
 
-  // Drag-and-drop PNG import
+  // ── Import handlers ───────────────────────────────────────────────
+
+  const handleImportCharacterFile = useCallback(async (file: File) => {
+    try {
+      let parsed = null;
+      let portraitDataUrl: string | null = null;
+
+      if (file.name.endsWith(".png")) {
+        parsed = await extractCharacterFromPng(file);
+        if (parsed) {
+          portraitDataUrl = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target?.result as string);
+            reader.readAsDataURL(file);
+          });
+        }
+      } else if (file.name.endsWith(".json")) {
+        const text = await file.text();
+        const json = JSON.parse(text);
+        parsed = parseCharacterJson(json);
+      }
+
+      if (!parsed) return;
+
+      const preview: ImportPreview = {
+        type: "character",
+        name: parsed.name,
+        tags: parsed.tags,
+        description: parsed.description,
+        portraitDataUrl,
+      };
+
+      const capturedParsed = parsed;
+      const capturedPortrait = portraitDataUrl;
+      pendingImportRef.current = () =>
+        createCharacter({
+          name: capturedParsed.name,
+          description: capturedParsed.description ?? undefined,
+          personality: capturedParsed.personality ?? undefined,
+          scenario: capturedParsed.scenario ?? undefined,
+          firstMessage: capturedParsed.firstMessage ?? undefined,
+          alternateGreetings: capturedParsed.alternateGreetings,
+          systemPrompt: capturedParsed.systemPrompt ?? undefined,
+          postHistoryInstructions:
+            capturedParsed.postHistoryInstructions ?? undefined,
+          exampleDialogues: capturedParsed.exampleDialogues,
+          creatorNotes: capturedParsed.creatorNotes ?? undefined,
+          tags: capturedParsed.tags,
+          creatorName: capturedParsed.creatorName ?? undefined,
+          characterVersion: capturedParsed.characterVersion ?? undefined,
+          specVersion: capturedParsed.specVersion as "v1" | "v2",
+          portraitUrl: capturedPortrait ?? undefined,
+          importDate: new Date().toISOString(),
+        });
+      pendingTypeRef.current = "character";
+      setImportPreview(preview);
+    } catch (err) {
+      console.error("Failed to parse character file:", err);
+    }
+  }, []);
+
+  const handleImportLorebookFile = useCallback(async (file: File) => {
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+
+      if (!data || !Array.isArray(data.entries)) {
+        console.error("Invalid lorebook JSON: missing entries array");
+        return;
+      }
+
+      const preview: ImportPreview = {
+        type: "lorebook",
+        name: data.name || "Imported Lorebook",
+        tags: data.tags || [],
+        entryCount: data.entries.length,
+        coverColor: data.coverColor || "zinc",
+      };
+
+      const capturedData = data;
+      pendingImportRef.current = () => importLorebook(capturedData);
+      pendingTypeRef.current = "lorebook";
+      setImportPreview(preview);
+    } catch (err) {
+      console.error("Failed to parse lorebook file:", err);
+    }
+  }, []);
+
+  const handleImportPersonaFile = useCallback(async (file: File) => {
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+
+      if (!data || typeof data.name !== "string") {
+        console.error("Invalid persona JSON: missing name");
+        return;
+      }
+
+      const preview: ImportPreview = {
+        type: "persona",
+        name: data.name,
+        description: data.description || "",
+        avatarUrl: data.avatarUrl || "",
+      };
+
+      const capturedData = data;
+      pendingImportRef.current = () =>
+        createPersona({
+          name: capturedData.name,
+          description: capturedData.description,
+          avatarUrl: capturedData.avatarUrl,
+        });
+      pendingTypeRef.current = "persona";
+      setImportPreview(preview);
+    } catch (err) {
+      console.error("Failed to parse persona file:", err);
+    }
+  }, []);
+
+  // Auto-detects JSON content type for global drag-and-drop
+  const handleImportJsonFile = useCallback(
+    async (file: File) => {
+      try {
+        const text = await file.text();
+        const data = JSON.parse(text);
+
+        if (Array.isArray(data.entries)) {
+          await handleImportLorebookFile(file);
+        } else if (data.spec || (data.data && data.data.name)) {
+          await handleImportCharacterFile(file);
+        } else if (typeof data.name === "string" && data.description !== undefined) {
+          await handleImportPersonaFile(file);
+        }
+      } catch (err) {
+        console.error("Failed to auto-detect JSON import type:", err);
+      }
+    },
+    [handleImportLorebookFile, handleImportCharacterFile, handleImportPersonaFile]
+  );
+
+  const handleConfirmImport = useCallback(async () => {
+    if (!pendingImportRef.current) return;
+    setImportLoading(true);
+    try {
+      const result = await pendingImportRef.current();
+      await fetchLibraryData();
+      setImportPreview(null);
+      pendingImportRef.current = null;
+      if (
+        pendingTypeRef.current === "character" &&
+        result &&
+        typeof (result as { id: string }).id === "string"
+      ) {
+        navigate(`/characters/${(result as { id: string }).id}/edit`);
+      }
+      pendingTypeRef.current = null;
+    } catch (err) {
+      console.error("Import failed:", err);
+    } finally {
+      setImportLoading(false);
+    }
+  }, [fetchLibraryData, navigate]);
+
+  const handleCancelImport = useCallback(() => {
+    setImportPreview(null);
+    pendingImportRef.current = null;
+    pendingTypeRef.current = null;
+  }, []);
+
+  // Global drag-and-drop (fixed — now parses files)
   const handleDrop = useCallback(
     async (e: React.DragEvent) => {
       e.preventDefault();
       const file = e.dataTransfer.files[0];
-      if (!file || !file.name.endsWith(".png")) return;
+      if (!file) return;
 
-      try {
-        const char = await createCharacter({
-          name: file.name.replace(".png", ""),
-          importDate: new Date().toISOString(),
-        });
-        await fetchLibraryData();
-        navigate(`/characters/${char.id}/edit`);
-      } catch (err) {
-        console.error("Failed to import PNG:", err);
+      if (file.name.endsWith(".png")) {
+        await handleImportCharacterFile(file);
+      } else if (file.name.endsWith(".json")) {
+        await handleImportJsonFile(file);
       }
     },
-    [fetchLibraryData, navigate]
+    [handleImportCharacterFile, handleImportJsonFile]
   );
 
   if (loading) {
@@ -376,6 +542,9 @@ export function LibraryPage() {
             onSetDefaultPersona={handleSetDefaultPersona}
             onEditPersona={handleEditPersona}
             onCreatePersona={handleCreatePersona}
+            onImportCharacter={handleImportCharacterFile}
+            onImportLorebook={handleImportLorebookFile}
+            onImportPersona={handleImportPersonaFile}
           />
         )}
         {activeTab === "discover" && (
@@ -386,6 +555,16 @@ export function LibraryPage() {
           />
         )}
       </div>
+
+      {/* Import preview modal */}
+      {importPreview && (
+        <ImportPreviewModal
+          preview={importPreview}
+          onConfirm={handleConfirmImport}
+          onCancel={handleCancelImport}
+          loading={importLoading}
+        />
+      )}
     </div>
   );
 }

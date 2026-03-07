@@ -3,11 +3,12 @@ import { db } from "../../db";
 import {
   characters,
   lorebookEntries,
+  lorebooks,
   chats,
   characterCollections,
   lorebookCharacters,
 } from "../../db/schema";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, and } from "drizzle-orm";
 
 function generateId(): string {
   return crypto.randomUUID();
@@ -319,6 +320,67 @@ export async function characterRoutes(app: FastifyInstance) {
 
     return { ok: true, deleted: ids.length };
   });
+
+  // Get lorebooks attached to a character
+  app.get<{ Params: { id: string } }>(
+    "/api/characters/:id/lorebooks",
+    async (request) => {
+      const { id } = request.params;
+      const rows = db
+        .select({
+          id: lorebooks.id,
+          name: lorebooks.name,
+          tags: lorebooks.tags,
+          coverColor: lorebooks.coverColor,
+          lastModified: lorebooks.lastModified,
+          createdAt: lorebooks.createdAt,
+        })
+        .from(lorebookCharacters)
+        .innerJoin(lorebooks, eq(lorebookCharacters.lorebookId, lorebooks.id))
+        .where(eq(lorebookCharacters.characterId, id))
+        .all();
+
+      return rows.map((r) => ({ ...r, tags: JSON.parse(r.tags || "[]") }));
+    }
+  );
+
+  // Attach a lorebook to a character
+  app.post<{ Params: { id: string; lorebookId: string } }>(
+    "/api/characters/:id/lorebooks/:lorebookId",
+    async (request, reply) => {
+      const { id, lorebookId } = request.params;
+      const existing = db
+        .select()
+        .from(lorebookCharacters)
+        .where(eq(lorebookCharacters.lorebookId, lorebookId))
+        .all()
+        .map((r) => r.characterId);
+
+      if (!existing.includes(id)) {
+        await db
+          .insert(lorebookCharacters)
+          .values({ lorebookId, characterId: id });
+      }
+      return reply.status(201).send({ ok: true });
+    }
+  );
+
+  // Detach a lorebook from a character
+  app.delete<{ Params: { id: string; lorebookId: string } }>(
+    "/api/characters/:id/lorebooks/:lorebookId",
+    async (request) => {
+      const { id, lorebookId } = request.params;
+      await db
+        .delete(lorebookCharacters)
+        .where(
+          and(
+            eq(lorebookCharacters.lorebookId, lorebookId),
+            eq(lorebookCharacters.characterId, id)
+          )
+        );
+      return { ok: true };
+    }
+  );
 
   // Bulk tag characters
   app.post("/api/characters/bulk-tag", async (request) => {
