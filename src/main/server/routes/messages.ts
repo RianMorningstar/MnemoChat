@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { db } from "../../db";
 import { messages, bookmarks, swipeAlternatives, chats } from "../../db/schema";
-import { eq, asc, desc, sql, inArray } from "drizzle-orm";
+import { eq, and, asc, desc, sql, inArray } from "drizzle-orm";
 import { wordCount } from "../lib/chat-utils";
 import {
   backfillParentIds,
@@ -420,6 +420,75 @@ export async function messageRoutes(app: FastifyInstance) {
 
     return record;
   });
+
+  // Switch active swipe
+  app.patch<{ Params: { messageId: string; index: string } }>(
+    "/api/messages/:messageId/swipes/:index",
+    async (request) => {
+      const { messageId } = request.params;
+      const targetIndex = parseInt(request.params.index, 10);
+
+      const msg = db.select().from(messages).where(eq(messages.id, messageId)).get();
+      if (!msg) return { error: "Message not found" };
+
+      const alt = db
+        .select()
+        .from(swipeAlternatives)
+        .where(and(eq(swipeAlternatives.messageId, messageId), eq(swipeAlternatives.index, targetIndex)))
+        .get();
+      if (!alt) return { error: "Swipe alternative not found" };
+
+      // Save current message content back to swipe_alternatives at its current index
+      const currentIndex = msg.swipeIndex ?? 0;
+      const existing = db
+        .select()
+        .from(swipeAlternatives)
+        .where(and(eq(swipeAlternatives.messageId, messageId), eq(swipeAlternatives.index, currentIndex)))
+        .get();
+
+      if (existing) {
+        db.update(swipeAlternatives)
+          .set({
+            content: msg.content,
+            tokenCount: msg.tokenCount,
+            model: msg.model || "",
+            generationTimeMs: msg.generationTimeMs,
+          })
+          .where(eq(swipeAlternatives.id, existing.id))
+          .run();
+      } else {
+        // Original content not yet saved — create alt for index 0
+        db.insert(swipeAlternatives)
+          .values({
+            id: generateId(),
+            messageId,
+            index: currentIndex,
+            content: msg.content || "",
+            tokenCount: msg.tokenCount || 0,
+            generationTimeMs: msg.generationTimeMs || 0,
+            model: msg.model || "",
+          })
+          .run();
+      }
+
+      // Update message to show the target alternative
+      db.update(messages)
+        .set({
+          content: alt.content,
+          swipeIndex: targetIndex,
+          tokenCount: alt.tokenCount,
+          model: alt.model,
+          generationTimeMs: alt.generationTimeMs,
+        })
+        .where(eq(messages.id, messageId))
+        .run();
+
+      const updated = db.select().from(messages).where(eq(messages.id, messageId)).get();
+      const bm = db.select().from(bookmarks).where(eq(bookmarks.messageId, messageId)).get();
+
+      return { ...updated, isSystemMessage: !!updated?.isSystemMessage, bookmark: bm || null };
+    },
+  );
 
   // Create bookmark
   app.post<{ Params: { messageId: string } }>("/api/messages/:messageId/bookmark", async (request) => {

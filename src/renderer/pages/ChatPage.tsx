@@ -37,6 +37,8 @@ import {
   getCharacter,
   getGlobalQuickReplies,
   classifyMessageExpression,
+  switchSwipe,
+  createSwipeAlternative,
 } from "@/lib/api";
 import { getSiblingLeafId } from "@/lib/branch-utils";
 import { pickNextCharacter } from "@/lib/group-utils";
@@ -106,6 +108,7 @@ export function ChatPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [generationError, setGenerationError] = useState<string | null>(null);
+  const [swipingMessageId, setSwipingMessageId] = useState<string | null>(null);
 
   const loadChatData = useCallback(async (id: string) => {
     try {
@@ -424,13 +427,63 @@ export function ChatPage() {
     await refreshMessages();
   }, [chat, refreshMessages]);
 
-  const onSwipeNavigate = useCallback((_messageId: string, _direction: "left" | "right") => {
-    console.log("onSwipeNavigate stub:", _messageId, _direction);
-  }, []);
+  const onSwipeNavigate = useCallback(async (messageId: string, direction: "left" | "right") => {
+    const msg = messages.find(m => m.id === messageId);
+    if (!msg) return;
 
-  const onSwipeGenerate = useCallback((messageId: string) => {
-    console.log("onSwipeGenerate stub:", messageId);
-  }, []);
+    const currentIndex = msg.swipeIndex ?? 0;
+    const total = msg.swipeCount ?? 1;
+    if (total <= 1) return;
+
+    const newIndex = direction === "right"
+      ? (currentIndex + 1) % total
+      : (currentIndex - 1 + total) % total;
+
+    await switchSwipe(messageId, newIndex);
+    await refreshMessages();
+  }, [messages, refreshMessages]);
+
+  const onSwipeGenerate = useCallback(async (messageId: string) => {
+    if (!chat || isGenerating) return;
+    const msg = messages.find(m => m.id === messageId);
+    if (!msg || msg.role !== "assistant") return;
+
+    // If first swipe, save original as alt index 0
+    if (!msg.swipeCount || msg.swipeCount <= 1) {
+      await createSwipeAlternative(messageId, {
+        content: msg.content,
+        model: msg.model || "",
+        tokenCount: msg.tokenCount,
+        generationTimeMs: msg.generationTimeMs,
+      });
+    }
+
+    const charId = msg.characterId ?? chat.characterId;
+    stoppedByUserRef.current = false;
+    setIsGenerating(true);
+    setStreamingContent("");
+    setGenerationError(null);
+    setSwipingMessageId(messageId);
+
+    const controller = generateResponse(
+      chat.id,
+      { mode: "in_character", characterId: charId, swipe: true, targetMessageId: messageId },
+      (token) => setStreamingContent((prev) => prev + token),
+      async () => {
+        setIsGenerating(false);
+        setStreamingContent("");
+        setSwipingMessageId(null);
+        await refreshMessages();
+      },
+      (err) => {
+        setIsGenerating(false);
+        setStreamingContent("");
+        setSwipingMessageId(null);
+        setGenerationError(err);
+      },
+    );
+    abortRef.current = controller;
+  }, [chat, messages, isGenerating, refreshMessages]);
 
   const onBookmark = useCallback(async (messageId: string, label: string, color: BookmarkColor) => {
     await createBookmark(messageId, { label, color });
@@ -663,6 +716,7 @@ export function ChatPage() {
       messages={messages}
       isGenerating={isGenerating}
       streamingContent={streamingContent}
+      swipingMessageId={swipingMessageId}
       onStopGeneration={onStopGeneration}
       swipeAlternatives={{}}
       sceneDirection={sceneDirection}

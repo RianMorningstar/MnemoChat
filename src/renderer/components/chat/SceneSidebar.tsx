@@ -12,6 +12,9 @@ import type {
   TokenBudget,
   GenerationPreset,
   Bookmark,
+  AvailableModel,
+  SceneDirection,
+  ReplyStrategy,
 } from '@shared/chat-types'
 
 interface SceneSidebarProps {
@@ -20,10 +23,19 @@ interface SceneSidebarProps {
   activePreset: GenerationPreset
   presets: GenerationPreset[]
   bookmarks: Bookmark[]
+  availableModels?: AvailableModel[]
+  sceneDirection?: SceneDirection
   onUpdatePreset?: (updates: Partial<GenerationPreset>) => void
   onSavePreset?: (name: string) => void
   onLoadPreset?: (presetId: string) => void
   onJumpToBookmark?: (messageId: string) => void
+  onSwitchModel?: (modelId: string) => void
+  onUpdateSceneDirection?: (text: string) => void
+  onSetInjectionDepth?: (depth: number) => void
+  onToggleSceneDirection?: (enabled: boolean) => void
+  onReplyStrategyChange?: (strategy: ReplyStrategy) => void
+  onAutoContinueChange?: (enabled: boolean) => void
+  onTalkativenessChange?: (characterId: string, value: number) => void
 }
 
 export function SceneSidebar({
@@ -32,10 +44,19 @@ export function SceneSidebar({
   activePreset,
   presets,
   bookmarks,
+  availableModels,
+  sceneDirection,
   onUpdatePreset,
   onSavePreset,
   onLoadPreset,
   onJumpToBookmark,
+  onSwitchModel,
+  onUpdateSceneDirection,
+  onSetInjectionDepth,
+  onToggleSceneDirection,
+  onReplyStrategyChange,
+  onAutoContinueChange,
+  onTalkativenessChange,
 }: SceneSidebarProps) {
   const [genOpen, setGenOpen] = useState(false)
   const [budgetExpanded, setBudgetExpanded] = useState(false)
@@ -81,7 +102,7 @@ export function SceneSidebar({
                 <img
                   src={chat.characterPortraitUrl}
                   alt={chat.characterName}
-                  className="mx-auto h-28 w-28 rounded-2xl object-cover ring-1 ring-zinc-700/50"
+                  className="mx-auto max-h-48 rounded-2xl object-contain ring-1 ring-zinc-700/50"
                 />
               ) : (
                 <div className="mx-auto flex h-28 w-28 items-center justify-center rounded-2xl bg-gradient-to-br from-zinc-700/40 to-zinc-800/60 ring-1 ring-zinc-700/50">
@@ -102,11 +123,129 @@ export function SceneSidebar({
                     key={tag}
                     className="rounded-full bg-zinc-800 px-2 py-0.5 text-[10px] text-zinc-400"
                   >
-                    {tag}
+                    {tag.replace(/[_-]/g, ' ')}
                   </span>
                 ))}
               </div>
             </div>
+
+            {/* Model selector */}
+            {availableModels && availableModels.length > 0 && (
+              <div className="border-b border-zinc-800 p-4">
+                <label className="mb-1.5 block text-[10px] font-medium uppercase tracking-widest text-zinc-500">
+                  Model
+                </label>
+                <select
+                  value={chat.modelId}
+                  onChange={(e) => onSwitchModel?.(e.target.value)}
+                  className="w-full rounded border border-zinc-700 bg-zinc-800 px-2 py-1.5 text-xs text-zinc-300 outline-none"
+                >
+                  {availableModels.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Scene direction */}
+            {sceneDirection && (
+              <div className="border-b border-zinc-800 p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[10px] font-medium uppercase tracking-widest text-zinc-500">
+                    Author's Note
+                  </span>
+                  <button
+                    onClick={() => onToggleSceneDirection?.(!sceneDirection.enabled)}
+                    className={cn(
+                      'rounded px-1.5 py-0.5 text-[9px] font-medium',
+                      sceneDirection.enabled
+                        ? 'bg-indigo-500/15 text-indigo-400'
+                        : 'bg-zinc-800 text-zinc-600'
+                    )}
+                  >
+                    {sceneDirection.enabled ? 'ON' : 'OFF'}
+                  </button>
+                </div>
+                {sceneDirection.enabled && (
+                  <div className="space-y-2">
+                    <textarea
+                      value={sceneDirection.text}
+                      onChange={(e) => onUpdateSceneDirection?.(e.target.value)}
+                      placeholder="Guide the scene direction..."
+                      rows={3}
+                      className="w-full resize-none rounded border border-zinc-700 bg-zinc-800 px-2 py-1.5 text-xs text-zinc-300 placeholder-zinc-600 outline-none focus:border-indigo-500"
+                    />
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] text-zinc-500">Injection depth</label>
+                      <input
+                        type="number"
+                        min={0}
+                        max={50}
+                        value={sceneDirection.injectionDepth}
+                        onChange={(e) => onSetInjectionDepth?.(Number(e.target.value))}
+                        className="w-16 rounded border border-zinc-700 bg-zinc-800 px-2 py-0.5 text-right text-[10px] tabular-nums text-zinc-300 outline-none"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Group chat settings */}
+            {chat.characters && chat.characters.length > 1 && (
+              <div className="border-b border-zinc-800 p-4">
+                <span className="mb-2 block text-[10px] font-medium uppercase tracking-widest text-zinc-500">
+                  Group Settings
+                </span>
+                <div className="space-y-3">
+                  <div>
+                    <label className="mb-1 block text-[10px] text-zinc-500">Reply Strategy</label>
+                    <select
+                      value={chat.replyStrategy ?? 'round_robin'}
+                      onChange={(e) => onReplyStrategyChange?.(e.target.value as ReplyStrategy)}
+                      className="w-full rounded border border-zinc-700 bg-zinc-800 px-2 py-1.5 text-xs text-zinc-300 outline-none"
+                    >
+                      <option value="round_robin">Round Robin</option>
+                      <option value="random">Random</option>
+                      <option value="weighted_random">Weighted Random</option>
+                    </select>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] text-zinc-500">Auto-continue</label>
+                    <button
+                      onClick={() => onAutoContinueChange?.(!chat.autoContinue)}
+                      className={cn(
+                        'rounded px-1.5 py-0.5 text-[9px] font-medium',
+                        chat.autoContinue
+                          ? 'bg-indigo-500/15 text-indigo-400'
+                          : 'bg-zinc-800 text-zinc-600'
+                      )}
+                    >
+                      {chat.autoContinue ? 'ON' : 'OFF'}
+                    </button>
+                  </div>
+                  {chat.characters.map((c) => (
+                    <div key={c.id} className="flex items-center gap-2">
+                      <span className="w-20 truncate text-[10px] text-zinc-400">{c.name}</span>
+                      <input
+                        type="range"
+                        min={0}
+                        max={1}
+                        step={0.05}
+                        value={c.talkativeness ?? 0.5}
+                        onChange={(e) => onTalkativenessChange?.(c.id, Number(e.target.value))}
+                        className="flex-1 accent-indigo-500"
+                      />
+                      <span className="w-8 text-right text-[10px] tabular-nums text-zinc-500">
+                        {((c.talkativeness ?? 0.5) * 100).toFixed(0)}%
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Token budget meter */}
             <div className="border-b border-zinc-800 p-4">

@@ -192,6 +192,7 @@ export interface ChatRoleplayProps {
   messages: Message[]
   isGenerating?: boolean
   streamingContent?: string
+  swipingMessageId?: string | null
   swipeAlternatives: Record<string, SwipeAlternative[]>
   sceneDirection: SceneDirection
   tokenBudget: TokenBudget

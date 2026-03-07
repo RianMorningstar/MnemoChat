@@ -4,6 +4,7 @@ import {
   chats,
   characters,
   messages,
+  swipeAlternatives,
   sceneDirections,
   generationPresets,
   connectionProfiles,
@@ -75,6 +76,8 @@ export async function generateRoutes(app: FastifyInstance) {
       const body = (request.body as Record<string, unknown>) || {};
       const mode = (body.mode as string) || "in_character";
       const requestedCharacterId = (body.characterId as string) || null;
+      const swipeMode = Boolean(body.swipe);
+      const swipeTargetMessageId = (body.targetMessageId as string) || null;
 
       console.log(`[generate] === Request received for chat=${chatId} mode=${mode} origin=${request.headers.origin} ===`);
 
@@ -507,45 +510,128 @@ export async function generateRoutes(app: FastifyInstance) {
         const generationTimeMs = Date.now() - startTime;
         const tokenCount = Math.ceil(fullContent.length / 4);
 
-        const now = new Date().toISOString();
-        const id = generateId();
-        const currentLeaf = chatMessages[chatMessages.length - 1];
-        const record = {
-          id,
-          chatId,
-          role: "assistant",
-          content: fullContent,
-          timestamp: now,
-          tokenCount,
-          isSystemMessage: 0,
-          model: chat.modelId,
-          generationTimeMs,
-          swipeIndex: null,
-          swipeCount: null,
-          characterId: speakingCharId,
-          parentId: currentLeaf?.id ?? null,
-          branchPosition: 0,
-        };
+        if (swipeMode && swipeTargetMessageId) {
+          // Swipe mode: save as a new alternative on the target message
+          const targetMsg = db.select().from(messages).where(eq(messages.id, swipeTargetMessageId)).get();
+          if (!targetMsg) {
+            sendSSE("error", { error: "Target message not found" });
+            reply.raw.end();
+            return reply;
+          }
 
-        db.insert(messages).values(record).run();
+          // If this is the first swipe, save original content as alt index 0
+          const existingAlts = db
+            .select({ count: sql<number>`count(*)` })
+            .from(swipeAlternatives)
+            .where(eq(swipeAlternatives.messageId, swipeTargetMessageId))
+            .get();
 
-        // Update active leaf to this new message
-        db.update(chats)
-          .set({ activeLeafId: id })
-          .where(eq(chats.id, chatId))
-          .run();
+          if (!existingAlts?.count) {
+            db.insert(swipeAlternatives).values({
+              id: generateId(),
+              messageId: swipeTargetMessageId,
+              index: 0,
+              content: targetMsg.content || "",
+              tokenCount: targetMsg.tokenCount || 0,
+              generationTimeMs: targetMsg.generationTimeMs || 0,
+              model: targetMsg.model || "",
+            }).run();
+          }
 
-        updateChatCounts(chatId);
+          // Get next index
+          const maxIdx = db
+            .select({ max: sql<number>`coalesce(max("index"), -1)` })
+            .from(swipeAlternatives)
+            .where(eq(swipeAlternatives.messageId, swipeTargetMessageId))
+            .get();
+          const newIndex = (maxIdx?.max ?? -1) + 1;
 
-        console.log(`[generate] === Sending done event, content length=${fullContent.length} ===`);
+          // Insert new alternative
+          db.insert(swipeAlternatives).values({
+            id: generateId(),
+            messageId: swipeTargetMessageId,
+            index: newIndex,
+            content: fullContent,
+            tokenCount,
+            generationTimeMs,
+            model: chat.modelId,
+          }).run();
 
-        sendSSE("done", {
-          message: {
-            ...record,
-            isSystemMessage: false,
-            bookmark: null,
-          },
-        });
+          // Count total alts (including original)
+          const totalAlts = db
+            .select({ count: sql<number>`count(*)` })
+            .from(swipeAlternatives)
+            .where(eq(swipeAlternatives.messageId, swipeTargetMessageId))
+            .get();
+          const newSwipeCount = (totalAlts?.count || 0) + 1; // +1 for original
+
+          // Update message to show the new alternative
+          db.update(messages)
+            .set({
+              content: fullContent,
+              swipeIndex: newIndex,
+              swipeCount: newSwipeCount,
+              tokenCount,
+              model: chat.modelId,
+              generationTimeMs,
+            })
+            .where(eq(messages.id, swipeTargetMessageId))
+            .run();
+
+          const updated = db.select().from(messages).where(eq(messages.id, swipeTargetMessageId)).get();
+          const bm = db.select().from(bookmarks).where(eq(bookmarks.messageId, swipeTargetMessageId)).get();
+
+          console.log(`[generate] === Swipe done, alt index=${newIndex}, content length=${fullContent.length} ===`);
+
+          sendSSE("done", {
+            message: {
+              ...updated,
+              isSystemMessage: false,
+              bookmark: bm || null,
+            },
+          });
+        } else {
+          // Normal mode: create a new message
+          const now = new Date().toISOString();
+          const id = generateId();
+          const currentLeaf = chatMessages[chatMessages.length - 1];
+          const record = {
+            id,
+            chatId,
+            role: "assistant",
+            content: fullContent,
+            timestamp: now,
+            tokenCount,
+            isSystemMessage: 0,
+            model: chat.modelId,
+            generationTimeMs,
+            swipeIndex: null,
+            swipeCount: null,
+            characterId: speakingCharId,
+            parentId: currentLeaf?.id ?? null,
+            branchPosition: 0,
+          };
+
+          db.insert(messages).values(record).run();
+
+          // Update active leaf to this new message
+          db.update(chats)
+            .set({ activeLeafId: id })
+            .where(eq(chats.id, chatId))
+            .run();
+
+          updateChatCounts(chatId);
+
+          console.log(`[generate] === Sending done event, content length=${fullContent.length} ===`);
+
+          sendSSE("done", {
+            message: {
+              ...record,
+              isSystemMessage: false,
+              bookmark: null,
+            },
+          });
+        }
 
         reply.raw.end();
       } catch (err) {

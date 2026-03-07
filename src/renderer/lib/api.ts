@@ -395,6 +395,13 @@ export async function createSwipeAlternative(
   return json(res);
 }
 
+export async function switchSwipe(messageId: string, index: number): Promise<Message> {
+  const res = await fetch(`${API_BASE}/api/messages/${messageId}/swipes/${index}`, {
+    method: "PATCH",
+  });
+  return json(res);
+}
+
 // Bookmarks
 export async function getChatBookmarks(chatId: string): Promise<Bookmark[]> {
   const res = await fetch(`${API_BASE}/api/chats/${chatId}/bookmarks`);
@@ -484,21 +491,7 @@ export async function getLibraryCharacters(): Promise<LibraryCharacter[]> {
   return json(res);
 }
 
-export async function bulkDeleteCharacters(ids: string[]): Promise<void> {
-  await fetch(`${API_BASE}/api/characters/bulk-delete`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ ids }),
-  });
-}
 
-export async function bulkTagCharacters(ids: string[], tags: string[]): Promise<void> {
-  await fetch(`${API_BASE}/api/characters/bulk-tag`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ ids, tags }),
-  });
-}
 
 // Personas
 export async function getPersonas(): Promise<Persona[]> {
@@ -720,15 +713,7 @@ export async function getTokenStatus(): Promise<{
   return json(res);
 }
 
-export async function getForYouCards(limit = 20): Promise<{ data: DiscoverCard[]; method: string }> {
-  const res = await fetch(`${API_BASE}/api/discover/for-you?limit=${limit}`);
-  return json(res);
-}
 
-export async function getMnemoProfile(): Promise<unknown> {
-  const res = await fetch(`${API_BASE}/api/discover/me`);
-  return json(res);
-}
 
 // Projects
 export async function getProjects(): Promise<Project[]> {
@@ -887,7 +872,7 @@ export async function addBlock(
 // Generation (SSE streaming)
 export function generateResponse(
   chatId: string,
-  opts: { mode?: string; characterId?: string },
+  opts: { mode?: string; characterId?: string; swipe?: boolean; targetMessageId?: string },
   onToken: (content: string) => void,
   onDone: (message: Message) => void,
   onError: (error: string) => void,
@@ -971,7 +956,12 @@ export function generateResponse(
 
   controller.signal.addEventListener("abort", () => xhr.abort());
 
-  xhr.send(JSON.stringify({ mode: opts.mode, characterId: opts.characterId }));
+  xhr.send(JSON.stringify({
+    mode: opts.mode,
+    characterId: opts.characterId,
+    swipe: opts.swipe,
+    targetMessageId: opts.targetMessageId,
+  }));
 
   return controller;
 }

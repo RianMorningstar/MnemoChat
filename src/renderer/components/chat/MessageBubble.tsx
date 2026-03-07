@@ -4,6 +4,7 @@ import {
   ChevronRight,
   Pencil,
   RefreshCw,
+  Plus,
   Bookmark,
   Trash2,
   Check,
@@ -32,6 +33,8 @@ interface MessageBubbleProps {
   siblingCount?: number
   siblingIndex?: number
   isLastMessage?: boolean
+  isSwipeStreaming?: boolean
+  swipeStreamingContent?: string
 }
 
 
@@ -52,6 +55,8 @@ export function MessageBubble({
   siblingCount,
   siblingIndex,
   isLastMessage,
+  isSwipeStreaming,
+  swipeStreamingContent,
 }: MessageBubbleProps) {
   const [hovered, setHovered] = useState(false)
   const [editing, setEditing] = useState(false)
@@ -125,11 +130,6 @@ export function MessageBubble({
                 <span className="text-xs font-semibold text-zinc-300">
                   {characterName || 'Assistant'}
                 </span>
-                {message.swipeCount && message.swipeCount > 1 && (
-                  <span className="rounded bg-zinc-800 px-1.5 py-0.5 text-[10px] tabular-nums text-zinc-500">
-                    {(message.swipeIndex ?? 0) + 1} / {message.swipeCount}
-                  </span>
-                )}
               </div>
 
               {editing ? (
@@ -158,7 +158,7 @@ export function MessageBubble({
                 </div>
               ) : (
                 <div className="border-l-2 border-indigo-500/30 pl-4 text-zinc-300">
-                  <MarkdownContent content={message.content} />
+                  <MarkdownContent content={isSwipeStreaming && swipeStreamingContent ? swipeStreamingContent : message.content} />
                 </div>
               )}
 
@@ -198,24 +198,38 @@ export function MessageBubble({
           {/* Hover actions */}
           {hovered && !editing && (
             <div className="absolute -top-1 right-0 flex items-center gap-0.5 rounded-lg border border-zinc-700 bg-zinc-800 p-0.5 shadow-lg">
-              {/* Swipe left (generate new) */}
+              {/* Swipe navigation */}
+              {message.swipeCount != null && message.swipeCount > 1 && (
+                <>
+                  <button
+                    onClick={() => onSwipeNavigate?.(message.id, 'left')}
+                    className="rounded p-1.5 text-zinc-400 transition-colors hover:bg-zinc-700 hover:text-zinc-200 disabled:opacity-30"
+                    title="Previous alternative"
+                    disabled={isSwipeStreaming}
+                  >
+                    <ChevronLeft className="h-3.5 w-3.5" />
+                  </button>
+                  <span className="px-0.5 text-[10px] tabular-nums text-zinc-500">
+                    {(message.swipeIndex ?? 0) + 1}/{message.swipeCount}
+                  </span>
+                  <button
+                    onClick={() => onSwipeNavigate?.(message.id, 'right')}
+                    className="rounded p-1.5 text-zinc-400 transition-colors hover:bg-zinc-700 hover:text-zinc-200 disabled:opacity-30"
+                    title="Next alternative"
+                    disabled={isSwipeStreaming}
+                  >
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  </button>
+                </>
+              )}
               <button
                 onClick={() => onSwipeGenerate?.(message.id)}
-                className="rounded p-1.5 text-zinc-400 transition-colors hover:bg-zinc-700 hover:text-zinc-200"
+                className="rounded p-1.5 text-zinc-400 transition-colors hover:bg-zinc-700 hover:text-zinc-200 disabled:opacity-30"
                 title="Generate new alternative"
+                disabled={isSwipeStreaming}
               >
-                <ChevronLeft className="h-3.5 w-3.5" />
+                <Plus className="h-3.5 w-3.5" />
               </button>
-              {/* Swipe right (navigate existing) */}
-              {message.swipeCount && message.swipeCount > 1 && (
-                <button
-                  onClick={() => onSwipeNavigate?.(message.id, 'right')}
-                  className="rounded p-1.5 text-zinc-400 transition-colors hover:bg-zinc-700 hover:text-zinc-200"
-                  title="Next alternative"
-                >
-                  <ChevronRight className="h-3.5 w-3.5" />
-                </button>
-              )}
               <div className="mx-0.5 h-4 w-px bg-zinc-700" />
               <button
                 onClick={() => setEditing(true)}
