@@ -6,6 +6,25 @@
 
 A desktop app for local AI roleplay and collaborative storytelling. Built on top of Ollama (or any OpenAI-compatible backend), everything runs on your machine — no accounts, no cloud, no data leaving your device.
 
+<p align="center">
+  <img src="screenshots/active_chat.png" alt="MnemoChat — Active Chat" width="800" />
+</p>
+
+<details>
+<summary><strong>More Screenshots</strong></summary>
+<br>
+
+| | |
+|:---:|:---:|
+| **Dashboard** | **Characters** |
+| <img src="screenshots/dashboard.png" width="400" /> | <img src="screenshots/character_list.png" width="400" /> |
+| **Library** | **Lorebooks** |
+| <img src="screenshots/my_library.png" width="400" /> | <img src="screenshots/lorebooks.png" width="400" /> |
+| **Story Projects** | **Settings** |
+| <img src="screenshots/projects.png" width="400" /> | <img src="screenshots/settings.png" width="400" /> |
+
+</details>
+
 ---
 
 ## What it does
