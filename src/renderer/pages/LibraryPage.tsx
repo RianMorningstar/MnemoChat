@@ -27,7 +27,6 @@ import {
   getSetting,
   setSetting,
   createCharacter,
-  bulkDeleteCharacters,
 } from "@/lib/api";
 import {
   extractCharacterFromPng,

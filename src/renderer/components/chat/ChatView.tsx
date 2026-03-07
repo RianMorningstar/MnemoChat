@@ -2,8 +2,6 @@ import { useState, useRef, useEffect } from 'react'
 import {
   Settings,
   List,
-  PanelRightClose,
-  PanelRight,
   Cpu,
   X,
   Search,
@@ -32,6 +30,7 @@ export function ChatView({
   messages,
   isGenerating,
   streamingContent,
+  swipingMessageId,
   sceneDirection,
   tokenBudget,
   activePreset,
@@ -304,10 +303,14 @@ export function ChatView({
           )}
         </div>
 
-        {/* Settings */}
+        {/* Settings (toggles sidebar) */}
         <button
-          className="rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-300"
-          title="Settings"
+          onClick={handleToggleSidebar}
+          className={cn(
+            'rounded-md p-1.5 transition-colors hover:bg-zinc-800',
+            sidebarOpen ? 'text-indigo-400' : 'text-zinc-500 hover:text-zinc-300'
+          )}
+          title={sidebarOpen ? 'Hide settings' : 'Show settings'}
         >
           <Settings className="h-4 w-4" />
         </button>
@@ -336,18 +339,6 @@ export function ChatView({
           <GitBranch className="h-4 w-4" />
         </button>
 
-        {/* Sidebar toggle */}
-        <button
-          onClick={handleToggleSidebar}
-          className="rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-300"
-          title={sidebarOpen ? 'Hide sidebar' : 'Show sidebar'}
-        >
-          {sidebarOpen ? (
-            <PanelRightClose className="h-4 w-4" />
-          ) : (
-            <PanelRight className="h-4 w-4" />
-          )}
-        </button>
       </div>
 
       {/* Main area */}
@@ -498,6 +489,8 @@ export function ChatView({
                   siblingCount={sibling?.total}
                   siblingIndex={sibling?.index}
                   isLastMessage={idx === messages.length - 1}
+                  isSwipeStreaming={swipingMessageId === msg.id && isGenerating}
+                  swipeStreamingContent={swipingMessageId === msg.id ? streamingContent : undefined}
                 />
               )
             })}
@@ -611,10 +604,19 @@ export function ChatView({
             activePreset={activePreset}
             presets={presets}
             bookmarks={bookmarks}
+            availableModels={availableModels}
+            sceneDirection={sceneDirection}
             onUpdatePreset={onUpdatePreset}
             onSavePreset={onSavePreset}
             onLoadPreset={onLoadPreset}
             onJumpToBookmark={onJumpToBookmark}
+            onSwitchModel={onSwitchModel}
+            onUpdateSceneDirection={onUpdateSceneDirection}
+            onSetInjectionDepth={onSetInjectionDepth}
+            onToggleSceneDirection={onToggleSceneDirection}
+            onReplyStrategyChange={onReplyStrategyChange}
+            onAutoContinueChange={onAutoContinueChange}
+            onTalkativenessChange={onTalkativenessChange}
           />
         )}
       </div>
