@@ -93,6 +93,8 @@ export interface GenerationPreset {
   topKEnabled: boolean
   maxNewTokens: number
   stopSequences: string[]
+  negativePrompt: string
+  guidanceScale: number
 }
 
 export interface ChatCharacter {

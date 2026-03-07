@@ -26,6 +26,8 @@ export interface CharacterGenerationOverrides {
   repetitionPenalty?: number | null;
   maxNewTokens?: number | null;
   stopSequences?: string[];
+  negativePrompt?: string | null;
+  guidanceScale?: number | null;
 }
 
 export interface Character {

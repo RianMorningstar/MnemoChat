@@ -19,6 +19,8 @@ const PRESET: ProviderPreset = {
   repetitionPenalty: 1.1,
   maxNewTokens: 256,
   stopSequences: ["<|end|>"],
+  negativePrompt: "",
+  guidanceScale: 1.0,
 };
 
 const MESSAGES: ProviderMessage[] = [
@@ -330,6 +332,50 @@ describe("buildProviderRequestBody (gemini)", () => {
   it("does not include model in body", () => {
     const body = buildProviderRequestBody("gemini", "gemini-pro", MESSAGES, PRESET) as Record<string, unknown>;
     expect(body.model).toBeUndefined();
+  });
+});
+
+// ── CFG / negative prompt fields ────────────────────────────────────────────
+
+describe("buildProviderRequestBody does not leak CFG fields to providers", () => {
+  const cfgPreset: ProviderPreset = {
+    ...PRESET,
+    negativePrompt: "avoid violence",
+    guidanceScale: 1.5,
+  };
+
+  it("ollama body does not contain negativePrompt or guidanceScale", () => {
+    const body = buildProviderRequestBody("ollama", "llama3", MESSAGES, cfgPreset) as Record<string, unknown>;
+    const opts = body.options as Record<string, unknown>;
+    expect(opts.negativePrompt).toBeUndefined();
+    expect(opts.negative_prompt).toBeUndefined();
+    expect(opts.guidanceScale).toBeUndefined();
+    expect(opts.guidance_scale).toBeUndefined();
+    expect(body.negativePrompt).toBeUndefined();
+    expect(body.guidanceScale).toBeUndefined();
+  });
+
+  it("openai body does not contain negativePrompt or guidanceScale", () => {
+    const body = buildProviderRequestBody("openai", "gpt-4o", MESSAGES, cfgPreset) as Record<string, unknown>;
+    expect(body.negativePrompt).toBeUndefined();
+    expect(body.negative_prompt).toBeUndefined();
+    expect(body.guidanceScale).toBeUndefined();
+    expect(body.guidance_scale).toBeUndefined();
+  });
+
+  it("anthropic body does not contain negativePrompt or guidanceScale", () => {
+    const body = buildProviderRequestBody("anthropic", "claude-sonnet-4-6", MESSAGES, cfgPreset) as Record<string, unknown>;
+    expect(body.negativePrompt).toBeUndefined();
+    expect(body.guidanceScale).toBeUndefined();
+  });
+
+  it("gemini body does not contain negativePrompt or guidanceScale", () => {
+    const body = buildProviderRequestBody("gemini", "gemini-pro", MESSAGES, cfgPreset) as Record<string, unknown>;
+    const config = body.generationConfig as Record<string, unknown>;
+    expect(body.negativePrompt).toBeUndefined();
+    expect(body.guidanceScale).toBeUndefined();
+    expect(config.negativePrompt).toBeUndefined();
+    expect(config.guidanceScale).toBeUndefined();
   });
 });
 

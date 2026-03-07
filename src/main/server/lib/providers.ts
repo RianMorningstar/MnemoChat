@@ -14,6 +14,8 @@ export interface ProviderPreset {
   repetitionPenalty: number | null;
   maxNewTokens: number | null;
   stopSequences: string[];
+  negativePrompt: string | null;
+  guidanceScale: number | null;
 }
 
 export function buildProviderUrl(type: ProviderType, endpoint: string, model?: string): string {

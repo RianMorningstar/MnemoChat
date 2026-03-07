@@ -400,6 +400,8 @@ export async function generateRoutes(app: FastifyInstance) {
             repetitionPenalty: preset.repetitionPenalty,
             maxNewTokens: preset.maxNewTokens,
             stopSequences: stops,
+            negativePrompt: preset.negativePrompt ?? "",
+            guidanceScale: preset.guidanceScale ?? 1.0,
           };
         }
 
@@ -416,8 +418,18 @@ export async function generateRoutes(app: FastifyInstance) {
               repetitionPenalty: ov.repetitionPenalty ?? presetParams.repetitionPenalty,
               maxNewTokens: ov.maxNewTokens ?? presetParams.maxNewTokens,
               stopSequences: ov.stopSequences ?? presetParams.stopSequences,
+              negativePrompt: ov.negativePrompt ?? presetParams.negativePrompt,
+              guidanceScale: ov.guidanceScale ?? presetParams.guidanceScale,
             };
           } catch { /* invalid JSON — ignore overrides */ }
+        }
+
+        // Inject soft negative prompt as final system instruction
+        if (presetParams?.negativePrompt) {
+          providerMessages.push({
+            role: "system",
+            content: `[IMPORTANT: Avoid the following in your response: ${presetParams.negativePrompt}]`,
+          });
         }
 
         // Dispatch to the correct provider

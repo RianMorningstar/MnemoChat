@@ -367,6 +367,48 @@ export function SceneSidebar({
                     </div>
                   </div>
 
+                  {/* Negative Prompt */}
+                  <div>
+                    <label className="mb-1 block text-[10px] uppercase tracking-wider text-zinc-600">
+                      Negative Prompt
+                    </label>
+                    <textarea
+                      value={activePreset.negativePrompt}
+                      onChange={(e) =>
+                        onUpdatePreset?.({ negativePrompt: e.target.value })
+                      }
+                      placeholder="Describe what to avoid..."
+                      rows={2}
+                      className="w-full resize-none rounded border border-zinc-700 bg-zinc-800 px-2 py-1.5 text-xs text-zinc-300 placeholder-zinc-600 outline-none focus:border-indigo-500"
+                    />
+                  </div>
+
+                  {/* CFG Scale (future use) */}
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] uppercase tracking-wider text-zinc-600">
+                        CFG Scale
+                      </label>
+                      <span className="text-[10px] text-zinc-600">Future use</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="range"
+                        min={1}
+                        max={3}
+                        step={0.05}
+                        value={activePreset.guidanceScale}
+                        onChange={(e) =>
+                          onUpdatePreset?.({ guidanceScale: Number(e.target.value) })
+                        }
+                        className="mt-1 w-full accent-indigo-500"
+                      />
+                      <span className="text-[10px] tabular-nums text-zinc-400">
+                        {activePreset.guidanceScale.toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+
                   {/* Save as Preset */}
                   <button
                     onClick={() => onSavePreset?.('New Preset')}

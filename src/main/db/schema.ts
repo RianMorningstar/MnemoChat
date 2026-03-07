@@ -133,6 +133,8 @@ export const generationPresets = sqliteTable("generation_presets", {
   topKEnabled: integer("top_k_enabled").default(0),
   maxNewTokens: integer("max_new_tokens").default(512),
   stopSequences: text("stop_sequences").default("[]"),
+  negativePrompt: text("negative_prompt").default(""),
+  guidanceScale: real("guidance_scale").default(1.0),
 });
 
 export const lorebookEntries = sqliteTable("lorebook_entries", {

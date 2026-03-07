@@ -19,6 +19,8 @@ const defaultPresets = [
     topKEnabled: 0,
     maxNewTokens: 512,
     stopSequences: "[]",
+    negativePrompt: "",
+    guidanceScale: 1.0,
   },
   {
     id: "preset-spicy",
@@ -31,6 +33,8 @@ const defaultPresets = [
     topKEnabled: 1,
     maxNewTokens: 768,
     stopSequences: "[]",
+    negativePrompt: "",
+    guidanceScale: 1.0,
   },
   {
     id: "preset-consistent",
@@ -43,6 +47,8 @@ const defaultPresets = [
     topKEnabled: 0,
     maxNewTokens: 384,
     stopSequences: "[]",
+    negativePrompt: "",
+    guidanceScale: 1.0,
   },
 ];
 
@@ -58,6 +64,8 @@ function mapPreset(row: typeof generationPresets.$inferSelect) {
     topKEnabled: row.topKEnabled === 1,
     maxNewTokens: row.maxNewTokens ?? 512,
     stopSequences: JSON.parse((row.stopSequences as string) || "[]"),
+    negativePrompt: row.negativePrompt ?? "",
+    guidanceScale: row.guidanceScale ?? 1.0,
   };
 }
 
@@ -98,6 +106,8 @@ export async function presetRoutes(app: FastifyInstance) {
       topKEnabled: body.topKEnabled ? 1 : 0,
       maxNewTokens: (body.maxNewTokens as number) ?? 512,
       stopSequences: JSON.stringify(body.stopSequences || []),
+      negativePrompt: (body.negativePrompt as string) ?? "",
+      guidanceScale: (body.guidanceScale as number) ?? 1.0,
     };
 
     db.insert(generationPresets).values(record).run();
@@ -120,6 +130,8 @@ export async function presetRoutes(app: FastifyInstance) {
     if ("topKEnabled" in body) updates.topKEnabled = body.topKEnabled ? 1 : 0;
     if ("maxNewTokens" in body) updates.maxNewTokens = body.maxNewTokens;
     if ("stopSequences" in body) updates.stopSequences = JSON.stringify(body.stopSequences);
+    if ("negativePrompt" in body) updates.negativePrompt = body.negativePrompt;
+    if ("guidanceScale" in body) updates.guidanceScale = body.guidanceScale;
 
     if (Object.keys(updates).length === 0) {
       return reply.status(400).send({ error: "No fields to update" });

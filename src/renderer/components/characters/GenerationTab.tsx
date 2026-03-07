@@ -18,6 +18,7 @@ const PARAMS: {
   { key: "topK", label: "Top K", min: 1, max: 200, step: 1, type: "number" },
   { key: "repetitionPenalty", label: "Repetition Penalty", min: 1, max: 2, step: 0.05, type: "number" },
   { key: "maxNewTokens", label: "Max Tokens", min: 64, max: 4096, step: 64, type: "number" },
+  { key: "guidanceScale", label: "CFG Scale", min: 1, max: 3, step: 0.05, type: "number" },
 ];
 
 export function GenerationTab({ character, onChange }: GenerationTabProps) {
@@ -54,6 +55,7 @@ export function GenerationTab({ character, onChange }: GenerationTabProps) {
     topK: 40,
     repetitionPenalty: 1.1,
     maxNewTokens: 512,
+    guidanceScale: 1.0,
   };
 
   return (
@@ -151,6 +153,42 @@ export function GenerationTab({ character, onChange }: GenerationTabProps) {
             }}
             placeholder="Comma-separated sequences..."
             className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-200 placeholder-zinc-500 focus:border-indigo-500 focus:outline-none"
+          />
+        )}
+      </div>
+
+      {/* Negative Prompt */}
+      <div className="space-y-1.5">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => toggleField("negativePrompt", "")}
+            className={`relative h-5 w-9 rounded-full transition-colors ${
+              "negativePrompt" in overrides ? "bg-indigo-600" : "bg-zinc-700"
+            }`}
+          >
+            <span
+              className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white transition-transform ${
+                "negativePrompt" in overrides ? "translate-x-4" : ""
+              }`}
+            />
+          </button>
+          <label className="text-sm font-medium text-zinc-300">
+            Negative Prompt
+          </label>
+          {"negativePrompt" in overrides ? null : (
+            <span className="ml-auto text-xs text-zinc-600">
+              Preset default
+            </span>
+          )}
+        </div>
+        {"negativePrompt" in overrides && (
+          <textarea
+            value={(overrides.negativePrompt as string) || ""}
+            onChange={(e) => setField("negativePrompt", e.target.value)}
+            placeholder="Describe what to avoid for this character..."
+            rows={3}
+            className="w-full resize-none rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-200 placeholder-zinc-500 focus:border-indigo-500 focus:outline-none"
           />
         )}
       </div>
