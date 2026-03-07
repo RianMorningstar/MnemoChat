@@ -181,10 +181,33 @@ export async function generateRoutes(app: FastifyInstance) {
         // Load first preset as active
         const preset = db.select().from(generationPresets).limit(1).get();
 
-        // Resolve persona/user name
+        // Resolve persona/user name and load persona description
         const userName = chat.personaName || "User";
         const charName = char.name;
-        const sub = (text: string) => substituteVars(text, charName, userName);
+        const persona = chat.personaName
+          ? db
+              .select()
+              .from(personas)
+              .where(eq(personas.name, chat.personaName))
+              .get()
+          : undefined;
+
+        const sub = (text: string) =>
+          substituteVars(text, {
+            charName,
+            userName,
+            personaDescription: persona?.description || undefined,
+            modelName: chat.modelId || undefined,
+            charDescription: char.description || undefined,
+            charPersonality: char.personality || undefined,
+            charScenario: char.scenario || undefined,
+            currentInput: chatMessages.filter((m) => m.role === "user").at(-1)?.content || undefined,
+            messages: chatMessages.map((m) => ({
+              role: m.role,
+              content: m.content || "",
+              timestamp: m.timestamp,
+            })),
+          });
 
         // Load lorebook entries: character-specific + any library lorebooks attached to this character
         const directLoreRows = db
@@ -247,6 +270,7 @@ export async function generateRoutes(app: FastifyInstance) {
           const content = bucket
             .map((e) => e.content)
             .filter(Boolean)
+            .map((c) => sub(c!))
             .join("\n\n");
           if (!content) return null;
           return { role: "system", content };
@@ -283,18 +307,11 @@ export async function generateRoutes(app: FastifyInstance) {
         }
 
         // Persona context
-        if (chat.personaName) {
-          const persona = db
-            .select()
-            .from(personas)
-            .where(eq(personas.name, chat.personaName))
-            .get();
-          if (persona?.description) {
-            providerMessages.push({
-              role: "system",
-              content: sub(`[${userName}'s persona: ${persona.description}]`),
-            });
-          }
+        if (persona?.description) {
+          providerMessages.push({
+            role: "system",
+            content: sub(`[${userName}'s persona: ${persona.description}]`),
+          });
         }
 
         // Lorebook: before_example

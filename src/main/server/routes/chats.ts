@@ -2,7 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { db } from "../../db";
 import { chats, characters, messages, bookmarks, sceneDirections, swipeAlternatives, chatCharacters } from "../../db/schema";
 import { eq, desc, sql, asc, and } from "drizzle-orm";
-import { wordCount } from "../lib/chat-utils";
+import { wordCount, substituteVars } from "../lib/chat-utils";
 
 function generateId(): string {
   return crypto.randomUUID();
@@ -184,9 +184,13 @@ export async function chatRoutes(app: FastifyInstance) {
 
     if (character?.firstMessage) {
       const personaName = (body.personaName as string) || "User";
-      const firstMessageContent = character.firstMessage
-        .replace(/\{\{char\}\}/gi, character.name)
-        .replace(/\{\{user\}\}/gi, personaName);
+      const firstMessageContent = substituteVars(character.firstMessage, {
+        charName: character.name,
+        userName: personaName,
+        charDescription: character.description || undefined,
+        charPersonality: character.personality || undefined,
+        charScenario: character.scenario || undefined,
+      });
       const msgId = generateId();
       db.insert(messages)
         .values({
