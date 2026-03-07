@@ -65,6 +65,10 @@ export const chats = sqliteTable("chats", {
   tags: text("tags").default("[]"),
   /** ID of the leaf message on the currently active branch */
   activeLeafId: text("active_leaf_id"),
+  /** Group chat reply strategy: round_robin | random | weighted_random */
+  replyStrategy: text("reply_strategy").notNull().default("round_robin"),
+  /** Whether auto-continue is enabled for group chats */
+  autoContinue: integer("auto_continue").notNull().default(0),
 });
 
 export const messages = sqliteTable("messages", {
@@ -259,6 +263,7 @@ export const chatCharacters = sqliteTable(
     chatId: text("chat_id").notNull(),
     characterId: text("character_id").notNull(),
     position: integer("position").notNull().default(0),
+    talkativeness: real("talkativeness").notNull().default(0.5),
   },
   (table) => [primaryKey({ columns: [table.chatId, table.characterId] })]
 );

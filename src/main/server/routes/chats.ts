@@ -49,13 +49,14 @@ function getChatCharacters(chatId: string) {
       name: characters.name,
       portraitUrl: characters.portraitUrl,
       position: chatCharacters.position,
+      talkativeness: chatCharacters.talkativeness,
     })
     .from(chatCharacters)
     .leftJoin(characters, eq(chatCharacters.characterId, characters.id))
     .where(eq(chatCharacters.chatId, chatId))
     .orderBy(asc(chatCharacters.position))
     .all()
-    .map((r) => ({ id: r.id!, name: r.name ?? "Unknown", portraitUrl: r.portraitUrl ?? "" }));
+    .map((r) => ({ id: r.id!, name: r.name ?? "Unknown", portraitUrl: r.portraitUrl ?? "", talkativeness: r.talkativeness }));
 }
 
 export async function chatRoutes(app: FastifyInstance) {
@@ -108,6 +109,8 @@ export async function chatRoutes(app: FastifyInstance) {
         wordCount: chats.wordCount,
         tags: chats.tags,
         activeLeafId: chats.activeLeafId,
+        replyStrategy: chats.replyStrategy,
+        autoContinue: chats.autoContinue,
       })
       .from(chats)
       .leftJoin(characters, eq(chats.characterId, characters.id))
@@ -123,6 +126,7 @@ export async function chatRoutes(app: FastifyInstance) {
       characterTags: JSON.parse((row.characterTags as string) || "[]"),
       tags: JSON.parse((row.tags as string) || "[]"),
       lastMessageAt: row.lastMessageAt || "",
+      autoContinue: !!row.autoContinue,
       characters: getChatCharacters(id),
     };
   });
@@ -230,6 +234,8 @@ export async function chatRoutes(app: FastifyInstance) {
         wordCount: chats.wordCount,
         tags: chats.tags,
         activeLeafId: chats.activeLeafId,
+        replyStrategy: chats.replyStrategy,
+        autoContinue: chats.autoContinue,
       })
       .from(chats)
       .leftJoin(characters, eq(chats.characterId, characters.id))
@@ -243,6 +249,7 @@ export async function chatRoutes(app: FastifyInstance) {
       characterTags: JSON.parse((chat!.characterTags as string) || "[]"),
       tags: JSON.parse((chat!.tags as string) || "[]"),
       lastMessageAt: chat!.lastMessageAt || "",
+      autoContinue: !!chat!.autoContinue,
       characters: getChatCharacters(id),
     };
   });
@@ -258,6 +265,8 @@ export async function chatRoutes(app: FastifyInstance) {
     if ("modelName" in body) updates.modelName = body.modelName;
     if ("tags" in body) updates.tags = JSON.stringify(body.tags);
     if ("personaName" in body) updates.personaName = body.personaName;
+    if ("replyStrategy" in body) updates.replyStrategy = body.replyStrategy;
+    if ("autoContinue" in body) updates.autoContinue = body.autoContinue ? 1 : 0;
 
     if (Object.keys(updates).length === 0) {
       return reply.status(400).send({ error: "No fields to update" });
@@ -328,6 +337,21 @@ export async function chatRoutes(app: FastifyInstance) {
         .where(and(eq(chatCharacters.chatId, id), eq(chatCharacters.characterId, characterId)))
         .run();
 
+      return { characters: getChatCharacters(id) };
+    }
+  );
+
+  // Update character settings in a group chat (talkativeness)
+  app.put<{ Params: { id: string; characterId: string } }>(
+    "/api/chats/:id/characters/:characterId",
+    async (request) => {
+      const { id, characterId } = request.params;
+      const body = request.body as { talkativeness: number };
+      const clamped = Math.max(0, Math.min(1, body.talkativeness));
+      db.update(chatCharacters)
+        .set({ talkativeness: clamped })
+        .where(and(eq(chatCharacters.chatId, id), eq(chatCharacters.characterId, characterId)))
+        .run();
       return { characters: getChatCharacters(id) };
     }
   );

@@ -78,6 +78,20 @@
       "when": 1772827000000,
       "tag": "0010_character_author_note",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1772828000000,
+      "tag": "0011_group_talkativeness",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1772829000000,
+      "tag": "0012_auto_continue",
+      "breakpoints": true
     }
   ]
 }

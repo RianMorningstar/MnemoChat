@@ -4,6 +4,7 @@ import type {
   Character,
   LorebookEntry,
   Chat,
+  ChatCharacter,
   ChatListItem,
   Message,
   SwipeAlternative,
@@ -229,7 +230,7 @@ export async function createChat(data: {
   return json(res);
 }
 
-export async function addChatCharacter(chatId: string, characterId: string): Promise<{ characters: { id: string; name: string; portraitUrl: string }[] }> {
+export async function addChatCharacter(chatId: string, characterId: string): Promise<{ characters: ChatCharacter[] }> {
   const res = await fetch(`${API_BASE}/api/chats/${chatId}/characters`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -238,7 +239,7 @@ export async function addChatCharacter(chatId: string, characterId: string): Pro
   return json(res);
 }
 
-export async function removeChatCharacter(chatId: string, characterId: string): Promise<{ characters: { id: string; name: string; portraitUrl: string }[] }> {
+export async function removeChatCharacter(chatId: string, characterId: string): Promise<{ characters: ChatCharacter[] }> {
   const res = await fetch(`${API_BASE}/api/chats/${chatId}/characters/${characterId}`, {
     method: "DELETE",
   });
@@ -247,13 +248,26 @@ export async function removeChatCharacter(chatId: string, characterId: string): 
 
 export async function updateChat(
   id: string,
-  updates: Partial<Pick<Chat, "title" | "tags" | "modelId" | "modelName" | "personaName">>
+  updates: Partial<Pick<Chat, "title" | "tags" | "modelId" | "modelName" | "personaName" | "replyStrategy" | "autoContinue">>
 ): Promise<void> {
   await fetch(`${API_BASE}/api/chats/${id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(updates),
   });
+}
+
+export async function updateChatCharacter(
+  chatId: string,
+  characterId: string,
+  updates: { talkativeness: number },
+): Promise<{ characters: ChatCharacter[] }> {
+  const res = await fetch(`${API_BASE}/api/chats/${chatId}/characters/${characterId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(updates),
+  });
+  return json(res);
 }
 
 export async function deleteChat(id: string): Promise<void> {

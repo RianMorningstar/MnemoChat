@@ -33,8 +33,10 @@ import {
   switchBranch,
   getBranches,
   deleteBranch,
+  updateChatCharacter,
 } from "@/lib/api";
 import { getSiblingLeafId } from "@/lib/branch-utils";
+import { pickNextCharacter } from "@/lib/group-utils";
 import type {
   Chat,
   ChatListItem,
@@ -49,6 +51,7 @@ import type {
   BookmarkColor,
   ExportScope,
   ExportFormat,
+  ReplyStrategy,
 } from "@shared/types";
 
 const defaultBudget: TokenBudget = {
@@ -89,6 +92,8 @@ export function ChatPage() {
   const [pendingCharacterId, setPendingCharacterId] = useState<string | null>(null);
   const [generatingCharacterId, setGeneratingCharacterId] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const autoContinueRef = useRef(false);
+  const stoppedByUserRef = useRef(false);
 
   const [branchInfo, setBranchInfo] = useState<BranchInfo | null>(null);
   const [branchPointActive, setBranchPointActive] = useState(false);
@@ -110,9 +115,10 @@ export function ChatPage() {
         ...chatData,
         characters: chatData.characters?.length
           ? chatData.characters
-          : [{ id: chatData.characterId, name: chatData.characterName, portraitUrl: chatData.characterPortraitUrl }],
+          : [{ id: chatData.characterId, name: chatData.characterName, portraitUrl: chatData.characterPortraitUrl, talkativeness: 0.5 }],
       };
       setChat(chatWithChars);
+      autoContinueRef.current = !!chatData.autoContinue;
       setMessages(msgResult.messages);
       setBranchInfo(msgResult.branchInfo);
       setBookmarks(bms);
@@ -214,13 +220,14 @@ export function ChatPage() {
       ...updated,
       characters: updated.characters?.length
         ? updated.characters
-        : [{ id: updated.characterId, name: updated.characterName, portraitUrl: updated.characterPortraitUrl }],
+        : [{ id: updated.characterId, name: updated.characterName, portraitUrl: updated.characterPortraitUrl, talkativeness: 0.5 }],
     });
   }, [chat]);
 
   const triggerGeneration = useCallback((targetChatId: string, mode: InputMode, characterId?: string) => {
     const characters = chat?.characters ?? [];
 
+    stoppedByUserRef.current = false;
     setIsGenerating(true);
     setStreamingContent("");
     setGenerationError(null);
@@ -234,11 +241,18 @@ export function ChatPage() {
         setStreamingContent("");
         setGeneratingCharacterId(null);
         await refreshMessages();
-        // Auto-advance to next character in round-robin (group chats only)
+        // Auto-advance to next character (group chats only)
         if (characters.length > 1 && characterId) {
-          const currentIdx = characters.findIndex(c => c.id === characterId);
-          const nextIdx = (currentIdx + 1) % characters.length;
-          setPendingCharacterId(characters[nextIdx].id);
+          const strategy = chat?.replyStrategy ?? 'round_robin';
+          const nextCharId = pickNextCharacter(characters, characterId, strategy);
+          setPendingCharacterId(nextCharId);
+
+          // Auto-continue: trigger next generation after a short delay
+          if (autoContinueRef.current && !stoppedByUserRef.current) {
+            setTimeout(() => {
+              triggerGeneration(targetChatId, "in_character", nextCharId);
+            }, 500);
+          }
         }
       },
       (err) => {
@@ -253,6 +267,7 @@ export function ChatPage() {
   }, [chat, refreshMessages]);
 
   const onStopGeneration = useCallback(() => {
+    stoppedByUserRef.current = true;
     abortRef.current?.abort();
     setIsGenerating(false);
     setStreamingContent("");
@@ -503,6 +518,25 @@ export function ChatPage() {
     URL.revokeObjectURL(url);
   }, [messages, chat]);
 
+  const onTalkativenessChange = useCallback(async (characterId: string, value: number) => {
+    if (!chat) return;
+    const result = await updateChatCharacter(chat.id, characterId, { talkativeness: value });
+    setChat((prev) => prev ? { ...prev, characters: result.characters } : prev);
+  }, [chat]);
+
+  const onReplyStrategyChange = useCallback(async (strategy: ReplyStrategy) => {
+    if (!chat) return;
+    await updateChat(chat.id, { replyStrategy: strategy });
+    setChat((prev) => prev ? { ...prev, replyStrategy: strategy } : prev);
+  }, [chat]);
+
+  const onAutoContinueChange = useCallback(async (enabled: boolean) => {
+    if (!chat) return;
+    autoContinueRef.current = enabled;
+    await updateChat(chat.id, { autoContinue: enabled });
+    setChat((prev) => prev ? { ...prev, autoContinue: enabled } : prev);
+  }, [chat]);
+
   const onAddCharacter = useCallback(async (characterId: string) => {
     if (!chat) return;
     const result = await addChatCharacter(chat.id, characterId);
@@ -630,6 +664,9 @@ export function ChatPage() {
       pendingCharacterId={pendingCharacterId ?? chat.characterId}
       generatingCharacter={generatingCharacter ?? undefined}
       onSelectCharacter={(charId) => setPendingCharacterId(charId)}
+      onTalkativenessChange={onTalkativenessChange}
+      onReplyStrategyChange={onReplyStrategyChange}
+      onAutoContinueChange={onAutoContinueChange}
       allCharacters={allCharacters}
       onAddCharacter={onAddCharacter}
       onRemoveCharacter={onRemoveCharacter}
