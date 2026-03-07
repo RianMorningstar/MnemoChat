@@ -176,3 +176,4 @@ export function buildSystemMessage(char: {
 
   return parts.join("\n\n");
 }
+

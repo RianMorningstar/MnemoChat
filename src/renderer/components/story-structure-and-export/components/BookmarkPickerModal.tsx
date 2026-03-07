@@ -40,12 +40,12 @@ export function BookmarkPickerModal({ onConfirm, onClose }: BookmarkPickerModalP
     setSelectedChat(chat);
     setStep("bookmarks");
     setLoading(true);
-    const [bm, msgs] = await Promise.all([
+    const [bm, msgResult] = await Promise.all([
       getChatBookmarks(chat.id),
       getMessages(chat.id),
     ]);
     setBookmarks(bm);
-    setMessages(msgs);
+    setMessages(msgResult.messages);
     setSceneTitle(chat.title || "Untitled Scene");
     setLoading(false);
   }

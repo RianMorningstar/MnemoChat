@@ -29,12 +29,18 @@ import {
   deleteChat as apiDeleteChat,
   renameChat as apiRenameChat,
   generateResponse,
+  createBranch,
+  switchBranch,
+  getBranches,
+  deleteBranch,
 } from "@/lib/api";
+import { getSiblingLeafId } from "@/lib/branch-utils";
 import type {
   Chat,
   ChatListItem,
   Message,
   Bookmark,
+  BranchInfo,
   SceneDirection,
   TokenBudget,
   GenerationPreset,
@@ -84,13 +90,15 @@ export function ChatPage() {
   const [generatingCharacterId, setGeneratingCharacterId] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
+  const [branchInfo, setBranchInfo] = useState<BranchInfo | null>(null);
+  const [branchPointActive, setBranchPointActive] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [generationError, setGenerationError] = useState<string | null>(null);
 
   const loadChatData = useCallback(async (id: string) => {
     try {
-      const [chatData, msgs, bms, scene, budget] = await Promise.all([
+      const [chatData, msgResult, bms, scene, budget] = await Promise.all([
         getChat(id),
         getMessages(id),
         getChatBookmarks(id),
@@ -105,7 +113,8 @@ export function ChatPage() {
           : [{ id: chatData.characterId, name: chatData.characterName, portraitUrl: chatData.characterPortraitUrl }],
       };
       setChat(chatWithChars);
-      setMessages(msgs);
+      setMessages(msgResult.messages);
+      setBranchInfo(msgResult.branchInfo);
       setBookmarks(bms);
       setSceneDirection(scene);
       setTokenBudget(budget);
@@ -188,13 +197,14 @@ export function ChatPage() {
 
   const refreshMessages = useCallback(async () => {
     if (!chat) return;
-    const [msgs, bms, budget, chats] = await Promise.all([
+    const [msgResult, bms, budget, chats] = await Promise.all([
       getMessages(chat.id),
       getChatBookmarks(chat.id),
       getTokenBudget(chat.id),
       getChats(),
     ]);
-    setMessages(msgs);
+    setMessages(msgResult.messages);
+    setBranchInfo(msgResult.branchInfo);
     setBookmarks(bms);
     setTokenBudget(budget);
     setChatList(chats);
@@ -255,21 +265,46 @@ export function ChatPage() {
 
     if (mode !== "continue") {
       const role = mode === "narrate" ? "system" : "user";
-      await createMessage(chat.id, {
-        role,
-        content,
-        isSystemMessage: mode === "narrate",
-      });
+
+      if (branchPointActive) {
+        // We're at a branch point — use createBranch to properly fork with correct branchPosition
+        const lastMsg = messages[messages.length - 1];
+        await createBranch(chat.id, lastMsg.id, { role, content });
+      } else {
+        await createMessage(chat.id, {
+          role,
+          content,
+          isSystemMessage: mode === "narrate",
+        });
+      }
+      setBranchPointActive(false);
       await refreshMessages();
     }
 
     triggerGeneration(chat.id, mode, pendingCharacterId ?? chat.characterId);
-  }, [chat, refreshMessages, triggerGeneration, pendingCharacterId]);
+  }, [chat, messages, branchPointActive, refreshMessages, triggerGeneration, pendingCharacterId]);
 
   const onEditMessage = useCallback(async (messageId: string, newContent: string) => {
-    await updateMessage(messageId, newContent);
-    await refreshMessages();
-  }, [refreshMessages]);
+    if (!chat) return;
+    const msg = messages.find((m) => m.id === messageId);
+    const msgIndex = messages.findIndex((m) => m.id === messageId);
+    const hasChildren = msgIndex < messages.length - 1;
+
+    if (hasChildren && msg?.parentId) {
+      // Auto-branch: create a new branch with the edited content, then regenerate
+      await createBranch(chat.id, msg.parentId, { role: msg.role, content: newContent });
+      await refreshMessages();
+      // Trigger regeneration on the new branch if it was a user message
+      if (msg.role === "user") {
+        const regenCharId = pendingCharacterId ?? chat.characterId;
+        triggerGeneration(chat.id, "in_character", regenCharId);
+      }
+    } else {
+      // Last message or no parent: edit in-place
+      await updateMessage(messageId, newContent);
+      await refreshMessages();
+    }
+  }, [chat, messages, pendingCharacterId, refreshMessages, triggerGeneration]);
 
   const onDeleteMessage = useCallback(async (messageId: string) => {
     await apiDeleteMessage(messageId);
@@ -278,13 +313,55 @@ export function ChatPage() {
 
   const onRegenerate = useCallback(async (messageId: string) => {
     if (!chat) return;
-    // Find character who originally sent this message to regenerate with same character
     const msg = messages.find((m) => m.id === messageId);
     const regenCharId = msg?.characterId ?? pendingCharacterId ?? chat.characterId;
-    await apiDeleteMessage(messageId);
-    await refreshMessages();
-    triggerGeneration(chat.id, "in_character", regenCharId);
+
+    // Branch-aware regenerate: create a sibling branch from the parent, then generate
+    const parentId = msg?.parentId;
+    if (parentId) {
+      await createBranch(chat.id, parentId);
+      await refreshMessages();
+      triggerGeneration(chat.id, "in_character", regenCharId);
+    } else {
+      // Fallback for root messages: delete and regenerate (legacy behavior)
+      await apiDeleteMessage(messageId);
+      await refreshMessages();
+      triggerGeneration(chat.id, "in_character", regenCharId);
+    }
   }, [chat, messages, pendingCharacterId, refreshMessages, triggerGeneration]);
+
+  // Branch callbacks
+  const onBranchCreate = useCallback(async (messageId: string) => {
+    if (!chat) return;
+    // Set this message as the active leaf — the chat truncates here.
+    // The fork happens when the user sends their next message.
+    const result = await switchBranch(chat.id, messageId);
+    setMessages(result.messages);
+    setBranchInfo(result.branchInfo);
+    setBranchPointActive(true);
+  }, [chat]);
+
+  const onBranchNavigate = useCallback(async (messageId: string, direction: "prev" | "next") => {
+    if (!chat || !branchInfo) return;
+    const leafId = getSiblingLeafId(branchInfo, messageId, direction);
+    if (!leafId) return;
+    const result = await switchBranch(chat.id, leafId);
+    setMessages(result.messages);
+    setBranchInfo(result.branchInfo);
+  }, [chat, branchInfo]);
+
+  const onBranchSwitch = useCallback(async (leafId: string) => {
+    if (!chat) return;
+    const result = await switchBranch(chat.id, leafId);
+    setMessages(result.messages);
+    setBranchInfo(result.branchInfo);
+  }, [chat]);
+
+  const onBranchDelete = useCallback(async (messageId: string) => {
+    if (!chat) return;
+    await deleteBranch(chat.id, messageId);
+    await refreshMessages();
+  }, [chat, refreshMessages]);
 
   const onSwipeNavigate = useCallback((_messageId: string, _direction: "left" | "right") => {
     console.log("onSwipeNavigate stub:", _messageId, _direction);
@@ -544,6 +621,12 @@ export function ChatPage() {
       onRenameChat={onRenameChat}
       onOpenCharacterEditor={onOpenCharacterEditor}
       onExportChat={onExportChat}
+      branchInfo={branchInfo}
+      branchPointActive={branchPointActive}
+      onBranchCreate={onBranchCreate}
+      onBranchNavigate={onBranchNavigate}
+      onBranchSwitch={onBranchSwitch}
+      onBranchDelete={onBranchDelete}
       pendingCharacterId={pendingCharacterId ?? chat.characterId}
       generatingCharacter={generatingCharacter ?? undefined}
       onSelectCharacter={(charId) => setPendingCharacterId(charId)}

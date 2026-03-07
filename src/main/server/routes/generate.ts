@@ -15,6 +15,7 @@ import {
 } from "../../db/schema";
 import { eq, asc, desc, sql, inArray } from "drizzle-orm";
 import { wordCount, substituteVars, buildSystemMessage, matchLorebookEntries, type LoreEntryForMatching } from "../lib/chat-utils";
+import { backfillParentIds, getBranchPath } from "../lib/branch-logic";
 import {
   buildProviderUrl,
   buildProviderHeaders,
@@ -163,13 +164,9 @@ export async function generateRoutes(app: FastifyInstance) {
           return;
         }
 
-        // Load messages
-        const chatMessages = db
-          .select()
-          .from(messages)
-          .where(eq(messages.chatId, chatId))
-          .orderBy(asc(messages.timestamp))
-          .all();
+        // Load messages (branch-aware)
+        backfillParentIds(chatId);
+        const chatMessages = getBranchPath(chatId, chat.activeLeafId);
 
         // Load scene direction
         const scene = db
@@ -483,6 +480,7 @@ export async function generateRoutes(app: FastifyInstance) {
 
         const now = new Date().toISOString();
         const id = generateId();
+        const currentLeaf = chatMessages[chatMessages.length - 1];
         const record = {
           id,
           chatId,
@@ -496,9 +494,18 @@ export async function generateRoutes(app: FastifyInstance) {
           swipeIndex: null,
           swipeCount: null,
           characterId: speakingCharId,
+          parentId: currentLeaf?.id ?? null,
+          branchPosition: 0,
         };
 
         db.insert(messages).values(record).run();
+
+        // Update active leaf to this new message
+        db.update(chats)
+          .set({ activeLeafId: id })
+          .where(eq(chats.id, chatId))
+          .run();
+
         updateChatCounts(chatId);
 
         console.log(`[generate] === Sending done event, content length=${fullContent.length} ===`);

@@ -107,6 +107,7 @@ export async function chatRoutes(app: FastifyInstance) {
         bookmarkCount: chats.bookmarkCount,
         wordCount: chats.wordCount,
         tags: chats.tags,
+        activeLeafId: chats.activeLeafId,
       })
       .from(chats)
       .leftJoin(characters, eq(chats.characterId, characters.id))
@@ -226,6 +227,7 @@ export async function chatRoutes(app: FastifyInstance) {
         bookmarkCount: chats.bookmarkCount,
         wordCount: chats.wordCount,
         tags: chats.tags,
+        activeLeafId: chats.activeLeafId,
       })
       .from(chats)
       .leftJoin(characters, eq(chats.characterId, characters.id))

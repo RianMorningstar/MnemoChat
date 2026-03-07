@@ -13,13 +13,16 @@ import {
   FileJson,
   Plus,
   Trash2,
+  GitBranch,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { ChatRoleplayProps, ExportScope, ExportFormat } from '@shared/chat-types'
+import { getSiblingInfo } from '@/lib/branch-utils'
 import { MessageBubble } from './MessageBubble'
 import { ChatComposer } from './ChatComposer'
 import { SceneSidebar } from './SceneSidebar'
 import { GroupCharacterStrip } from './GroupCharacterStrip'
+import { BranchPanel } from './BranchPanel'
 
 export function ChatView({
   chat,
@@ -58,6 +61,12 @@ export function ChatView({
   onRenameChat,
   onOpenCharacterEditor,
   onExportChat,
+  branchInfo,
+  branchPointActive,
+  onBranchCreate,
+  onBranchNavigate,
+  onBranchSwitch,
+  onBranchDelete,
   onToggleSidebar,
   pendingCharacterId,
   generatingCharacter,
@@ -67,6 +76,7 @@ export function ChatView({
   onRemoveCharacter,
 }: ChatRoleplayProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [branchPanelOpen, setBranchPanelOpen] = useState(false)
   const [chatListOpen, setChatListOpen] = useState(false)
   const [modelMenuOpen, setModelMenuOpen] = useState(false)
   const [exportMenuOpen, setExportMenuOpen] = useState(false)
@@ -293,6 +303,18 @@ export function ChatView({
           <List className="h-4 w-4" />
         </button>
 
+        {/* Branch panel toggle */}
+        <button
+          onClick={() => setBranchPanelOpen(!branchPanelOpen)}
+          className={cn(
+            'rounded-md p-1.5 transition-colors hover:bg-zinc-800 hover:text-zinc-300',
+            branchPanelOpen ? 'text-indigo-400' : 'text-zinc-500'
+          )}
+          title={branchPanelOpen ? 'Hide branches' : 'Show branches'}
+        >
+          <GitBranch className="h-4 w-4" />
+        </button>
+
         {/* Sidebar toggle */}
         <button
           onClick={handleToggleSidebar}
@@ -392,7 +414,7 @@ export function ChatView({
         {/* Message thread */}
         <div className="flex min-w-0 flex-1 flex-col">
           <div ref={threadRef} className="flex-1 overflow-y-auto py-4">
-            {messages.map((msg) => {
+            {messages.map((msg, idx) => {
               // In group chats, resolve per-message character identity
               let charName = chat.characterName
               let charPortrait = chat.characterPortraitUrl
@@ -403,6 +425,7 @@ export function ChatView({
                   charPortrait = charInfo.portraitUrl
                 }
               }
+              const sibling = getSiblingInfo(branchInfo ?? null, msg.id)
               return (
                 <MessageBubble
                   key={msg.id}
@@ -417,9 +440,41 @@ export function ChatView({
                   onSwipeGenerate={onSwipeGenerate}
                   onBookmark={onBookmark}
                   onRemoveBookmark={onRemoveBookmark}
+                  onBranch={onBranchCreate}
+                  onBranchNavigate={onBranchNavigate}
+                  siblingCount={sibling?.total}
+                  siblingIndex={sibling?.index}
+                  isLastMessage={idx === messages.length - 1}
                 />
               )
             })}
+
+            {/* Branch point indicator */}
+            {!isGenerating && messages.length > 0 && (() => {
+              if (branchPointActive) {
+                return (
+                  <div className="mx-auto max-w-lg px-4 py-3 text-center">
+                    <div className="inline-flex items-center gap-1.5 rounded-full bg-indigo-500/10 px-3 py-1 text-[11px] text-indigo-400">
+                      <GitBranch className="h-3 w-3" />
+                      Branched — send a message to continue on this path
+                    </div>
+                  </div>
+                )
+              }
+              const lastMsg = messages[messages.length - 1]
+              const sibling = getSiblingInfo(branchInfo ?? null, lastMsg.id)
+              if (sibling && sibling.total > 1) {
+                return (
+                  <div className="mx-auto max-w-lg px-4 py-3 text-center">
+                    <div className="inline-flex items-center gap-1.5 rounded-full bg-indigo-500/10 px-3 py-1 text-[11px] text-indigo-400">
+                      <GitBranch className="h-3 w-3" />
+                      Branch {sibling.index + 1} of {sibling.total}
+                    </div>
+                  </div>
+                )
+              }
+              return null
+            })()}
 
             {/* Streaming response bubble */}
             {isGenerating && (
@@ -478,6 +533,16 @@ export function ChatView({
             onToggleSceneDirection={onToggleSceneDirection}
           />
         </div>
+
+        {/* Branch panel */}
+        {branchPanelOpen && onBranchSwitch && onBranchDelete && (
+          <BranchPanel
+            chatId={chat.id}
+            onSwitchBranch={onBranchSwitch}
+            onDeleteBranch={onBranchDelete}
+            onClose={() => setBranchPanelOpen(false)}
+          />
+        )}
 
         {/* Scene sidebar */}
         {sidebarOpen && (
