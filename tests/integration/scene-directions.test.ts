@@ -101,6 +101,74 @@ describe("scene direction routes", () => {
     expect(res.json().tokenCount).toBe(0);
   });
 
+  it("chat creation seeds scene direction from character authorNote", async () => {
+    // Create a character with an author note
+    const charRes = await app.inject({
+      method: "POST",
+      url: "/api/characters",
+      payload: {
+        name: "DarkFantasyChar",
+        authorNote: "Dark fantasy atmosphere with gothic undertones",
+        authorNoteDepth: 6,
+      },
+    });
+    const charBody = charRes.json();
+
+    // Create a chat with that character
+    const chatRes = await app.inject({
+      method: "POST",
+      url: "/api/chats",
+      payload: {
+        characterId: charBody.id,
+        modelId: "llama3",
+        modelName: "Llama 3",
+      },
+    });
+    const newChatId = chatRes.json().id;
+
+    // Scene direction should be seeded from author note
+    const sdRes = await app.inject({
+      method: "GET",
+      url: `/api/chats/${newChatId}/scene-direction`,
+    });
+    expect(sdRes.statusCode).toBe(200);
+    const sd = sdRes.json();
+    expect(sd.text).toBe("Dark fantasy atmosphere with gothic undertones");
+    expect(sd.injectionDepth).toBe(6);
+    expect(sd.enabled).toBe(true);
+    expect(sd.tokenCount).toBe(Math.ceil(46 / 4)); // 46 chars
+  });
+
+  it("chat creation without authorNote keeps scene direction blank and disabled", async () => {
+    // Create a character without an author note
+    const charRes = await app.inject({
+      method: "POST",
+      url: "/api/characters",
+      payload: { name: "PlainChar" },
+    });
+
+    const chatRes = await app.inject({
+      method: "POST",
+      url: "/api/chats",
+      payload: {
+        characterId: charRes.json().id,
+        modelId: "llama3",
+        modelName: "Llama 3",
+      },
+    });
+
+    const sdRes = await app.inject({
+      method: "GET",
+      url: `/api/chats/${chatRes.json().id}/scene-direction`,
+    });
+    expect(sdRes.statusCode).toBe(200);
+    const sd = sdRes.json();
+    expect(sd.text).toBe("");
+    expect(sd.enabled).toBe(false);
+    expect(sd.injectionDepth).toBe(4);
+    expect(sd.tokenCount).toBe(0);
+  });
+
   it("GET on unknown chatId returns default shape", async () => {
     const res = await app.inject({
       method: "GET",
