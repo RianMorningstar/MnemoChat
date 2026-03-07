@@ -4,6 +4,7 @@ import type {
   ContentTierOption,
   ConnectionState,
   OllamaModel,
+  ProviderType,
   WizardStep,
 } from "@shared/types";
 import { StepIndicator } from "./StepIndicator";
@@ -24,7 +25,7 @@ interface OnboardingWizardProps {
   onChangePersonaDescription: (description: string) => void;
   onSelectContentTier?: (tier: ContentTier) => void;
   onConfirmAge?: () => void;
-  onConnectOllama?: (endpoint: string) => void;
+  onConnectProvider?: (endpoint: string, type: ProviderType, apiKey: string | null) => void;
   onSelectModel?: (modelName: string) => void;
   onCompleteWizard?: () => void;
 }
@@ -40,7 +41,7 @@ export function OnboardingWizard({
   onChangePersonaDescription,
   onSelectContentTier,
   onConfirmAge,
-  onConnectOllama,
+  onConnectProvider,
   onSelectModel,
   onCompleteWizard,
 }: OnboardingWizardProps) {
@@ -93,7 +94,7 @@ export function OnboardingWizard({
             connectionState={connectionState}
             detectedEndpoint={detectedEndpoint}
             modelCount={ollamaModels.length}
-            onConnect={onConnectOllama}
+            onConnect={onConnectProvider}
             onNext={handleNext}
           />
         )}

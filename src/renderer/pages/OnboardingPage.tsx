@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router";
-import type { ContentTier, ConnectionState, OllamaModel, ContentTierOption } from "@shared/types";
+import type { ContentTier, ConnectionState, OllamaModel, ContentTierOption, ProviderType } from "@shared/types";
 import { OnboardingWizard } from "@/components/onboarding";
 import { getSetting, setSetting, createConnection, activateConnection, getConnections, createPersona, setDefaultPersona } from "@/lib/api";
-import { checkOllamaHealth, fetchOllamaModels } from "@/lib/ollama";
+import { checkProviderHealth, fetchProviderModels } from "@/lib/ollama";
 
 const CONTENT_TIER_OPTIONS: ContentTierOption[] = [
   {
@@ -29,6 +29,8 @@ export function OnboardingPage() {
   const [loading, setLoading] = useState(true);
   const [connectionState, setConnectionState] = useState<ConnectionState>("unknown");
   const [endpoint, setEndpoint] = useState<string>(DEFAULT_ENDPOINT);
+  const [providerType, setProviderType] = useState<ProviderType>("ollama");
+  const [providerApiKey, setProviderApiKey] = useState<string | null>(null);
   const [models, setModels] = useState<OllamaModel[]>([]);
   const [selectedTier, setSelectedTier] = useState<ContentTier | null>(null);
   const [selectedModel, setSelectedModel] = useState<string | null>(null);
@@ -49,22 +51,28 @@ export function OnboardingPage() {
     });
   }, [navigate]);
 
-  // Auto-detect Ollama
-  const tryConnect = useCallback(async (ep: string) => {
-    setConnectionState("unknown");
-    setEndpoint(ep);
-    const healthy = await checkOllamaHealth(ep);
-    if (healthy) {
-      setConnectionState("connected");
-      const fetched = await fetchOllamaModels(ep);
-      setModels(fetched);
-    } else {
-      setConnectionState("unreachable");
-    }
-  }, []);
+  // Auto-detect Ollama on startup
+  const tryConnect = useCallback(
+    async (ep: string, type: ProviderType = "ollama", apiKey: string | null = null) => {
+      setConnectionState("unknown");
+      setEndpoint(ep);
+      setProviderType(type);
+      setProviderApiKey(apiKey);
+      const healthy = await checkProviderHealth(ep, type, apiKey ?? undefined);
+      if (healthy) {
+        setConnectionState("connected");
+        const fetched = await fetchProviderModels(ep, type, apiKey ?? undefined);
+        setModels(fetched);
+      } else {
+        setConnectionState("unreachable");
+        setModels([]);
+      }
+    },
+    []
+  );
 
   useEffect(() => {
-    tryConnect(DEFAULT_ENDPOINT);
+    tryConnect(DEFAULT_ENDPOINT, "ollama", null);
   }, [tryConnect]);
 
   const handleComplete = async () => {
@@ -73,10 +81,12 @@ export function OnboardingPage() {
       const cleanEndpoint = endpoint.replace(/\/+$/, "");
       await createConnection({
         id: profileId,
-        name: "Local Ollama",
+        name: `${providerType === "ollama" ? "Local Ollama" : providerType.charAt(0).toUpperCase() + providerType.slice(1)}`,
+        type: providerType,
         endpoint: cleanEndpoint,
         defaultModel: selectedModel || undefined,
         contentTier: selectedTier || undefined,
+        apiKey: providerApiKey || undefined,
       });
       await activateConnection(profileId);
 
@@ -118,7 +128,7 @@ export function OnboardingPage() {
       onChangePersonaName={setPersonaName}
       onChangePersonaDescription={setPersonaDescription}
       onSelectContentTier={setSelectedTier}
-      onConnectOllama={tryConnect}
+      onConnectProvider={tryConnect}
       onSelectModel={setSelectedModel}
       onCompleteWizard={handleComplete}
     />

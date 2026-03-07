@@ -14,6 +14,7 @@ export const connectionProfiles = sqliteTable("connection_profiles", {
   isActive: integer("is_active").notNull().default(0),
   defaultModel: text("default_model"),
   contentTier: text("content_tier"),
+  apiKey: text("api_key"),
   createdAt: text("created_at").notNull(),
   lastUsed: text("last_used"),
 });

@@ -13,6 +13,15 @@ import {
 } from "../../db/schema";
 import { eq, asc, desc, sql } from "drizzle-orm";
 import { wordCount, substituteVars, buildSystemMessage } from "../lib/chat-utils";
+import {
+  buildProviderUrl,
+  buildProviderHeaders,
+  buildProviderRequestBody,
+  parseStreamLine,
+  type ProviderMessage,
+  type ProviderPreset,
+} from "../lib/providers";
+import type { ProviderType } from "../../../shared/types";
 
 function generateId(): string {
   return crypto.randomUUID();
@@ -53,11 +62,6 @@ function updateChatCounts(chatId: string) {
     })
     .where(eq(chats.id, chatId))
     .run();
-}
-
-interface OllamaChatMessage {
-  role: "system" | "user" | "assistant";
-  content: string;
 }
 
 export async function generateRoutes(app: FastifyInstance) {
@@ -180,18 +184,18 @@ export async function generateRoutes(app: FastifyInstance) {
         const charName = char.name;
         const sub = (text: string) => substituteVars(text, charName, userName);
 
-        // Build Ollama messages array
-        const ollamaMessages: OllamaChatMessage[] = [];
+        // Build provider messages array
+        const providerMessages: ProviderMessage[] = [];
 
         // System message
-        ollamaMessages.push({
+        providerMessages.push({
           role: "system",
           content: sub(buildSystemMessage(char)),
         });
 
         // Group chat preamble
         if (isGroupChat && otherParticipantNames.length > 0) {
-          ollamaMessages.push({
+          providerMessages.push({
             role: "system",
             content: [
               `This is a group roleplay. You are ONLY ${charName}. You must NEVER speak as, act as, or write the actions/thoughts of any other character.`,
@@ -210,7 +214,7 @@ export async function generateRoutes(app: FastifyInstance) {
             .where(eq(personas.name, chat.personaName))
             .get();
           if (persona?.description) {
-            ollamaMessages.push({
+            providerMessages.push({
               role: "system",
               content: sub(`[${userName}'s persona: ${persona.description}]`),
             });
@@ -222,7 +226,7 @@ export async function generateRoutes(app: FastifyInstance) {
           try {
             const examples = JSON.parse(char.exampleDialogues) as string[];
             if (examples.length > 0) {
-              ollamaMessages.push({
+              providerMessages.push({
                 role: "system",
                 content: sub("[Example Chat]\n" + examples.join("\n")),
               });
@@ -236,14 +240,14 @@ export async function generateRoutes(app: FastifyInstance) {
         const postInstructions = char.postHistoryInstructions;
 
         // Chat history — in group chats, prefix assistant messages from other characters
-        const historyMessages: OllamaChatMessage[] = chatMessages.map((m) => {
+        const historyMessages: ProviderMessage[] = chatMessages.map((m) => {
           let content = sub(m.content || "");
           if (isGroupChat && m.role === "assistant" && m.characterId && m.characterId !== speakingCharId) {
             const otherName = charNameById.get(m.characterId) ?? "Unknown";
             content = `[${otherName}]: ${content}`;
           }
           return {
-            role: (m.role === "system" ? "system" : m.role) as OllamaChatMessage["role"],
+            role: (m.role === "system" ? "system" : m.role) as ProviderMessage["role"],
             content,
           };
         });
@@ -266,11 +270,11 @@ export async function generateRoutes(app: FastifyInstance) {
           });
         }
 
-        ollamaMessages.push(...historyMessages);
+        providerMessages.push(...historyMessages);
 
         // Continue mode nudge
         if (mode === "continue") {
-          ollamaMessages.push({
+          providerMessages.push({
             role: "system",
             content: "[Continue your last message without repeating its original content.]",
           });
@@ -278,58 +282,57 @@ export async function generateRoutes(app: FastifyInstance) {
 
         // Final identity anchor for group chats — highest recency, prevents trait bleed
         if (isGroupChat) {
-          ollamaMessages.push({
+          providerMessages.push({
             role: "system",
             content: `Remember: you are ${charName}. Write only ${charName}'s response now. Do not include dialogue or actions for ${otherParticipantNames.join(", ")}.`,
           });
         }
 
-        // Build Ollama options from preset
-        const options: Record<string, unknown> = {};
+        // Build preset params for the provider adapter
+        let presetParams: ProviderPreset | null = null;
         if (preset) {
-          options.temperature = preset.temperature;
-          if (preset.topPEnabled) options.top_p = preset.topP;
-          if (preset.topKEnabled) options.top_k = preset.topK;
-          options.repeat_penalty = preset.repetitionPenalty;
-          options.num_predict = preset.maxNewTokens;
-          try {
-            const stops = JSON.parse(preset.stopSequences || "[]") as string[];
-            if (stops.length > 0) options.stop = stops;
-          } catch {
-            // ignore
-          }
+          let stops: string[] = [];
+          try { stops = JSON.parse(preset.stopSequences || "[]") as string[]; } catch { /**/ }
+          presetParams = {
+            temperature: preset.temperature,
+            topP: preset.topP,
+            topPEnabled: Boolean(preset.topPEnabled),
+            topK: preset.topK,
+            topKEnabled: Boolean(preset.topKEnabled),
+            repetitionPenalty: preset.repetitionPenalty,
+            maxNewTokens: preset.maxNewTokens,
+            stopSequences: stops,
+          };
         }
 
-        // Call Ollama with timeout
+        // Dispatch to the correct provider
+        const providerType = (connection.type as ProviderType) || "ollama";
         const startTime = Date.now();
-        const OLLAMA_TIMEOUT_MS = 120_000;
-        const timeoutSignal = AbortSignal.timeout(OLLAMA_TIMEOUT_MS);
+        const timeoutSignal = AbortSignal.timeout(120_000);
         const combinedSignal = AbortSignal.any([abortController.signal, timeoutSignal]);
-        const ollamaRes = await fetch(`${connection.endpoint}/api/chat`, {
+
+        const providerRes = await fetch(buildProviderUrl(providerType, connection.endpoint), {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            model: chat.modelId,
-            messages: ollamaMessages,
-            stream: true,
-            options,
-          }),
+          headers: buildProviderHeaders(providerType, connection.apiKey ?? null),
+          body: JSON.stringify(
+            buildProviderRequestBody(providerType, chat.modelId, providerMessages, presetParams)
+          ),
           signal: combinedSignal,
         });
 
-        if (!ollamaRes.ok) {
-          const errText = await ollamaRes.text().catch(() => "Unknown error");
-          console.error(`[generate] Ollama returned ${ollamaRes.status}: ${errText}`);
-          sendSSE("error", { error: `Ollama error ${ollamaRes.status}: ${errText}` });
+        if (!providerRes.ok) {
+          const errText = await providerRes.text().catch(() => "Unknown error");
+          console.error(`[generate] Provider (${providerType}) returned ${providerRes.status}: ${errText}`);
+          sendSSE("error", { error: `Provider error ${providerRes.status}: ${errText}` });
           reply.raw.end();
           return;
         }
 
-        // Stream NDJSON from Ollama as SSE to client
+        // Stream response as SSE to client
         let fullContent = "";
-        const reader = ollamaRes.body?.getReader();
+        const reader = providerRes.body?.getReader();
         if (!reader) {
-          sendSSE("error", { error: "No response stream from Ollama" });
+          sendSSE("error", { error: "No response stream from provider" });
           reply.raw.end();
           return;
         }
@@ -346,41 +349,26 @@ export async function generateRoutes(app: FastifyInstance) {
           buffer = lines.pop() || "";
 
           for (const line of lines) {
-            if (!line.trim()) continue;
-            try {
-              const chunk = JSON.parse(line) as {
-                message?: { content?: string };
-                done?: boolean;
-              };
-
-              if (chunk.message?.content) {
-                fullContent += chunk.message.content;
-                sendSSE("token", { content: chunk.message.content });
-              }
-            } catch {
-              // skip malformed lines
+            const parsed = parseStreamLine(providerType, line);
+            if (!parsed) continue;
+            if (parsed.text) {
+              fullContent += parsed.text;
+              sendSSE("token", { content: parsed.text });
             }
           }
         }
 
-        // Process any remaining buffer
+        // Process any remaining buffer content
         if (buffer.trim()) {
-          try {
-            const chunk = JSON.parse(buffer) as {
-              message?: { content?: string };
-              done?: boolean;
-            };
-            if (chunk.message?.content) {
-              fullContent += chunk.message.content;
-              sendSSE("token", { content: chunk.message.content });
-            }
-          } catch {
-            // ignore
+          const parsed = parseStreamLine(providerType, buffer);
+          if (parsed?.text) {
+            fullContent += parsed.text;
+            sendSSE("token", { content: parsed.text });
           }
         }
 
         if (!fullContent) {
-          console.error(`[generate] Stream ended without producing any tokens (chat=${chatId}, model=${chat.modelId})`);
+          console.error(`[generate] Stream ended without producing any tokens (chat=${chatId}, model=${chat.modelId}, provider=${providerType})`);
         }
 
         // Only save to DB if client is still connected
@@ -430,11 +418,11 @@ export async function generateRoutes(app: FastifyInstance) {
           return reply;
         }
 
-        // Timeout (AbortSignal.timeout fires TimeoutError, or AbortError with timeout)
+        // Timeout (AbortSignal.timeout fires TimeoutError)
         const isTimeout = (err as Error).name === "TimeoutError" ||
           ((err as Error).name === "AbortError" && !clientDisconnected);
         const errorMsg = isTimeout
-          ? "Generation timed out — Ollama may be loading the model or unresponsive. Try again."
+          ? "Generation timed out — the provider may be slow or unresponsive. Try again."
           : err instanceof Error ? err.message : "Generation failed";
 
         console.error(`[generate] ${errorMsg}`, err);

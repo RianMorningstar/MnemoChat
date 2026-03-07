@@ -43,6 +43,13 @@
       "when": 1741305600000,
       "tag": "0005_group_chats",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1741392000000,
+      "tag": "0006_multi_provider",
+      "breakpoints": true
     }
   ]
 }

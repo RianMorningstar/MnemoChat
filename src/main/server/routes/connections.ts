@@ -16,6 +16,7 @@ export async function connectionRoutes(app: FastifyInstance) {
       endpoint: string;
       defaultModel?: string;
       contentTier?: string;
+      apiKey?: string;
     };
     const now = new Date().toISOString();
     const profile = {
@@ -26,6 +27,7 @@ export async function connectionRoutes(app: FastifyInstance) {
       isActive: 0,
       defaultModel: body.defaultModel || null,
       contentTier: body.contentTier || null,
+      apiKey: body.apiKey || null,
       createdAt: now,
       lastUsed: null,
     };
@@ -40,9 +42,11 @@ export async function connectionRoutes(app: FastifyInstance) {
       const body = request.body as Record<string, unknown>;
       const updates: Record<string, unknown> = {};
       if ("name" in body) updates.name = body.name;
+      if ("type" in body) updates.type = body.type;
       if ("endpoint" in body) updates.endpoint = body.endpoint;
       if ("defaultModel" in body) updates.defaultModel = body.defaultModel;
       if ("contentTier" in body) updates.contentTier = body.contentTier;
+      if ("apiKey" in body) updates.apiKey = body.apiKey;
       if ("lastUsed" in body) updates.lastUsed = body.lastUsed;
 
       if (Object.keys(updates).length === 0) {

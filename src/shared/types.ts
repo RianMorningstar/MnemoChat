@@ -23,8 +23,35 @@ export type ContentTier = "sfw" | "nsfw";
 /** Connection health state */
 export type ConnectionState = "connected" | "unreachable" | "unknown";
 
-/** Provider backend type — Ollama at launch, extensible for future backends */
-export type ProviderType = "ollama";
+/** Provider backend type */
+export type ProviderType = "ollama" | "openai" | "anthropic" | "lm-studio" | "groq";
+
+/** Default endpoint URL per provider */
+export const PROVIDER_DEFAULT_ENDPOINTS: Record<ProviderType, string> = {
+  ollama: "http://localhost:11434",
+  "lm-studio": "http://localhost:1234",
+  openai: "https://api.openai.com",
+  groq: "https://api.groq.com/openai",
+  anthropic: "https://api.anthropic.com",
+};
+
+/** Whether a provider requires an API key */
+export const PROVIDER_REQUIRES_API_KEY: Record<ProviderType, boolean> = {
+  ollama: false,
+  "lm-studio": false,
+  openai: true,
+  groq: true,
+  anthropic: true,
+};
+
+/** Human-readable provider labels */
+export const PROVIDER_LABELS: Record<ProviderType, string> = {
+  ollama: "Ollama",
+  "lm-studio": "LM Studio",
+  openai: "OpenAI",
+  groq: "Groq",
+  anthropic: "Anthropic",
+};
 
 /** Auto-derived model capability tags */
 export type ModelTag = "roleplay" | "instruct" | "uncensored" | "vision" | "code";
@@ -47,6 +74,7 @@ export interface ConnectionProfile {
   isActive: boolean;
   defaultModel: string | null;
   contentTier: string | null;
+  apiKey: string | null;
   createdAt: string;
   lastUsed: string | null;
 }

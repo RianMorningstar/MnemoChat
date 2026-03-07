@@ -65,9 +65,11 @@ export async function getConnections(): Promise<ConnectionProfile[]> {
 export async function createConnection(data: {
   id: string;
   name: string;
+  type?: string;
   endpoint: string;
   defaultModel?: string;
   contentTier?: string;
+  apiKey?: string;
 }): Promise<ConnectionProfile> {
   const res = await fetch(`${API_BASE}/api/connections`, {
     method: "POST",
@@ -79,7 +81,7 @@ export async function createConnection(data: {
 
 export async function updateConnection(
   id: string,
-  data: Partial<Pick<ConnectionProfile, "name" | "endpoint" | "defaultModel">>
+  data: Partial<Pick<ConnectionProfile, "name" | "type" | "endpoint" | "defaultModel" | "apiKey">>
 ): Promise<ConnectionProfile> {
   const res = await fetch(`${API_BASE}/api/connections/${id}`, {
     method: "PUT",

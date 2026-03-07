@@ -1,13 +1,20 @@
 import { useState, useEffect, useCallback } from "react";
-import { Loader2, Trash2, Plus, Zap, CheckCircle2, XCircle } from "lucide-react";
-import type { ConnectionProfile, ConnectionState } from "@shared/types";
+import { Loader2, Trash2, Plus, Zap, CheckCircle2, XCircle, Eye, EyeOff } from "lucide-react";
+import type { ConnectionProfile, ConnectionState, ProviderType } from "@shared/types";
+import {
+  PROVIDER_LABELS,
+  PROVIDER_DEFAULT_ENDPOINTS,
+  PROVIDER_REQUIRES_API_KEY,
+} from "@shared/types";
 import {
   getConnections,
   createConnection,
   deleteConnection,
   activateConnection,
 } from "@/lib/api";
-import { checkOllamaHealth } from "@/lib/ollama";
+import { checkProviderHealth } from "@/lib/ollama";
+
+const PROVIDER_OPTIONS: ProviderType[] = ["ollama", "lm-studio", "openai", "groq", "anthropic"];
 
 interface ProfileStatus {
   state: ConnectionState;
@@ -20,7 +27,10 @@ export function ConnectionManager() {
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [newName, setNewName] = useState("");
-  const [newEndpoint, setNewEndpoint] = useState("");
+  const [newType, setNewType] = useState<ProviderType>("ollama");
+  const [newEndpoint, setNewEndpoint] = useState("http://localhost:11434");
+  const [newApiKey, setNewApiKey] = useState("");
+  const [showApiKey, setShowApiKey] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const loadProfiles = useCallback(async () => {
@@ -33,12 +43,22 @@ export function ConnectionManager() {
     loadProfiles();
   }, [loadProfiles]);
 
+  const handleTypeChange = (type: ProviderType) => {
+    setNewType(type);
+    setNewEndpoint(PROVIDER_DEFAULT_ENDPOINTS[type]);
+    setNewApiKey("");
+  };
+
   const handleTest = async (profile: ConnectionProfile) => {
     setStatuses((s) => ({
       ...s,
       [profile.id]: { state: "unknown", testing: true },
     }));
-    const healthy = await checkOllamaHealth(profile.endpoint);
+    const healthy = await checkProviderHealth(
+      profile.endpoint,
+      profile.type,
+      profile.apiKey ?? undefined
+    );
     setStatuses((s) => ({
       ...s,
       [profile.id]: {
@@ -69,20 +89,32 @@ export function ConnectionManager() {
 
   const handleAdd = async () => {
     if (!newName.trim() || !newEndpoint.trim()) return;
+    const requiresKey = PROVIDER_REQUIRES_API_KEY[newType];
+    if (requiresKey && !newApiKey.trim()) return;
     try {
       await createConnection({
         id: crypto.randomUUID(),
         name: newName.trim(),
+        type: newType,
         endpoint: newEndpoint.trim(),
+        apiKey: newApiKey.trim() || undefined,
       });
       setNewName("");
-      setNewEndpoint("");
+      setNewType("ollama");
+      setNewEndpoint(PROVIDER_DEFAULT_ENDPOINTS["ollama"]);
+      setNewApiKey("");
       setShowAdd(false);
       await loadProfiles();
     } catch (err) {
       console.error("Failed to add connection:", err);
     }
   };
+
+  const requiresKey = PROVIDER_REQUIRES_API_KEY[newType];
+  const canSave =
+    newName.trim() &&
+    newEndpoint.trim() &&
+    (!requiresKey || newApiKey.trim());
 
   if (loading) {
     return (
@@ -96,13 +128,12 @@ export function ConnectionManager() {
   return (
     <div className="space-y-4">
       {profiles.length === 0 && !showAdd && (
-        <p className="text-sm text-zinc-500">
-          No connection profiles yet.
-        </p>
+        <p className="text-sm text-zinc-500">No connection profiles yet.</p>
       )}
 
       {profiles.map((profile) => {
         const status = statuses[profile.id];
+        const providerLabel = PROVIDER_LABELS[profile.type] ?? profile.type;
         return (
           <div
             key={profile.id}
@@ -123,6 +154,9 @@ export function ConnectionManager() {
                   <span className="text-sm font-medium text-zinc-200 truncate">
                     {profile.name}
                   </span>
+                  <span className="rounded bg-zinc-800 px-1.5 py-0.5 text-[10px] font-medium text-zinc-400">
+                    {providerLabel}
+                  </span>
                   {profile.isActive && (
                     <span className="rounded bg-indigo-500/15 px-1.5 py-0.5 text-[10px] font-medium text-indigo-400">
                       Active
@@ -135,6 +169,7 @@ export function ConnectionManager() {
                 >
                   {profile.endpoint}
                   {profile.defaultModel && ` / ${profile.defaultModel}`}
+                  {profile.apiKey && " · key set"}
                 </p>
               </div>
             </div>
@@ -197,6 +232,25 @@ export function ConnectionManager() {
 
       {showAdd ? (
         <div className="rounded-lg border border-zinc-700 bg-zinc-900/80 p-4 space-y-3">
+          {/* Provider type */}
+          <div>
+            <label className="mb-1.5 block text-xs font-medium text-zinc-400">
+              Provider
+            </label>
+            <select
+              value={newType}
+              onChange={(e) => handleTypeChange(e.target.value as ProviderType)}
+              className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-200 outline-none focus:border-indigo-500"
+            >
+              {PROVIDER_OPTIONS.map((p) => (
+                <option key={p} value={p}>
+                  {PROVIDER_LABELS[p]}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Profile name */}
           <input
             type="text"
             value={newName}
@@ -204,18 +258,46 @@ export function ConnectionManager() {
             placeholder="Profile name"
             className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-200 placeholder-zinc-600 outline-none focus:border-indigo-500"
           />
+
+          {/* Endpoint */}
           <input
             type="text"
             value={newEndpoint}
             onChange={(e) => setNewEndpoint(e.target.value)}
-            placeholder="http://localhost:11434"
+            placeholder={PROVIDER_DEFAULT_ENDPOINTS[newType]}
             className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-200 placeholder-zinc-600 outline-none focus:border-indigo-500"
             style={{ fontFamily: "'JetBrains Mono', monospace" }}
           />
+
+          {/* API key (cloud providers only) */}
+          {requiresKey && (
+            <div className="relative">
+              <input
+                type={showApiKey ? "text" : "password"}
+                value={newApiKey}
+                onChange={(e) => setNewApiKey(e.target.value)}
+                placeholder="API key"
+                className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 pr-10 text-sm text-zinc-200 placeholder-zinc-600 outline-none focus:border-indigo-500"
+                style={{ fontFamily: "'JetBrains Mono', monospace" }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowApiKey((s) => !s)}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
+              >
+                {showApiKey ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </button>
+            </div>
+          )}
+
           <div className="flex gap-2">
             <button
               onClick={handleAdd}
-              disabled={!newName.trim() || !newEndpoint.trim()}
+              disabled={!canSave}
               className="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-400 disabled:cursor-not-allowed disabled:bg-zinc-800 disabled:text-zinc-600"
             >
               Save
@@ -224,7 +306,9 @@ export function ConnectionManager() {
               onClick={() => {
                 setShowAdd(false);
                 setNewName("");
-                setNewEndpoint("");
+                setNewType("ollama");
+                setNewEndpoint(PROVIDER_DEFAULT_ENDPOINTS["ollama"]);
+                setNewApiKey("");
               }}
               className="rounded-lg px-4 py-2 text-sm font-medium text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-200"
             >
