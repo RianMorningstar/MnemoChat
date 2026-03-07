@@ -51,7 +51,7 @@ describe("message routes", () => {
       url: `/api/chats/${chatId}/messages`,
     });
     expect(res.statusCode).toBe(200);
-    expect(res.json()).toEqual([]);
+    expect(res.json().messages).toEqual([]);
   });
 
   it("POST /api/chats/:chatId/messages persists a user message", async () => {
@@ -134,7 +134,7 @@ describe("message routes", () => {
       method: "GET",
       url: `/api/chats/${chatId}/messages`,
     });
-    const ids = msgs.json().map((m: { id: string }) => m.id);
+    const ids = msgs.json().messages.map((m: { id: string }) => m.id);
     expect(ids).not.toContain(id);
   });
 

@@ -8,6 +8,8 @@ import type {
   Message,
   SwipeAlternative,
   Bookmark,
+  BranchInfo,
+  BranchLeaf,
   SceneDirection,
   TokenBudget,
   GenerationPreset,
@@ -267,14 +269,18 @@ export async function renameChat(id: string, title: string): Promise<void> {
 }
 
 // Messages
-export async function getMessages(chatId: string): Promise<Message[]> {
-  const res = await fetch(`${API_BASE}/api/chats/${chatId}/messages`);
+export async function getMessages(
+  chatId: string,
+  leafId?: string
+): Promise<{ messages: Message[]; branchInfo: BranchInfo }> {
+  const params = leafId ? `?leafId=${encodeURIComponent(leafId)}` : "";
+  const res = await fetch(`${API_BASE}/api/chats/${chatId}/messages${params}`);
   return json(res);
 }
 
 export async function createMessage(
   chatId: string,
-  data: { role: string; content: string; model?: string; isSystemMessage?: boolean }
+  data: { role: string; content: string; model?: string; isSystemMessage?: boolean; parentId?: string }
 ): Promise<Message> {
   const res = await fetch(`${API_BASE}/api/chats/${chatId}/messages`, {
     method: "POST",
@@ -294,6 +300,46 @@ export async function updateMessage(id: string, content: string): Promise<void> 
 
 export async function deleteMessage(id: string): Promise<void> {
   await fetch(`${API_BASE}/api/messages/${id}`, { method: "DELETE" });
+}
+
+// Branches
+export async function createBranch(
+  chatId: string,
+  parentMessageId: string,
+  message?: { role: string; content: string }
+): Promise<{ message: Message; branchInfo: BranchInfo }> {
+  const res = await fetch(`${API_BASE}/api/chats/${chatId}/branch`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ parentMessageId, message }),
+  });
+  return json(res);
+}
+
+export async function switchBranch(
+  chatId: string,
+  leafId: string
+): Promise<{ messages: Message[]; branchInfo: BranchInfo }> {
+  const res = await fetch(`${API_BASE}/api/chats/${chatId}/active-branch`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ leafId }),
+  });
+  return json(res);
+}
+
+export async function getBranches(chatId: string): Promise<BranchLeaf[]> {
+  const res = await fetch(`${API_BASE}/api/chats/${chatId}/branches`);
+  const data = await json<{ branches: BranchLeaf[] }>(res);
+  return data.branches;
+}
+
+export async function deleteBranch(chatId: string, messageId: string): Promise<void> {
+  await fetch(`${API_BASE}/api/chats/${chatId}/branch`, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ messageId }),
+  });
 }
 
 // Swipes

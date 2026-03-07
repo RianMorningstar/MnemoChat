@@ -1,8 +1,15 @@
 import type { FastifyInstance } from "fastify";
 import { db } from "../../db";
 import { messages, bookmarks, swipeAlternatives, chats } from "../../db/schema";
-import { eq, asc, desc, sql } from "drizzle-orm";
+import { eq, asc, desc, sql, inArray } from "drizzle-orm";
 import { wordCount } from "../lib/chat-utils";
+import {
+  backfillParentIds,
+  getBranchPath,
+  computeBranchInfo,
+  getDescendantIds,
+  findAllLeaves,
+} from "../lib/branch-logic";
 
 function generateId(): string {
   return crypto.randomUUID();
@@ -43,46 +50,54 @@ function updateChatCounts(chatId: string) {
 }
 
 export async function messageRoutes(app: FastifyInstance) {
-  // List messages for a chat, with bookmark join
-  app.get<{ Params: { chatId: string } }>("/api/chats/:chatId/messages", async (request) => {
-    const { chatId } = request.params;
+  // List messages for a chat (branch-aware), with bookmark join
+  app.get<{ Params: { chatId: string }; Querystring: { leafId?: string } }>(
+    "/api/chats/:chatId/messages",
+    async (request) => {
+      const { chatId } = request.params;
+      const { leafId } = request.query as { leafId?: string };
 
-    const rows = db
-      .select()
-      .from(messages)
-      .where(eq(messages.chatId, chatId))
-      .orderBy(asc(messages.timestamp))
-      .all();
+      // Lazy backfill for legacy chats
+      backfillParentIds(chatId);
 
-    // Get bookmarks for this chat
-    const bms = db
-      .select()
-      .from(bookmarks)
-      .where(eq(bookmarks.chatId, chatId))
-      .all();
+      const chat = db.select().from(chats).where(eq(chats.id, chatId)).get();
+      const effectiveLeafId = leafId || chat?.activeLeafId || null;
+      const pathMessages = getBranchPath(chatId, effectiveLeafId);
 
-    const bmByMessage = new Map(bms.map((b) => [b.messageId, b]));
+      // Get bookmarks for this chat
+      const bms = db
+        .select()
+        .from(bookmarks)
+        .where(eq(bookmarks.chatId, chatId))
+        .all();
 
-    return rows.map((m) => {
-      const bm = bmByMessage.get(m.id);
-      return {
-        ...m,
-        isSystemMessage: m.isSystemMessage === 1,
-        bookmark: bm
-          ? {
-              id: bm.id,
-              messageId: bm.messageId,
-              label: bm.label,
-              color: bm.color,
-              messageIndex: bm.messageIndex,
-              createdAt: bm.createdAt,
-            }
-          : null,
-      };
-    });
-  });
+      const bmByMessage = new Map(bms.map((b) => [b.messageId, b]));
 
-  // Create message
+      const mappedMessages = pathMessages.map((m) => {
+        const bm = bmByMessage.get(m.id);
+        return {
+          ...m,
+          isSystemMessage: m.isSystemMessage === 1,
+          bookmark: bm
+            ? {
+                id: bm.id,
+                messageId: bm.messageId,
+                label: bm.label,
+                color: bm.color,
+                messageIndex: bm.messageIndex,
+                createdAt: bm.createdAt,
+              }
+            : null,
+        };
+      });
+
+      const branchInfo = computeBranchInfo(chatId, pathMessages);
+
+      return { messages: mappedMessages, branchInfo };
+    }
+  );
+
+  // Create message (branch-aware)
   app.post<{ Params: { chatId: string } }>("/api/chats/:chatId/messages", async (request) => {
     const { chatId } = request.params;
     const body = request.body as Record<string, unknown>;
@@ -90,6 +105,10 @@ export async function messageRoutes(app: FastifyInstance) {
     const id = generateId();
 
     const content = (body.content as string) || "";
+
+    // Determine parent: explicit, or current active leaf
+    const chat = db.select().from(chats).where(eq(chats.id, chatId)).get();
+    const parentId = (body.parentId as string) || chat?.activeLeafId || null;
 
     const record = {
       id,
@@ -103,9 +122,18 @@ export async function messageRoutes(app: FastifyInstance) {
       generationTimeMs: (body.generationTimeMs as number) || null,
       swipeIndex: (body.swipeIndex as number) ?? null,
       swipeCount: (body.swipeCount as number) ?? null,
+      parentId,
+      branchPosition: (body.branchPosition as number) ?? 0,
     };
 
     db.insert(messages).values(record).run();
+
+    // Update active leaf to point to this new message
+    db.update(chats)
+      .set({ activeLeafId: id })
+      .where(eq(chats.id, chatId))
+      .run();
+
     updateChatCounts(chatId);
 
     return { ...record, isSystemMessage: record.isSystemMessage === 1, bookmark: null };
@@ -130,21 +158,215 @@ export async function messageRoutes(app: FastifyInstance) {
     return { ok: true };
   });
 
-  // Delete message
+  // Delete message (with descendant cascade)
   app.delete<{ Params: { id: string } }>("/api/messages/:id", async (request, reply) => {
     const { id } = request.params;
 
     const msg = db.select().from(messages).where(eq(messages.id, id)).get();
     if (!msg) return reply.status(404).send({ error: "Message not found" });
 
-    db.delete(swipeAlternatives).where(eq(swipeAlternatives.messageId, id)).run();
-    db.delete(bookmarks).where(eq(bookmarks.messageId, id)).run();
-    db.delete(messages).where(eq(messages.id, id)).run();
+    // Get all messages in chat to find descendants
+    const allMessages = db
+      .select()
+      .from(messages)
+      .where(eq(messages.chatId, msg.chatId))
+      .all();
+
+    const idsToDelete = getDescendantIds(id, allMessages);
+
+    // Delete swipe alternatives and bookmarks for all affected messages
+    for (const delId of idsToDelete) {
+      db.delete(swipeAlternatives).where(eq(swipeAlternatives.messageId, delId)).run();
+      db.delete(bookmarks).where(eq(bookmarks.messageId, delId)).run();
+      db.delete(messages).where(eq(messages.id, delId)).run();
+    }
+
+    // If deleted message was on active path, move activeLeafId to parent
+    const chat = db.select().from(chats).where(eq(chats.id, msg.chatId)).get();
+    if (chat?.activeLeafId && idsToDelete.includes(chat.activeLeafId)) {
+      db.update(chats)
+        .set({ activeLeafId: msg.parentId || null })
+        .where(eq(chats.id, msg.chatId))
+        .run();
+    }
 
     updateChatCounts(msg.chatId);
 
     return { ok: true };
   });
+
+  // -------------------------------------------------------------------------
+  // Branch routes
+  // -------------------------------------------------------------------------
+
+  // Create a branch from a message
+  app.post<{ Params: { chatId: string } }>("/api/chats/:chatId/branch", async (request) => {
+    const { chatId } = request.params;
+    const body = request.body as {
+      parentMessageId: string;
+      message?: { role: string; content: string };
+    };
+    const now = new Date().toISOString();
+    const id = generateId();
+
+    // Find max branchPosition among existing siblings
+    const siblings = db
+      .select({ branchPosition: messages.branchPosition })
+      .from(messages)
+      .where(eq(messages.parentId, body.parentMessageId))
+      .all();
+
+    const maxPosition = siblings.reduce(
+      (max, s) => Math.max(max, s.branchPosition ?? 0),
+      -1
+    );
+
+    const content = body.message?.content || "";
+    const record = {
+      id,
+      chatId,
+      role: body.message?.role || "user",
+      content,
+      timestamp: now,
+      tokenCount: Math.ceil(content.length / 4),
+      isSystemMessage: 0,
+      model: null,
+      generationTimeMs: null,
+      swipeIndex: null,
+      swipeCount: null,
+      parentId: body.parentMessageId,
+      branchPosition: maxPosition + 1,
+    };
+
+    db.insert(messages).values(record).run();
+
+    // Update active leaf
+    db.update(chats)
+      .set({ activeLeafId: id })
+      .where(eq(chats.id, chatId))
+      .run();
+
+    updateChatCounts(chatId);
+
+    // Return the new message and updated branch info
+    const activePath = getBranchPath(chatId, id);
+    const branchInfo = computeBranchInfo(chatId, activePath);
+
+    return {
+      message: { ...record, isSystemMessage: false, bookmark: null },
+      branchInfo,
+    };
+  });
+
+  // Switch active branch
+  app.put<{ Params: { chatId: string } }>("/api/chats/:chatId/active-branch", async (request, reply) => {
+    const { chatId } = request.params;
+    const body = request.body as { leafId: string };
+
+    // Validate leaf belongs to this chat
+    const leaf = db.select().from(messages).where(eq(messages.id, body.leafId)).get();
+    if (!leaf || leaf.chatId !== chatId) {
+      return reply.status(404).send({ error: "Leaf message not found in this chat" });
+    }
+
+    db.update(chats)
+      .set({ activeLeafId: body.leafId })
+      .where(eq(chats.id, chatId))
+      .run();
+
+    // Return the new branch path
+    const activePath = getBranchPath(chatId, body.leafId);
+    const branchInfo = computeBranchInfo(chatId, activePath);
+
+    // Get bookmarks
+    const bms = db.select().from(bookmarks).where(eq(bookmarks.chatId, chatId)).all();
+    const bmByMessage = new Map(bms.map((b) => [b.messageId, b]));
+
+    const mappedMessages = activePath.map((m) => {
+      const bm = bmByMessage.get(m.id);
+      return {
+        ...m,
+        isSystemMessage: m.isSystemMessage === 1,
+        bookmark: bm
+          ? {
+              id: bm.id,
+              messageId: bm.messageId,
+              label: bm.label,
+              color: bm.color,
+              messageIndex: bm.messageIndex,
+              createdAt: bm.createdAt,
+            }
+          : null,
+      };
+    });
+
+    return { messages: mappedMessages, branchInfo };
+  });
+
+  // List all branches (leaves) for the branch panel
+  app.get<{ Params: { chatId: string } }>("/api/chats/:chatId/branches", async (request) => {
+    const { chatId } = request.params;
+    return { branches: findAllLeaves(chatId) };
+  });
+
+  // Delete a branch
+  app.delete<{ Params: { chatId: string } }>("/api/chats/:chatId/branch", async (request) => {
+    const { chatId } = request.params;
+    const body = request.body as { messageId: string };
+
+    const allMessages = db
+      .select()
+      .from(messages)
+      .where(eq(messages.chatId, chatId))
+      .all();
+
+    const idsToDelete = getDescendantIds(body.messageId, allMessages);
+
+    for (const delId of idsToDelete) {
+      db.delete(swipeAlternatives).where(eq(swipeAlternatives.messageId, delId)).run();
+      db.delete(bookmarks).where(eq(bookmarks.messageId, delId)).run();
+      db.delete(messages).where(eq(messages.id, delId)).run();
+    }
+
+    // If active leaf was deleted, switch to a sibling
+    const chat = db.select().from(chats).where(eq(chats.id, chatId)).get();
+    if (chat?.activeLeafId && idsToDelete.includes(chat.activeLeafId)) {
+      const deletedMsg = allMessages.find((m) => m.id === body.messageId);
+      const parentId = deletedMsg?.parentId;
+
+      if (parentId) {
+        // Find a sibling branch's leaf
+        const remainingMessages = db
+          .select()
+          .from(messages)
+          .where(eq(messages.chatId, chatId))
+          .all();
+        const siblingChild = remainingMessages.find((m) => m.parentId === parentId);
+        if (siblingChild) {
+          // Walk to deepest leaf of sibling
+          let leafId = siblingChild.id;
+          while (true) {
+            const child = remainingMessages.find((m) => m.parentId === leafId);
+            if (!child) break;
+            leafId = child.id;
+          }
+          db.update(chats).set({ activeLeafId: leafId }).where(eq(chats.id, chatId)).run();
+        } else {
+          db.update(chats).set({ activeLeafId: parentId }).where(eq(chats.id, chatId)).run();
+        }
+      } else {
+        db.update(chats).set({ activeLeafId: null }).where(eq(chats.id, chatId)).run();
+      }
+    }
+
+    updateChatCounts(chatId);
+
+    return { ok: true };
+  });
+
+  // -------------------------------------------------------------------------
+  // Swipe & bookmark routes (unchanged)
+  // -------------------------------------------------------------------------
 
   // List swipe alternatives
   app.get<{ Params: { messageId: string } }>("/api/messages/:messageId/swipes", async (request) => {

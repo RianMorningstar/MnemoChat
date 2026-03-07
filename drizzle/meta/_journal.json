@@ -57,6 +57,13 @@
       "when": 1741478400000,
       "tag": "0007_lorebook_advanced",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1741564800000,
+      "tag": "0008_chat_branching",
+      "breakpoints": true
     }
   ]
 }

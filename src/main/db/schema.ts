@@ -60,6 +60,8 @@ export const chats = sqliteTable("chats", {
   bookmarkCount: integer("bookmark_count").default(0),
   wordCount: integer("word_count").default(0),
   tags: text("tags").default("[]"),
+  /** ID of the leaf message on the currently active branch */
+  activeLeafId: text("active_leaf_id"),
 });
 
 export const messages = sqliteTable("messages", {
@@ -76,6 +78,10 @@ export const messages = sqliteTable("messages", {
   swipeCount: integer("swipe_count"),
   /** Which character spoke this message (assistant messages in group chats) */
   characterId: text("character_id"),
+  /** Parent message ID for branching (NULL = root message or legacy) */
+  parentId: text("parent_id"),
+  /** Position among siblings sharing the same parent (0 = original, 1+ = forks) */
+  branchPosition: integer("branch_position").default(0),
 });
 
 export const swipeAlternatives = sqliteTable("swipe_alternatives", {

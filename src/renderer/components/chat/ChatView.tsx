@@ -13,13 +13,16 @@ import {
   FileJson,
   Plus,
   Trash2,
+  GitBranch,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { ChatRoleplayProps, ExportScope, ExportFormat } from '@shared/chat-types'
+import { getSiblingInfo } from '@/lib/branch-utils'
 import { MessageBubble } from './MessageBubble'
 import { ChatComposer } from './ChatComposer'
 import { SceneSidebar } from './SceneSidebar'
 import { GroupCharacterStrip } from './GroupCharacterStrip'
+import { BranchPanel } from './BranchPanel'
 
 export function ChatView({
   chat,
@@ -58,6 +61,11 @@ export function ChatView({
   onRenameChat,
   onOpenCharacterEditor,
   onExportChat,
+  branchInfo,
+  onBranchCreate,
+  onBranchNavigate,
+  onBranchSwitch,
+  onBranchDelete,
   onToggleSidebar,
   pendingCharacterId,
   generatingCharacter,
@@ -67,6 +75,7 @@ export function ChatView({
   onRemoveCharacter,
 }: ChatRoleplayProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [branchPanelOpen, setBranchPanelOpen] = useState(false)
   const [chatListOpen, setChatListOpen] = useState(false)
   const [modelMenuOpen, setModelMenuOpen] = useState(false)
   const [exportMenuOpen, setExportMenuOpen] = useState(false)
@@ -293,6 +302,18 @@ export function ChatView({
           <List className="h-4 w-4" />
         </button>
 
+        {/* Branch panel toggle */}
+        <button
+          onClick={() => setBranchPanelOpen(!branchPanelOpen)}
+          className={cn(
+            'rounded-md p-1.5 transition-colors hover:bg-zinc-800 hover:text-zinc-300',
+            branchPanelOpen ? 'text-indigo-400' : 'text-zinc-500'
+          )}
+          title={branchPanelOpen ? 'Hide branches' : 'Show branches'}
+        >
+          <GitBranch className="h-4 w-4" />
+        </button>
+
         {/* Sidebar toggle */}
         <button
           onClick={handleToggleSidebar}
@@ -403,6 +424,7 @@ export function ChatView({
                   charPortrait = charInfo.portraitUrl
                 }
               }
+              const sibling = getSiblingInfo(branchInfo ?? null, msg.id)
               return (
                 <MessageBubble
                   key={msg.id}
@@ -417,6 +439,10 @@ export function ChatView({
                   onSwipeGenerate={onSwipeGenerate}
                   onBookmark={onBookmark}
                   onRemoveBookmark={onRemoveBookmark}
+                  onBranch={onBranchCreate}
+                  onBranchNavigate={onBranchNavigate}
+                  siblingCount={sibling?.total}
+                  siblingIndex={sibling?.index}
                 />
               )
             })}
@@ -478,6 +504,16 @@ export function ChatView({
             onToggleSceneDirection={onToggleSceneDirection}
           />
         </div>
+
+        {/* Branch panel */}
+        {branchPanelOpen && onBranchSwitch && onBranchDelete && (
+          <BranchPanel
+            chatId={chat.id}
+            onSwitchBranch={onBranchSwitch}
+            onDeleteBranch={onBranchDelete}
+            onClose={() => setBranchPanelOpen(false)}
+          />
+        )}
 
         {/* Scene sidebar */}
         {sidebarOpen && (

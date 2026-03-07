@@ -54,6 +54,10 @@ export interface Message {
   characterId?: string | null
   /** Bookmark on this message, if any */
   bookmark: Bookmark | null
+  /** Parent message ID for branching (null = root message or legacy) */
+  parentId?: string | null
+  /** Position among siblings sharing the same parent (0 = original, 1+ = forks) */
+  branchPosition?: number
 }
 
 export interface SceneDirection {
@@ -110,6 +114,8 @@ export interface Chat {
   tags: string[]
   /** All characters in this chat (includes primary). Empty for old chats without chat_characters rows. */
   characters: ChatCharacter[]
+  /** ID of the leaf message on the currently active branch */
+  activeLeafId?: string | null
 }
 
 export interface ChatListItem {
@@ -128,6 +134,38 @@ export interface AvailableModel {
   id: string
   name: string
   contextLength: number
+}
+
+// ---------------------------------------------------------------------------
+// Branching
+// ---------------------------------------------------------------------------
+
+export interface BranchChild {
+  branchPosition: number
+  childId: string
+  isActive: boolean
+  messageCount: number
+  leafTimestamp: string
+}
+
+export interface ForkPoint {
+  messageId: string
+  activeBranchPosition: number
+  branches: BranchChild[]
+}
+
+export interface BranchInfo {
+  leafId: string
+  forkPoints: ForkPoint[]
+}
+
+export interface BranchLeaf {
+  leafId: string
+  leafTimestamp: string
+  depth: number
+  lastContent: string
+  isActive: boolean
+  forkMessageId: string
 }
 
 // ---------------------------------------------------------------------------
@@ -227,6 +265,18 @@ export interface ChatRoleplayProps {
   generatingCharacter?: ChatCharacter
   /** Called when user selects a character to speak next */
   onSelectCharacter?: (characterId: string) => void
+
+  // Branching
+  /** Branch info for the current active branch path */
+  branchInfo?: BranchInfo | null
+  /** Called when user creates a branch from a message */
+  onBranchCreate?: (messageId: string) => void
+  /** Called when user navigates between sibling branches */
+  onBranchNavigate?: (messageId: string, direction: 'prev' | 'next') => void
+  /** Called when user switches to a specific branch by leaf ID */
+  onBranchSwitch?: (leafId: string) => void
+  /** Called when user deletes a branch */
+  onBranchDelete?: (messageId: string) => void
 
   // Sidebar
   /** Called when user toggles the scene sidebar */

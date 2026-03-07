@@ -8,10 +8,12 @@ import {
   Trash2,
   Check,
   X,
+  GitBranch,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Message, BookmarkColor } from '@shared/chat-types'
 import { MarkdownContent } from './MarkdownContent'
+import { BranchNavigator } from './BranchNavigator'
 
 interface MessageBubbleProps {
   message: Message
@@ -25,6 +27,10 @@ interface MessageBubbleProps {
   onSwipeGenerate?: (messageId: string) => void
   onBookmark?: (messageId: string, label: string, color: BookmarkColor) => void
   onRemoveBookmark?: (bookmarkId: string) => void
+  onBranch?: (messageId: string) => void
+  onBranchNavigate?: (messageId: string, direction: 'prev' | 'next') => void
+  siblingCount?: number
+  siblingIndex?: number
 }
 
 
@@ -40,6 +46,10 @@ export function MessageBubble({
   onSwipeGenerate,
   onBookmark,
   onRemoveBookmark,
+  onBranch,
+  onBranchNavigate,
+  siblingCount,
+  siblingIndex,
 }: MessageBubbleProps) {
   const [hovered, setHovered] = useState(false)
   const [editing, setEditing] = useState(false)
@@ -150,6 +160,15 @@ export function MessageBubble({
                 </div>
               )}
 
+              {/* Branch navigator */}
+              {siblingCount != null && siblingIndex != null && siblingCount > 1 && (
+                <BranchNavigator
+                  currentIndex={siblingIndex}
+                  totalSiblings={siblingCount}
+                  onNavigate={(dir) => onBranchNavigate?.(message.id, dir)}
+                />
+              )}
+
               {/* Hover metadata */}
               {hovered && !editing && (
                 <div className="mt-2 flex items-center gap-3 text-[10px] text-zinc-600">
@@ -204,6 +223,13 @@ export function MessageBubble({
                 title="Regenerate"
               >
                 <RefreshCw className="h-3.5 w-3.5" />
+              </button>
+              <button
+                onClick={() => onBranch?.(message.id)}
+                className="rounded p-1.5 text-zinc-400 transition-colors hover:bg-zinc-700 hover:text-zinc-200"
+                title="Create branch from here"
+              >
+                <GitBranch className="h-3.5 w-3.5" />
               </button>
               <button
                 onClick={() =>
@@ -261,9 +287,21 @@ export function MessageBubble({
               </div>
             </div>
           ) : (
-            <div className="rounded-2xl rounded-br-md bg-zinc-800/60 px-4 py-3 text-zinc-300">
-              <MarkdownContent content={message.content} />
-            </div>
+            <>
+              <div className="rounded-2xl rounded-br-md bg-zinc-800/60 px-4 py-3 text-zinc-300">
+                <MarkdownContent content={message.content} />
+              </div>
+              {/* Branch navigator */}
+              {siblingCount != null && siblingIndex != null && siblingCount > 1 && (
+                <div className="flex justify-end">
+                  <BranchNavigator
+                    currentIndex={siblingIndex}
+                    totalSiblings={siblingCount}
+                    onNavigate={(dir) => onBranchNavigate?.(message.id, dir)}
+                  />
+                </div>
+              )}
+            </>
           )}
 
           {/* Hover actions */}
@@ -282,6 +320,13 @@ export function MessageBubble({
                 title="Regenerate AI response"
               >
                 <RefreshCw className="h-3.5 w-3.5" />
+              </button>
+              <button
+                onClick={() => onBranch?.(message.id)}
+                className="rounded p-1.5 text-zinc-400 transition-colors hover:bg-zinc-700 hover:text-zinc-200"
+                title="Create branch from here"
+              >
+                <GitBranch className="h-3.5 w-3.5" />
               </button>
               <button
                 onClick={() =>
