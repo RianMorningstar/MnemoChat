@@ -556,6 +556,20 @@ export async function exportLorebook(id: string): Promise<unknown> {
   return json(res);
 }
 
+export async function importLorebook(data: {
+  name: string;
+  tags?: string[];
+  coverColor?: string;
+  entries?: unknown[];
+}): Promise<LibraryLorebook> {
+  const res = await fetch(`${API_BASE}/api/lorebooks/import`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  return json<LibraryLorebook>(res);
+}
+
 // Discover
 import type { DiscoverQuery, DiscoverCardsResponse } from "@shared/library-types";
 

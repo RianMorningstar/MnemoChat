@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import {
   Search,
   Grid3X3,
@@ -15,6 +15,7 @@ import {
   Star,
   ChevronDown,
   MoreHorizontal,
+  Upload,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type {
@@ -40,6 +41,9 @@ type MyLibraryProps = Pick<
   | 'onEditPersona' | 'onSetDefaultPersona' | 'onDuplicatePersona' | 'onDeletePersona'
 > & {
   onCreatePersona?: () => void;
+  onImportCharacter?: (file: File) => void;
+  onImportLorebook?: (file: File) => void;
+  onImportPersona?: (file: File) => void;
 }
 
 export function MyLibrary({
@@ -72,7 +76,15 @@ export function MyLibrary({
   onDuplicatePersona,
   onDeletePersona,
   onCreatePersona,
+  onImportCharacter,
+  onImportLorebook,
+  onImportPersona,
 }: MyLibraryProps) {
+  const charFileInputRef = useRef<HTMLInputElement>(null)
+  const lorebookFileInputRef = useRef<HTMLInputElement>(null)
+  const personaFileInputRef = useRef<HTMLInputElement>(null)
+  const [charDragOver, setCharDragOver] = useState(false)
+  const [lorebookDragOver, setLorebookDragOver] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [activeCollection, setActiveCollection] = useState<string | null>(null)
   const [activeTier, setActiveTier] = useState<ContentTier | null>(null)
@@ -122,7 +134,31 @@ export function MyLibrary({
 
       {/* Characters view */}
       {activeContentType === 'characters' && (
-        <div className="flex-1 overflow-y-auto">
+        <div
+          className={cn(
+            'relative flex-1 overflow-y-auto transition-colors',
+            charDragOver && 'ring-2 ring-inset ring-indigo-500/40'
+          )}
+          onDragOver={(e) => { e.preventDefault(); setCharDragOver(true) }}
+          onDragLeave={() => setCharDragOver(false)}
+          onDrop={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            setCharDragOver(false)
+            const file = e.dataTransfer.files[0]
+            if (file && (file.name.endsWith('.png') || file.name.endsWith('.json'))) {
+              onImportCharacter?.(file)
+            }
+          }}
+        >
+          {charDragOver && (
+            <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-indigo-500/5">
+              <div className="rounded-xl border-2 border-dashed border-indigo-500/50 px-8 py-4 text-sm font-medium text-indigo-400">
+                Drop to import character
+              </div>
+            </div>
+          )}
+
           {/* Collection pills */}
           <div className="flex items-center gap-2 overflow-x-auto px-6 py-3 scrollbar-none">
             <button
@@ -251,6 +287,26 @@ export function MyLibrary({
                 )
               })}
             </div>
+
+            <input
+              ref={charFileInputRef}
+              type="file"
+              accept=".png,.json"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                if (file) onImportCharacter?.(file)
+                e.target.value = ''
+              }}
+            />
+            <button
+              onClick={() => charFileInputRef.current?.click()}
+              className="flex items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2 text-xs text-zinc-400 transition-colors hover:border-indigo-500/40 hover:text-zinc-200"
+              title="Import character (.png or .json)"
+            >
+              <Upload className="h-3.5 w-3.5" />
+              Import
+            </button>
           </div>
 
           {/* Result count */}
@@ -305,7 +361,53 @@ export function MyLibrary({
 
       {/* Lorebooks view */}
       {activeContentType === 'lorebooks' && (
-        <div className="flex-1 overflow-y-auto p-6">
+        <div
+          className={cn(
+            'relative flex-1 overflow-y-auto p-6 transition-colors',
+            lorebookDragOver && 'ring-2 ring-inset ring-indigo-500/40'
+          )}
+          onDragOver={(e) => { e.preventDefault(); setLorebookDragOver(true) }}
+          onDragLeave={() => setLorebookDragOver(false)}
+          onDrop={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            setLorebookDragOver(false)
+            const file = e.dataTransfer.files[0]
+            if (file && file.name.endsWith('.json')) {
+              onImportLorebook?.(file)
+            }
+          }}
+        >
+          {lorebookDragOver && (
+            <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-indigo-500/5">
+              <div className="rounded-xl border-2 border-dashed border-indigo-500/50 px-8 py-4 text-sm font-medium text-indigo-400">
+                Drop to import lorebook
+              </div>
+            </div>
+          )}
+
+          {/* Lorebooks toolbar */}
+          <div className="mb-4 flex items-center justify-end gap-2">
+            <input
+              ref={lorebookFileInputRef}
+              type="file"
+              accept=".json"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                if (file) onImportLorebook?.(file)
+                e.target.value = ''
+              }}
+            />
+            <button
+              onClick={() => lorebookFileInputRef.current?.click()}
+              className="flex items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-1.5 text-xs text-zinc-400 transition-colors hover:border-indigo-500/40 hover:text-zinc-200"
+            >
+              <Upload className="h-3.5 w-3.5" />
+              Import Lorebook
+            </button>
+          </div>
+
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {lorebooks.map((lb) => (
               <div
@@ -379,7 +481,25 @@ export function MyLibrary({
       {/* Personas view */}
       {activeContentType === 'personas' && (
         <div className="flex-1 overflow-y-auto p-6">
-          <div className="mb-4 flex justify-end px-0">
+          <div className="mb-4 flex items-center justify-end gap-2 px-0">
+            <input
+              ref={personaFileInputRef}
+              type="file"
+              accept=".json"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                if (file) onImportPersona?.(file)
+                e.target.value = ''
+              }}
+            />
+            <button
+              onClick={() => personaFileInputRef.current?.click()}
+              className="flex items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-1.5 text-xs text-zinc-400 transition-colors hover:border-indigo-500/40 hover:text-zinc-200"
+            >
+              <Upload className="h-3.5 w-3.5" />
+              Import
+            </button>
             <button
               onClick={onCreatePersona}
               className="flex items-center gap-1.5 rounded-lg bg-indigo-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-indigo-400"
