@@ -49,6 +49,7 @@ export const characters = sqliteTable("characters", {
   authorNote: text("author_note"),
   authorNoteDepth: integer("author_note_depth").default(4),
   quickReplies: text("quick_replies"),
+  regexSubstitutions: text("regex_substitutions"),
 });
 
 export const chats = sqliteTable("chats", {

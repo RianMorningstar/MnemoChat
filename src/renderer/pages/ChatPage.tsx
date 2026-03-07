@@ -39,7 +39,7 @@ import {
 } from "@/lib/api";
 import { getSiblingLeafId } from "@/lib/branch-utils";
 import { pickNextCharacter } from "@/lib/group-utils";
-import type { QuickReply } from "@shared/character-types";
+import type { QuickReply, RegexSubstitution } from "@shared/character-types";
 import type {
   Chat,
   ChatListItem,
@@ -99,6 +99,7 @@ export function ChatPage() {
   const stoppedByUserRef = useRef(false);
 
   const [quickReplies, setQuickReplies] = useState<{ character: QuickReply[]; global: QuickReply[] }>({ character: [], global: [] });
+  const [regexRulesMap, setRegexRulesMap] = useState<Record<string, RegexSubstitution[]>>({});
   const [branchInfo, setBranchInfo] = useState<BranchInfo | null>(null);
   const [branchPointActive, setBranchPointActive] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -130,10 +131,28 @@ export function ChatPage() {
       setSceneDirection(scene);
       setTokenBudget(budget);
       setError(null);
-      // Load character quick replies
+      // Load character quick replies + regex substitution rules
       getCharacter(chatData.characterId)
-        .then((char) => setQuickReplies({ character: char.quickReplies ?? [], global: globalQr }))
+        .then((char) => {
+          setQuickReplies({ character: char.quickReplies ?? [], global: globalQr });
+          if (char.regexSubstitutions?.length) {
+            setRegexRulesMap((prev) => ({ ...prev, [char.id]: char.regexSubstitutions! }));
+          }
+        })
         .catch(() => setQuickReplies({ character: [], global: globalQr }));
+      // Load regex rules for group chat characters
+      if (chatData.characters?.length > 1) {
+        for (const cc of chatData.characters) {
+          if (cc.id === chatData.characterId) continue;
+          getCharacter(cc.id)
+            .then((char) => {
+              if (char.regexSubstitutions?.length) {
+                setRegexRulesMap((prev) => ({ ...prev, [char.id]: char.regexSubstitutions! }));
+              }
+            })
+            .catch(() => {});
+        }
+      }
       // Default pending character to primary
       setPendingCharacterId((prev) => prev ?? chatData.characterId);
     } catch (e) {
@@ -680,6 +699,7 @@ export function ChatPage() {
       onAddCharacter={onAddCharacter}
       onRemoveCharacter={onRemoveCharacter}
       quickReplies={quickReplies}
+      regexRulesMap={regexRulesMap}
     />
     </>
   );

@@ -5,6 +5,13 @@ export interface QuickReply {
   content: string;
 }
 
+export interface RegexSubstitution {
+  pattern: string;
+  replacement: string;
+  flags: string;
+  enabled: boolean;
+}
+
 export type SpecVersion = "v1" | "v2";
 export type InsertionPosition = "before_character" | "after_character" | "before_example" | "after_example";
 export type LorebookLogic = "AND_ANY" | "AND_ALL" | "NOT_ANY" | "NOT_ALL";
@@ -50,6 +57,7 @@ export interface Character {
   authorNote?: string | null;
   authorNoteDepth?: number;
   quickReplies?: QuickReply[] | null;
+  regexSubstitutions?: RegexSubstitution[] | null;
 }
 
 export interface LorebookEntry {

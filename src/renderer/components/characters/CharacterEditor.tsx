@@ -8,8 +8,9 @@ import { PromptEngineeringTab } from "./PromptEngineeringTab";
 import { LorebookTab } from "./LorebookTab";
 import { MetaTab } from "./MetaTab";
 import { GenerationTab } from "./GenerationTab";
+import { RegexTab } from "./RegexTab";
 
-type TabId = "basic" | "prompts" | "lorebook" | "generation" | "meta";
+type TabId = "basic" | "prompts" | "lorebook" | "generation" | "regex" | "meta";
 
 interface CharacterEditorProps {
   character: Character;
@@ -31,6 +32,7 @@ const TABS: { id: TabId; label: string }[] = [
   { id: "prompts", label: "Prompt Engineering" },
   { id: "lorebook", label: "Lorebook" },
   { id: "generation", label: "Generation" },
+  { id: "regex", label: "Regex" },
   { id: "meta", label: "Meta" },
 ];
 
@@ -151,6 +153,9 @@ export function CharacterEditor({
         )}
         {activeTab === "generation" && (
           <GenerationTab character={merged} onChange={handleChange} />
+        )}
+        {activeTab === "regex" && (
+          <RegexTab character={merged} onChange={handleChange} />
         )}
         {activeTab === "meta" && (
           <MetaTab character={merged} onChange={handleChange} />

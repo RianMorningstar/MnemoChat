@@ -18,6 +18,7 @@ import {
 import { cn } from '@/lib/utils'
 import type { ChatRoleplayProps, ExportScope, ExportFormat } from '@shared/chat-types'
 import { getSiblingInfo } from '@/lib/branch-utils'
+import { applySubstitutions } from '@/lib/substitution-utils'
 import { MessageBubble } from './MessageBubble'
 import { ChatComposer } from './ChatComposer'
 import { SceneSidebar } from './SceneSidebar'
@@ -78,6 +79,7 @@ export function ChatView({
   onAddCharacter,
   onRemoveCharacter,
   quickReplies,
+  regexRulesMap,
 }: ChatRoleplayProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [branchPanelOpen, setBranchPanelOpen] = useState(false)
@@ -429,11 +431,20 @@ export function ChatView({
                   charPortrait = charInfo.portraitUrl
                 }
               }
+              // Apply per-character regex substitutions to assistant messages
+              const charRules = msg.role === 'assistant' && msg.characterId
+                ? regexRulesMap?.[msg.characterId]
+                : msg.role === 'assistant'
+                  ? regexRulesMap?.[chat.characterId]
+                  : undefined
+              const displayMsg = charRules?.length
+                ? { ...msg, content: applySubstitutions(msg.content, charRules) }
+                : msg
               const sibling = getSiblingInfo(branchInfo ?? null, msg.id)
               return (
                 <MessageBubble
                   key={msg.id}
-                  message={msg}
+                  message={displayMsg}
                   characterName={charName}
                   characterInitial={charName.charAt(0)}
                   characterPortraitUrl={charPortrait}

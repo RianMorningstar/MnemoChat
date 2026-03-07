@@ -1,4 +1,4 @@
-import type { QuickReply } from './character-types'
+import type { QuickReply, RegexSubstitution } from './character-types'
 
 /** Message author role */
 export type MessageRole = 'user' | 'assistant' | 'system'
@@ -198,6 +198,7 @@ export interface ChatRoleplayProps {
   inputMode: InputMode
   availableModels: AvailableModel[]
   quickReplies?: { character: QuickReply[]; global: QuickReply[] }
+  regexRulesMap?: Record<string, RegexSubstitution[]>
 
   // Generation control
   /** Called to stop an in-progress generation */

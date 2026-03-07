@@ -36,6 +36,7 @@ export async function characterRoutes(app: FastifyInstance) {
       tags: JSON.parse(row.tags || "[]"),
       generationOverrides: row.generationOverrides ? JSON.parse(row.generationOverrides) : null,
       quickReplies: row.quickReplies ? JSON.parse(row.quickReplies) : null,
+      regexSubstitutions: row.regexSubstitutions ? JSON.parse(row.regexSubstitutions) : null,
       lorebookEntryCount: countMap.get(row.id) || 0,
     }));
   });
@@ -66,6 +67,7 @@ export async function characterRoutes(app: FastifyInstance) {
         tags: JSON.parse(row.tags || "[]"),
         generationOverrides: row.generationOverrides ? JSON.parse(row.generationOverrides) : null,
         quickReplies: row.quickReplies ? JSON.parse(row.quickReplies) : null,
+        regexSubstitutions: row.regexSubstitutions ? JSON.parse(row.regexSubstitutions) : null,
         lorebookEntryCount: count?.count || 0,
       };
     }
@@ -107,6 +109,7 @@ export async function characterRoutes(app: FastifyInstance) {
       authorNote: (body.authorNote as string) || null,
       authorNoteDepth: (body.authorNoteDepth as number) ?? 4,
       quickReplies: body.quickReplies ? JSON.stringify(body.quickReplies) : null,
+      regexSubstitutions: body.regexSubstitutions ? JSON.stringify(body.regexSubstitutions) : null,
     };
 
     await db.insert(characters).values(record);
@@ -118,6 +121,7 @@ export async function characterRoutes(app: FastifyInstance) {
       tags: JSON.parse(record.tags),
       generationOverrides: record.generationOverrides ? JSON.parse(record.generationOverrides) : null,
       quickReplies: record.quickReplies ? JSON.parse(record.quickReplies) : null,
+      regexSubstitutions: record.regexSubstitutions ? JSON.parse(record.regexSubstitutions) : null,
       lorebookEntryCount: 0,
     };
   });
@@ -130,7 +134,7 @@ export async function characterRoutes(app: FastifyInstance) {
       const body = request.body as Record<string, unknown>;
 
       const updates: Record<string, unknown> = {};
-      const jsonFields = ["alternateGreetings", "exampleDialogues", "tags", "generationOverrides", "quickReplies"];
+      const jsonFields = ["alternateGreetings", "exampleDialogues", "tags", "generationOverrides", "quickReplies", "regexSubstitutions"];
       const textFields = [
         "name", "portraitUrl", "description", "personality", "scenario",
         "firstMessage", "systemPrompt", "postHistoryInstructions",
@@ -169,6 +173,7 @@ export async function characterRoutes(app: FastifyInstance) {
         tags: JSON.parse(row.tags || "[]"),
         generationOverrides: row.generationOverrides ? JSON.parse(row.generationOverrides) : null,
         quickReplies: row.quickReplies ? JSON.parse(row.quickReplies) : null,
+        regexSubstitutions: row.regexSubstitutions ? JSON.parse(row.regexSubstitutions) : null,
       };
     }
   );
@@ -239,6 +244,7 @@ export async function characterRoutes(app: FastifyInstance) {
         tags: JSON.parse(row!.tags || "[]"),
         generationOverrides: row!.generationOverrides ? JSON.parse(row!.generationOverrides) : null,
         quickReplies: row!.quickReplies ? JSON.parse(row!.quickReplies) : null,
+        regexSubstitutions: row!.regexSubstitutions ? JSON.parse(row!.regexSubstitutions) : null,
         lorebookEntryCount: entries.length,
       };
     }
