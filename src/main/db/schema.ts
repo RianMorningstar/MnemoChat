@@ -46,6 +46,8 @@ export const characters = sqliteTable("characters", {
   source: text("source").default("local"),
   communityRefJson: text("community_ref_json"),
   generationOverrides: text("generation_overrides"),
+  authorNote: text("author_note"),
+  authorNoteDepth: integer("author_note_depth").default(4),
 });
 
 export const chats = sqliteTable("chats", {

@@ -102,6 +102,8 @@ export async function characterRoutes(app: FastifyInstance) {
       source: (body.source as string) || "local",
       communityRefJson: (body.communityRefJson as string) || null,
       generationOverrides: body.generationOverrides ? JSON.stringify(body.generationOverrides) : null,
+      authorNote: (body.authorNote as string) || null,
+      authorNoteDepth: (body.authorNoteDepth as number) ?? 4,
     };
 
     await db.insert(characters).values(record);
@@ -130,7 +132,7 @@ export async function characterRoutes(app: FastifyInstance) {
         "firstMessage", "systemPrompt", "postHistoryInstructions",
         "creatorNotes", "contentTier", "creatorName", "characterVersion",
         "sourceUrl", "specVersion", "importDate", "lastChatted", "internalNotes",
-        "source", "communityRefJson",
+        "source", "communityRefJson", "authorNote",
       ];
 
       for (const field of textFields) {
@@ -140,6 +142,7 @@ export async function characterRoutes(app: FastifyInstance) {
         if (field in body) updates[field] = JSON.stringify(body[field]);
       }
       if ("tokenCount" in body) updates.tokenCount = body.tokenCount;
+      if ("authorNoteDepth" in body) updates.authorNoteDepth = body.authorNoteDepth;
 
       if (Object.keys(updates).length === 0) {
         return reply.status(400).send({ error: "No fields to update" });

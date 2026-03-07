@@ -164,24 +164,26 @@ export async function chatRoutes(app: FastifyInstance) {
       db.insert(chatCharacters).values({ chatId: id, characterId: cid, position: pos }).onConflictDoNothing().run();
     });
 
-    // Create default scene direction
-    db.insert(sceneDirections)
-      .values({
-        id: generateId(),
-        chatId: id,
-        text: "",
-        injectionDepth: 4,
-        enabled: 0,
-        tokenCount: 0,
-      })
-      .run();
-
-    // Auto-insert firstMessage if character has one
+    // Fetch character for firstMessage and authorNote seeding
     const character = db
       .select()
       .from(characters)
       .where(eq(characters.id, characterId))
       .get();
+
+    // Create scene direction — seed from character's author note if present
+    db.insert(sceneDirections)
+      .values({
+        id: generateId(),
+        chatId: id,
+        text: character?.authorNote || "",
+        injectionDepth: character?.authorNoteDepth ?? 4,
+        enabled: character?.authorNote ? 1 : 0,
+        tokenCount: character?.authorNote
+          ? Math.ceil(character.authorNote.length / 4)
+          : 0,
+      })
+      .run();
 
     if (character?.firstMessage) {
       const personaName = (body.personaName as string) || "User";

@@ -49,6 +49,42 @@ export function PromptEngineeringTab({
         />
       </div>
 
+      {/* Author's Note */}
+      <div>
+        <label className="mb-1 block text-sm font-medium text-zinc-300">
+          Author's Note
+        </label>
+        <p className="mb-2 text-xs text-zinc-500">
+          Becomes the default Scene Direction when starting a new chat with this
+          character. Can be overridden per-chat.
+        </p>
+        <textarea
+          value={character.authorNote || ""}
+          onChange={(e) => onChange({ authorNote: e.target.value })}
+          rows={4}
+          placeholder="[Write in a dark fantasy style with vivid descriptions...]"
+          className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 font-mono text-sm text-zinc-200 placeholder-zinc-500 focus:border-indigo-500 focus:outline-none"
+        />
+        <div className="mt-2 flex items-center gap-3">
+          <label className="text-xs text-zinc-400">Injection depth</label>
+          <input
+            type="number"
+            min={1}
+            max={20}
+            value={character.authorNoteDepth ?? 4}
+            onChange={(e) =>
+              onChange({
+                authorNoteDepth: Math.max(1, Math.min(20, Number(e.target.value) || 4)),
+              })
+            }
+            className="w-16 rounded-md border border-zinc-700 bg-zinc-800 px-2 py-1 text-sm text-zinc-200 focus:border-indigo-500 focus:outline-none"
+          />
+          <span className="text-xs text-zinc-500">
+            messages from the end of context
+          </span>
+        </div>
+      </div>
+
       {/* Example Dialogues */}
       <div>
         <label className="mb-1 block text-sm font-medium text-zinc-300">

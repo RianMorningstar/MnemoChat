@@ -42,6 +42,8 @@ export interface Character {
   internalNotes: string | null;
   lorebookEntryCount?: number;
   generationOverrides?: CharacterGenerationOverrides | null;
+  authorNote?: string | null;
+  authorNoteDepth?: number;
 }
 
 export interface LorebookEntry {

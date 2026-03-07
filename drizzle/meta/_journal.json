@@ -71,6 +71,13 @@
       "when": 1772826000000,
       "tag": "0009_character_gen_overrides",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1772827000000,
+      "tag": "0010_character_author_note",
+      "breakpoints": true
     }
   ]
 }
