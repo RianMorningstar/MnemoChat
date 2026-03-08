@@ -41,7 +41,7 @@ export function CharacterCard({
     >
       {/* Portrait area */}
       <div
-        className="relative aspect-[3/4] w-full cursor-pointer bg-zinc-800"
+        className="relative h-56 w-full cursor-pointer bg-zinc-800"
         onClick={() => (bulkMode && onSelect ? onSelect(character.id) : onEdit(character.id))}
       >
         {character.portraitUrl ? (
