@@ -38,6 +38,7 @@ export async function characterRoutes(app: FastifyInstance) {
       generationOverrides: row.generationOverrides ? JSON.parse(row.generationOverrides) : null,
       quickReplies: row.quickReplies ? JSON.parse(row.quickReplies) : null,
       regexSubstitutions: row.regexSubstitutions ? JSON.parse(row.regexSubstitutions) : null,
+      ttsSettings: row.ttsSettings ? JSON.parse(row.ttsSettings) : null,
       lorebookEntryCount: countMap.get(row.id) || 0,
     }));
   });
@@ -69,6 +70,7 @@ export async function characterRoutes(app: FastifyInstance) {
         generationOverrides: row.generationOverrides ? JSON.parse(row.generationOverrides) : null,
         quickReplies: row.quickReplies ? JSON.parse(row.quickReplies) : null,
         regexSubstitutions: row.regexSubstitutions ? JSON.parse(row.regexSubstitutions) : null,
+      ttsSettings: row.ttsSettings ? JSON.parse(row.ttsSettings) : null,
         lorebookEntryCount: count?.count || 0,
       };
     }
@@ -111,6 +113,9 @@ export async function characterRoutes(app: FastifyInstance) {
       authorNoteDepth: (body.authorNoteDepth as number) ?? 4,
       quickReplies: body.quickReplies ? JSON.stringify(body.quickReplies) : null,
       regexSubstitutions: body.regexSubstitutions ? JSON.stringify(body.regexSubstitutions) : null,
+      ttsProvider: (body.ttsProvider as string) || null,
+      ttsVoice: (body.ttsVoice as string) || null,
+      ttsSettings: body.ttsSettings ? JSON.stringify(body.ttsSettings) : null,
     };
 
     await db.insert(characters).values(record);
@@ -135,13 +140,14 @@ export async function characterRoutes(app: FastifyInstance) {
       const body = request.body as Record<string, unknown>;
 
       const updates: Record<string, unknown> = {};
-      const jsonFields = ["alternateGreetings", "exampleDialogues", "tags", "generationOverrides", "quickReplies", "regexSubstitutions"];
+      const jsonFields = ["alternateGreetings", "exampleDialogues", "tags", "generationOverrides", "quickReplies", "regexSubstitutions", "ttsSettings"];
       const textFields = [
         "name", "portraitUrl", "description", "personality", "scenario",
         "firstMessage", "systemPrompt", "postHistoryInstructions",
         "creatorNotes", "contentTier", "creatorName", "characterVersion",
         "sourceUrl", "specVersion", "importDate", "lastChatted", "internalNotes",
         "source", "communityRefJson", "authorNote",
+        "ttsProvider", "ttsVoice",
       ];
 
       for (const field of textFields) {
@@ -175,6 +181,7 @@ export async function characterRoutes(app: FastifyInstance) {
         generationOverrides: row.generationOverrides ? JSON.parse(row.generationOverrides) : null,
         quickReplies: row.quickReplies ? JSON.parse(row.quickReplies) : null,
         regexSubstitutions: row.regexSubstitutions ? JSON.parse(row.regexSubstitutions) : null,
+      ttsSettings: row.ttsSettings ? JSON.parse(row.ttsSettings) : null,
       };
     }
   );
@@ -247,6 +254,7 @@ export async function characterRoutes(app: FastifyInstance) {
         generationOverrides: row!.generationOverrides ? JSON.parse(row!.generationOverrides) : null,
         quickReplies: row!.quickReplies ? JSON.parse(row!.quickReplies) : null,
         regexSubstitutions: row!.regexSubstitutions ? JSON.parse(row!.regexSubstitutions) : null,
+        ttsSettings: row!.ttsSettings ? JSON.parse(row!.ttsSettings) : null,
         lorebookEntryCount: entries.length,
       };
     }

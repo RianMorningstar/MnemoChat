@@ -51,6 +51,12 @@ export const characters = sqliteTable("characters", {
   quickReplies: text("quick_replies"),
   regexSubstitutions: text("regex_substitutions"),
   defaultExpression: text("default_expression").default("neutral"),
+  /** TTS provider override for this character (null = use global default) */
+  ttsProvider: text("tts_provider"),
+  /** TTS voice identifier for this character */
+  ttsVoice: text("tts_voice"),
+  /** JSON blob of provider-specific TTS settings */
+  ttsSettings: text("tts_settings"),
 });
 
 export const chats = sqliteTable("chats", {
@@ -94,6 +100,8 @@ export const messages = sqliteTable("messages", {
   branchPosition: integer("branch_position").default(0),
   /** Classified expression/emotion for sprite display */
   expression: text("expression"),
+  /** Relative path to cached TTS audio file */
+  ttsAudioPath: text("tts_audio_path"),
 });
 
 export const swipeAlternatives = sqliteTable("swipe_alternatives", {

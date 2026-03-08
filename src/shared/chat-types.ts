@@ -65,6 +65,8 @@ export interface Message {
   branchPosition?: number
   /** Classified expression/emotion for sprite display */
   expression?: string | null
+  /** Relative path to cached TTS audio file */
+  ttsAudioPath?: string | null
 }
 
 export interface SceneDirection {
@@ -314,4 +316,12 @@ export interface ChatRoleplayProps {
   onAddCharacter?: (characterId: string) => void
   /** Called when user removes a character from the group */
   onRemoveCharacter?: (characterId: string) => void
+
+  // TTS
+  /** Whether TTS is globally enabled */
+  ttsEnabled?: boolean
+  /** Default TTS provider */
+  ttsDefaultProvider?: string | null
+  /** Default TTS voice */
+  ttsDefaultVoice?: string | null
 }

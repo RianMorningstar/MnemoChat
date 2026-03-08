@@ -61,6 +61,12 @@ export interface Character {
   quickReplies?: QuickReply[] | null;
   regexSubstitutions?: RegexSubstitution[] | null;
   defaultExpression?: string;
+  /** TTS provider override (null = use global default) */
+  ttsProvider?: string | null;
+  /** TTS voice identifier */
+  ttsVoice?: string | null;
+  /** JSON-parsed provider-specific TTS settings */
+  ttsSettings?: import("./tts-types").TtsSettings | null;
 }
 
 export interface LorebookEntry {

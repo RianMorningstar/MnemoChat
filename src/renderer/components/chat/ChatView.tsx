@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import {
   Settings,
   List,
@@ -24,6 +24,8 @@ import { SceneSidebar } from './SceneSidebar'
 import { GroupCharacterStrip } from './GroupCharacterStrip'
 import { BranchPanel } from './BranchPanel'
 import { SpritePanel } from './SpritePanel'
+import { useTtsPlayback } from '@/lib/tts-playback'
+import type { TtsProviderType } from '@shared/tts-types'
 
 export function ChatView({
   chat,
@@ -81,7 +83,11 @@ export function ChatView({
   onRemoveCharacter,
   quickReplies,
   regexRulesMap,
+  ttsEnabled,
+  ttsDefaultProvider,
+  ttsDefaultVoice,
 }: ChatRoleplayProps) {
+  const tts = useTtsPlayback()
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [branchPanelOpen, setBranchPanelOpen] = useState(false)
   const [spritePanelOpen, setSpritePanelOpen] = useState(false)
@@ -110,6 +116,20 @@ export function ChatView({
     setSidebarOpen(!sidebarOpen)
     onToggleSidebar?.()
   }
+
+  const handlePlayTts = useCallback((messageId: string) => {
+    const msg = messages.find(m => m.id === messageId)
+    if (!msg) return
+    const charId = msg.characterId || chat.characterId
+    tts.playMessage(
+      messageId,
+      msg.content,
+      charId,
+      msg.expression,
+      (ttsDefaultProvider as TtsProviderType) || undefined,
+      ttsDefaultVoice || undefined,
+    )
+  }, [messages, chat.characterId, tts, ttsDefaultProvider, ttsDefaultVoice])
 
   const filteredChatList = chatList.filter((c) =>
     !chatSearchQuery ||
@@ -491,6 +511,11 @@ export function ChatView({
                   isLastMessage={idx === messages.length - 1}
                   isSwipeStreaming={swipingMessageId === msg.id && isGenerating}
                   swipeStreamingContent={swipingMessageId === msg.id ? streamingContent : undefined}
+                  ttsEnabled={ttsEnabled}
+                  onPlayTts={handlePlayTts}
+                  onStopTts={tts.stopPlayback}
+                  isTtsPlaying={tts.isPlaying(msg.id)}
+                  isTtsLoading={tts.isLoading(msg.id)}
                 />
               )
             })}
