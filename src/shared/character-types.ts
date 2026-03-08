@@ -67,6 +67,10 @@ export interface Character {
   ttsVoice?: string | null;
   /** JSON-parsed provider-specific TTS settings */
   ttsSettings?: import("./tts-types").TtsSettings | null;
+  /** Per-character image generation prompt prefix (style prompt) */
+  imageGenPromptPrefix?: string | null;
+  /** JSON-parsed per-character image generation settings */
+  imageGenSettings?: import("./image-gen-types").ImageGenSettings | null;
 }
 
 export interface LorebookEntry {

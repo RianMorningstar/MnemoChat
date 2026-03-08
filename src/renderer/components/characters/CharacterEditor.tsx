@@ -11,8 +11,9 @@ import { GenerationTab } from "./GenerationTab";
 import { RegexTab } from "./RegexTab";
 import { SpriteTab } from "./SpriteTab";
 import { VoiceTab } from "./VoiceTab";
+import { ImageGenTab } from "./ImageGenTab";
 
-type TabId = "basic" | "prompts" | "lorebook" | "generation" | "regex" | "sprites" | "voice" | "meta";
+type TabId = "basic" | "prompts" | "lorebook" | "generation" | "regex" | "sprites" | "voice" | "imagegen" | "meta";
 
 interface CharacterEditorProps {
   character: Character;
@@ -37,6 +38,7 @@ const TABS: { id: TabId; label: string }[] = [
   { id: "regex", label: "Regex" },
   { id: "sprites", label: "Sprites" },
   { id: "voice", label: "Voice" },
+  { id: "imagegen", label: "Image Gen" },
   { id: "meta", label: "Meta" },
 ];
 
@@ -166,6 +168,9 @@ export function CharacterEditor({
         )}
         {activeTab === "voice" && (
           <VoiceTab character={merged} onChange={handleChange} />
+        )}
+        {activeTab === "imagegen" && (
+          <ImageGenTab character={merged} onChange={handleChange} />
         )}
         {activeTab === "meta" && (
           <MetaTab character={merged} onChange={handleChange} />

@@ -27,6 +27,7 @@ import type {
 } from "@shared/types";
 import type { SpriteInfo } from "@shared/expression-types";
 import type { TtsProviderType, TtsVoice, TtsSettings } from "@shared/tts-types";
+import type { ImageGenProviderType, ImageGenRequest, ImageGenResult } from "@shared/image-gen-types";
 
 async function json<T>(res: Response): Promise<T> {
   if (!res.ok) throw new Error(`API ${res.status}: ${res.statusText}`);
@@ -1071,4 +1072,80 @@ export async function clearTtsCache(characterId: string, messageId?: string): Pr
     ? `${API_BASE}/api/tts/cache/${characterId}/${messageId}`
     : `${API_BASE}/api/tts/cache/${characterId}`;
   await fetch(url, { method: "DELETE" });
+}
+
+// ── Image Generation ────────────────────────────────────
+
+export async function generateImage(request: ImageGenRequest): Promise<ImageGenResult> {
+  const res = await fetch(`${API_BASE}/api/image-gen/generate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(request),
+  });
+  return json(res);
+}
+
+export function getGeneratedImageUrl(imageId: string): string {
+  return `${API_BASE}/api/image-gen/images/${imageId}`;
+}
+
+/** Build a URL to serve a generated image from its relative path (characterId/imageId.ext) */
+export function getGeneratedImageUrlFromPath(relativePath: string): string {
+  const parts = relativePath.split("/");
+  const filename = parts[parts.length - 1];
+  const imageId = filename.replace(/\.[^.]+$/, "");
+  return `${API_BASE}/api/image-gen/images/${imageId}`;
+}
+
+export async function getImageGallery(characterId: string): Promise<ImageGenResult[]> {
+  return json(await fetch(`${API_BASE}/api/image-gen/gallery/${characterId}`));
+}
+
+export async function getChatImageGallery(chatId: string): Promise<ImageGenResult[]> {
+  return json(await fetch(`${API_BASE}/api/image-gen/gallery/chat/${chatId}`));
+}
+
+export async function listImageGenModels(
+  provider: ImageGenProviderType,
+  endpoint?: string,
+): Promise<string[]> {
+  const params = endpoint ? `?endpoint=${encodeURIComponent(endpoint)}` : "";
+  const data = await json<{ models: string[] }>(
+    await fetch(`${API_BASE}/api/image-gen/models/${provider}${params}`),
+  );
+  return data.models;
+}
+
+export async function listImageGenSamplers(
+  provider: ImageGenProviderType,
+  endpoint?: string,
+): Promise<string[]> {
+  const params = endpoint ? `?endpoint=${encodeURIComponent(endpoint)}` : "";
+  const data = await json<{ samplers: string[] }>(
+    await fetch(`${API_BASE}/api/image-gen/samplers/${provider}${params}`),
+  );
+  return data.samplers;
+}
+
+export async function checkImageGenConnection(
+  provider: ImageGenProviderType,
+  endpoint: string,
+  apiKey?: string,
+): Promise<boolean> {
+  const params = new URLSearchParams({ endpoint });
+  if (apiKey) params.set("apiKey", apiKey);
+  const data = await json<{ ok: boolean }>(
+    await fetch(`${API_BASE}/api/image-gen/check/${provider}?${params}`),
+  );
+  return data.ok;
+}
+
+export async function deleteGeneratedImage(imageId: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/image-gen/images/${imageId}`, { method: "DELETE" });
+  if (!res.ok) throw new Error(`API ${res.status}: ${res.statusText}`);
+}
+
+export async function deleteAllGeneratedImages(characterId: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/image-gen/gallery/${characterId}`, { method: "DELETE" });
+  if (!res.ok) throw new Error(`API ${res.status}: ${res.statusText}`);
 }

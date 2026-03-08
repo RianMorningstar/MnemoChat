@@ -67,6 +67,8 @@ export interface Message {
   expression?: string | null
   /** Relative path to cached TTS audio file */
   ttsAudioPath?: string | null
+  /** Relative path to generated image */
+  generatedImagePath?: string | null
 }
 
 export interface SceneDirection {

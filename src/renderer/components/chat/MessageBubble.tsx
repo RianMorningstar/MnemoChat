@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Message, BookmarkColor } from '@shared/chat-types'
+import { getGeneratedImageUrlFromPath } from '@/lib/api'
 import { MarkdownContent } from './MarkdownContent'
 import { BranchNavigator } from './BranchNavigator'
 
@@ -172,6 +173,19 @@ export function MessageBubble({
               ) : (
                 <div className="border-l-2 border-indigo-500/30 pl-4 text-zinc-300">
                   <MarkdownContent content={isSwipeStreaming && swipeStreamingContent ? swipeStreamingContent : message.content} />
+                </div>
+              )}
+
+              {/* Generated image (inline) */}
+              {message.generatedImagePath && (
+                <div className="mt-3 pl-4">
+                  <img
+                    src={getGeneratedImageUrlFromPath(message.generatedImagePath)}
+                    alt="Generated image"
+                    className="max-w-sm rounded-lg border border-zinc-700/50 cursor-pointer hover:border-indigo-500/50 transition-colors"
+                    loading="lazy"
+                    onClick={() => window.open(getGeneratedImageUrlFromPath(message.generatedImagePath!), '_blank')}
+                  />
                 </div>
               )}
 

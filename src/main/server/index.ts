@@ -20,6 +20,7 @@ import { ollamaProxyRoutes } from "./routes/ollama-proxy";
 import { generateRoutes } from "./routes/generate";
 import { spriteRoutes } from "./routes/sprites";
 import { ttsRoutes } from "./routes/tts";
+import { imageGenRoutes } from "./routes/image-gen";
 
 const server = Fastify({ bodyLimit: 10 * 1024 * 1024 });
 
@@ -45,6 +46,7 @@ export async function startServer(): Promise<number> {
   await server.register(generateRoutes);
   await server.register(spriteRoutes);
   await server.register(ttsRoutes);
+  await server.register(imageGenRoutes);
 
   const port = 3001;
   await server.listen({ port, host: "127.0.0.1" });

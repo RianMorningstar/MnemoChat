@@ -13,6 +13,7 @@ import {
   Trash2,
   GitBranch,
   Image,
+  ImageIcon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { ChatRoleplayProps, ExportScope, ExportFormat } from '@shared/chat-types'
@@ -24,6 +25,7 @@ import { SceneSidebar } from './SceneSidebar'
 import { GroupCharacterStrip } from './GroupCharacterStrip'
 import { BranchPanel } from './BranchPanel'
 import { SpritePanel } from './SpritePanel'
+import { ImageGenPanel } from './ImageGenPanel'
 import { useTtsPlayback } from '@/lib/tts-playback'
 import type { TtsProviderType } from '@shared/tts-types'
 
@@ -91,6 +93,7 @@ export function ChatView({
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [branchPanelOpen, setBranchPanelOpen] = useState(false)
   const [spritePanelOpen, setSpritePanelOpen] = useState(false)
+  const [imageGenPanelOpen, setImageGenPanelOpen] = useState(false)
   const [chatListOpen, setChatListOpen] = useState(false)
   const [modelMenuOpen, setModelMenuOpen] = useState(false)
   const [exportMenuOpen, setExportMenuOpen] = useState(false)
@@ -277,6 +280,18 @@ export function ChatView({
           title={spritePanelOpen ? 'Hide sprites' : 'Show sprites'}
         >
           <Image className="h-4 w-4" />
+        </button>
+
+        {/* Image gen panel toggle */}
+        <button
+          onClick={() => setImageGenPanelOpen(!imageGenPanelOpen)}
+          className={cn(
+            'rounded-md p-1.5 transition-colors hover:bg-zinc-800',
+            imageGenPanelOpen ? 'text-indigo-400' : 'text-zinc-500 hover:text-zinc-300'
+          )}
+          title={imageGenPanelOpen ? 'Hide image gen' : 'Generate images'}
+        >
+          <ImageIcon className="h-4 w-4" />
         </button>
 
         {/* Export */}
@@ -618,6 +633,16 @@ export function ChatView({
             onSwitchBranch={onBranchSwitch}
             onDeleteBranch={onBranchDelete}
             onClose={() => setBranchPanelOpen(false)}
+          />
+        )}
+
+        {/* Image generation panel */}
+        {imageGenPanelOpen && (
+          <ImageGenPanel
+            chatId={chat.id}
+            characterId={chat.characterId}
+            characterName={chat.characterName}
+            onClose={() => setImageGenPanelOpen(false)}
           />
         )}
 

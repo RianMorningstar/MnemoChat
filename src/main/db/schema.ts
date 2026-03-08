@@ -57,6 +57,10 @@ export const characters = sqliteTable("characters", {
   ttsVoice: text("tts_voice"),
   /** JSON blob of provider-specific TTS settings */
   ttsSettings: text("tts_settings"),
+  /** Per-character image generation prompt prefix (style prompt) */
+  imageGenPromptPrefix: text("image_gen_prompt_prefix"),
+  /** JSON blob of per-character image generation settings */
+  imageGenSettings: text("image_gen_settings"),
 });
 
 export const chats = sqliteTable("chats", {
@@ -102,6 +106,8 @@ export const messages = sqliteTable("messages", {
   expression: text("expression"),
   /** Relative path to cached TTS audio file */
   ttsAudioPath: text("tts_audio_path"),
+  /** Relative path to generated image */
+  generatedImagePath: text("generated_image_path"),
 });
 
 export const swipeAlternatives = sqliteTable("swipe_alternatives", {
@@ -291,6 +297,24 @@ export const projectCharacters = sqliteTable(
   },
   (table) => [primaryKey({ columns: [table.projectId, table.characterId] })]
 );
+
+// ── Image Generation ───────────────────────────────────
+
+export const generatedImages = sqliteTable("generated_images", {
+  id: text("id").primaryKey(),
+  characterId: text("character_id"),
+  chatId: text("chat_id"),
+  messageId: text("message_id"),
+  prompt: text("prompt").notNull(),
+  negativePrompt: text("negative_prompt").default(""),
+  provider: text("provider").notNull(),
+  settings: text("settings").default("{}"),
+  relativePath: text("relative_path").notNull(),
+  width: integer("width").default(512),
+  height: integer("height").default(512),
+  seed: integer("seed"),
+  createdAt: text("created_at").notNull(),
+});
 
 export const projectLorebooks = sqliteTable(
   "project_lorebooks",
