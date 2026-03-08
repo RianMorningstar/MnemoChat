@@ -3,10 +3,12 @@ import { useNavigate } from "react-router";
 import { CharacterLibrary } from "@/components/characters";
 import {
   getCharacters,
+  getCharacter,
   createCharacter,
   deleteCharacter,
   duplicateCharacter,
 } from "@/lib/api";
+import { exportCharacterAsJson, exportCharacterAsPng } from "@/lib/character-export";
 import { extractCharacterFromPng } from "@/lib/png-metadata";
 import type { Character, ImportPreview } from "@shared/character-types";
 
@@ -145,9 +147,14 @@ export function CharacterLibraryPage() {
     setPendingImportData(null);
   }, []);
 
-  const handleExport = useCallback((_id: string) => {
-    // Placeholder for export functionality
-    console.log("Export not yet implemented");
+  const handleExport = useCallback(async (id: string, format: "png" | "json") => {
+    try {
+      const char = await getCharacter(id);
+      if (format === "png") await exportCharacterAsPng(char);
+      else exportCharacterAsJson(char);
+    } catch (err) {
+      console.error("Failed to export character:", err);
+    }
   }, []);
 
   if (loading) {
