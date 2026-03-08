@@ -27,7 +27,9 @@ import {
   getSetting,
   setSetting,
   createCharacter,
+  getCharacter,
 } from "@/lib/api";
+import { exportCharacterAsJson, exportCharacterAsPng } from "@/lib/character-export";
 import {
   extractCharacterFromPng,
   parseCharacterJson,
@@ -164,6 +166,16 @@ export function LibraryPage() {
       setLibraryCharacters((prev) => prev.filter((c) => c.id !== id));
     } catch (err) {
       console.error("Failed to delete character:", err);
+    }
+  }, []);
+
+  const handleExport = useCallback(async (id: string, format?: "png" | "json") => {
+    try {
+      const char = await getCharacter(id);
+      if (format === "png") await exportCharacterAsPng(char);
+      else exportCharacterAsJson(char);
+    } catch (err) {
+      console.error("Failed to export character:", err);
     }
   }, []);
 
@@ -530,6 +542,7 @@ export function LibraryPage() {
             onChat={handleChat}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            onExport={handleExport}
             onDuplicate={handleDuplicate}
             onChangeGridDensity={handleChangeGridDensity}
             onCreateCollection={handleCreateCollection}

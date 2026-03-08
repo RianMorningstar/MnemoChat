@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { User, MessageSquare, Pencil, Copy, Download, Trash2, MoreVertical } from "lucide-react";
+import { User, MessageSquare, Pencil, Copy, Download, FileJson, ImageIcon, Trash2, MoreVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Character } from "@shared/character-types";
 
@@ -9,7 +9,7 @@ interface CharacterCardProps {
   onChat: (id: string) => void;
   onEdit: (id: string) => void;
   onDuplicate: (id: string) => void;
-  onExport: (id: string) => void;
+  onExport: (id: string, format: "png" | "json") => void;
   onDelete: (id: string) => void;
   onSelect?: (id: string) => void;
   bulkMode?: boolean;
@@ -137,7 +137,8 @@ export function CharacterCard({
               { label: "Chat", icon: MessageSquare, action: () => onChat(character.id) },
               { label: "Edit", icon: Pencil, action: () => onEdit(character.id) },
               { label: "Duplicate", icon: Copy, action: () => onDuplicate(character.id) },
-              { label: "Export", icon: Download, action: () => onExport(character.id) },
+              { label: "Export as JSON", icon: FileJson, action: () => onExport(character.id, "json") },
+              { label: "Export as PNG", icon: ImageIcon, action: () => onExport(character.id, "png") },
               { label: "Delete", icon: Trash2, action: () => onDelete(character.id), danger: true },
             ].map((item) => (
               <button

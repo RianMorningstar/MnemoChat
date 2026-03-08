@@ -12,7 +12,7 @@ interface CharacterLibraryProps {
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
   onDuplicate: (id: string) => void;
-  onExport: (id: string) => void;
+  onExport: (id: string, format: "png" | "json") => void;
   onCreateNew: () => void;
   onImportPng: (file: File) => void;
   importPreview: ImportPreview | null;
