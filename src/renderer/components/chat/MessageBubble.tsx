@@ -10,6 +10,9 @@ import {
   Check,
   X,
   GitBranch,
+  Volume2,
+  Square,
+  Loader2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Message, BookmarkColor } from '@shared/chat-types'
@@ -35,6 +38,11 @@ interface MessageBubbleProps {
   isLastMessage?: boolean
   isSwipeStreaming?: boolean
   swipeStreamingContent?: string
+  onPlayTts?: (messageId: string) => void
+  onStopTts?: () => void
+  isTtsPlaying?: boolean
+  isTtsLoading?: boolean
+  ttsEnabled?: boolean
 }
 
 
@@ -57,6 +65,11 @@ export function MessageBubble({
   isLastMessage,
   isSwipeStreaming,
   swipeStreamingContent,
+  onPlayTts,
+  onStopTts,
+  isTtsPlaying,
+  isTtsLoading,
+  ttsEnabled,
 }: MessageBubbleProps) {
   const [hovered, setHovered] = useState(false)
   const [editing, setEditing] = useState(false)
@@ -270,6 +283,31 @@ export function MessageBubble({
               >
                 <Bookmark className="h-3.5 w-3.5" fill={message.bookmark ? 'currentColor' : 'none'} />
               </button>
+              {ttsEnabled && (
+                <button
+                  onClick={() =>
+                    isTtsPlaying
+                      ? onStopTts?.()
+                      : onPlayTts?.(message.id)
+                  }
+                  className={cn(
+                    'rounded p-1.5 transition-colors hover:bg-zinc-700',
+                    isTtsPlaying
+                      ? 'text-indigo-400 hover:text-indigo-300'
+                      : 'text-zinc-400 hover:text-zinc-200'
+                  )}
+                  title={isTtsPlaying ? 'Stop playback' : 'Read aloud'}
+                  disabled={isTtsLoading}
+                >
+                  {isTtsLoading ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : isTtsPlaying ? (
+                    <Square className="h-3.5 w-3.5" />
+                  ) : (
+                    <Volume2 className="h-3.5 w-3.5" />
+                  )}
+                </button>
+              )}
               <button
                 onClick={() => onDelete?.(message.id)}
                 className="rounded p-1.5 text-zinc-400 transition-colors hover:bg-red-500/20 hover:text-red-400"

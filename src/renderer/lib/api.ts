@@ -26,6 +26,7 @@ import type {
   ContentBlock,
 } from "@shared/types";
 import type { SpriteInfo } from "@shared/expression-types";
+import type { TtsProviderType, TtsVoice, TtsSettings } from "@shared/tts-types";
 
 async function json<T>(res: Response): Promise<T> {
   if (!res.ok) throw new Error(`API ${res.status}: ${res.statusText}`);
@@ -1035,4 +1036,39 @@ export async function classifyMessageExpression(
     body: JSON.stringify({ messageId, content }),
   });
   return json(res);
+}
+
+// ── TTS ──────────────────────────────────────────────────
+
+export async function synthesizeTts(
+  messageId: string,
+  text: string,
+  characterId: string,
+  emotion?: string | null,
+  provider?: TtsProviderType,
+  voice?: string,
+  settings?: TtsSettings,
+): Promise<Blob> {
+  const res = await fetch(`${API_BASE}/api/tts/synthesize`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ messageId, text, characterId, emotion, provider, voice, settings }),
+  });
+  if (!res.ok) throw new Error(`TTS ${res.status}: ${res.statusText}`);
+  return res.blob();
+}
+
+export function getTtsAudioUrl(characterId: string, messageId: string): string {
+  return `${API_BASE}/api/tts/audio/${characterId}/${messageId}`;
+}
+
+export async function listTtsVoices(provider: TtsProviderType): Promise<TtsVoice[]> {
+  return json(await fetch(`${API_BASE}/api/tts/voices/${provider}`));
+}
+
+export async function clearTtsCache(characterId: string, messageId?: string): Promise<void> {
+  const url = messageId
+    ? `${API_BASE}/api/tts/cache/${characterId}/${messageId}`
+    : `${API_BASE}/api/tts/cache/${characterId}`;
+  await fetch(url, { method: "DELETE" });
 }

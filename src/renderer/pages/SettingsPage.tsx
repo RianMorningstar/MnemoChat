@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { ConnectionManager } from "@/components/settings/ConnectionManager";
-import { getSetting, setSetting, getTokenStatus } from "@/lib/api";
-import { Check, Loader2, Eye, EyeOff, ExternalLink } from "lucide-react";
+import { getSetting, setSetting, getTokenStatus, listTtsVoices } from "@/lib/api";
+import { Check, Loader2, Eye, EyeOff, ExternalLink, Volume2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { TtsProviderType, TtsVoice } from "@shared/tts-types";
 
 function MnemoTokenSection() {
   const [token, setToken] = useState("");
@@ -149,6 +150,187 @@ function MnemoTokenSection() {
   );
 }
 
+function TtsSettingsSection() {
+  const [ttsEnabled, setTtsEnabled] = useState(false);
+  const [autoPlay, setAutoPlay] = useState(false);
+  const [emotionEnabled, setEmotionEnabled] = useState(true);
+  const [provider, setProvider] = useState<TtsProviderType | "">("");
+  const [voice, setVoice] = useState("");
+  const [openaiKey, setOpenaiKey] = useState("");
+  const [elevenlabsKey, setElevenlabsKey] = useState("");
+  const [voices, setVoices] = useState<TtsVoice[]>([]);
+  const [loadingVoices, setLoadingVoices] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const [en, ap, em, prov, vc, oKey, eKey] = await Promise.all([
+        getSetting("tts_enabled"),
+        getSetting("tts_auto_play"),
+        getSetting("tts_emotion_enabled"),
+        getSetting("tts_default_provider"),
+        getSetting("tts_default_voice"),
+        getSetting("tts_openai_api_key"),
+        getSetting("tts_elevenlabs_api_key"),
+      ]);
+      if (en?.value === "true") setTtsEnabled(true);
+      if (ap?.value === "true") setAutoPlay(true);
+      if (em?.value === "false") setEmotionEnabled(false);
+      if (prov?.value) setProvider(prov.value as TtsProviderType);
+      if (vc?.value) setVoice(vc.value);
+      if (oKey?.value) setOpenaiKey(oKey.value);
+      if (eKey?.value) setElevenlabsKey(eKey.value);
+    })();
+  }, []);
+
+  // Fetch voices when provider changes
+  useEffect(() => {
+    if (!provider || provider === "system") {
+      setVoices([]);
+      return;
+    }
+    setLoadingVoices(true);
+    listTtsVoices(provider as TtsProviderType)
+      .then(setVoices)
+      .catch(() => setVoices([]))
+      .finally(() => setLoadingVoices(false));
+  }, [provider]);
+
+  const handleSave = useCallback(async () => {
+    setSaving(true);
+    await Promise.all([
+      setSetting("tts_enabled", ttsEnabled ? "true" : "false"),
+      setSetting("tts_auto_play", autoPlay ? "true" : "false"),
+      setSetting("tts_emotion_enabled", emotionEnabled ? "true" : "false"),
+      setSetting("tts_default_provider", provider),
+      setSetting("tts_default_voice", voice),
+      setSetting("tts_openai_api_key", openaiKey),
+      setSetting("tts_elevenlabs_api_key", elevenlabsKey),
+    ]);
+    setSaving(false);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  }, [ttsEnabled, autoPlay, emotionEnabled, provider, voice, openaiKey, elevenlabsKey]);
+
+  return (
+    <div className="space-y-5">
+      {/* Enable toggle */}
+      <label className="flex items-center gap-3 cursor-pointer">
+        <input
+          type="checkbox"
+          checked={ttsEnabled}
+          onChange={(e) => setTtsEnabled(e.target.checked)}
+          className="h-4 w-4 rounded border-zinc-600 bg-zinc-800 accent-indigo-500"
+        />
+        <span className="text-sm text-zinc-200">Enable Text-to-Speech</span>
+      </label>
+
+      <label className="flex items-center gap-3 cursor-pointer">
+        <input
+          type="checkbox"
+          checked={autoPlay}
+          onChange={(e) => setAutoPlay(e.target.checked)}
+          className="h-4 w-4 rounded border-zinc-600 bg-zinc-800 accent-indigo-500"
+        />
+        <span className="text-sm text-zinc-200">Auto-play AI responses</span>
+      </label>
+
+      <label className="flex items-center gap-3 cursor-pointer">
+        <input
+          type="checkbox"
+          checked={emotionEnabled}
+          onChange={(e) => setEmotionEnabled(e.target.checked)}
+          className="h-4 w-4 rounded border-zinc-600 bg-zinc-800 accent-indigo-500"
+        />
+        <span className="text-sm text-zinc-200">Emotion-aware voice modulation</span>
+        <span className="text-[10px] text-indigo-400/70">Uses expression classification to adjust tone</span>
+      </label>
+
+      {/* Default provider */}
+      <div className="space-y-2">
+        <label className="text-xs font-medium text-zinc-400">Default Provider</label>
+        <select
+          value={provider}
+          onChange={(e) => { setProvider(e.target.value as TtsProviderType); setVoice(""); }}
+          className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2 text-sm text-zinc-200 outline-none focus:border-indigo-500/50"
+        >
+          <option value="">None</option>
+          <option value="system">System (free)</option>
+          <option value="openai">OpenAI</option>
+          <option value="elevenlabs">ElevenLabs</option>
+        </select>
+      </div>
+
+      {/* Default voice */}
+      {provider && provider !== "system" && (
+        <div className="space-y-2">
+          <label className="text-xs font-medium text-zinc-400">Default Voice</label>
+          {loadingVoices ? (
+            <div className="flex items-center gap-2 text-xs text-zinc-500">
+              <Loader2 className="h-3 w-3 animate-spin" /> Loading voices...
+            </div>
+          ) : (
+            <select
+              value={voice}
+              onChange={(e) => setVoice(e.target.value)}
+              className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2 text-sm text-zinc-200 outline-none focus:border-indigo-500/50"
+            >
+              <option value="">Select a voice</option>
+              {voices.map((v) => (
+                <option key={v.id} value={v.id}>{v.name}</option>
+              ))}
+            </select>
+          )}
+        </div>
+      )}
+
+      {/* API Keys */}
+      {(provider === "openai" || !provider) && (
+        <div className="space-y-2">
+          <label className="text-xs font-medium text-zinc-400">OpenAI TTS API Key</label>
+          <input
+            type="password"
+            value={openaiKey}
+            onChange={(e) => setOpenaiKey(e.target.value)}
+            placeholder="sk-..."
+            className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2 text-sm text-zinc-100 outline-none placeholder:text-zinc-500 focus:border-indigo-500/50"
+          />
+          <p className="text-[10px] text-zinc-600">Can be a separate key from your chat provider</p>
+        </div>
+      )}
+
+      {(provider === "elevenlabs" || !provider) && (
+        <div className="space-y-2">
+          <label className="text-xs font-medium text-zinc-400">ElevenLabs API Key</label>
+          <input
+            type="password"
+            value={elevenlabsKey}
+            onChange={(e) => setElevenlabsKey(e.target.value)}
+            placeholder="Enter your ElevenLabs API key..."
+            className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2 text-sm text-zinc-100 outline-none placeholder:text-zinc-500 focus:border-indigo-500/50"
+          />
+        </div>
+      )}
+
+      {/* Save */}
+      <button
+        onClick={handleSave}
+        disabled={saving}
+        className={cn(
+          "flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium transition-colors",
+          saved
+            ? "bg-green-600/20 text-green-400"
+            : "bg-indigo-600 text-white hover:bg-indigo-500 disabled:opacity-40"
+        )}
+      >
+        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : saved ? <Check className="h-4 w-4" /> : null}
+        {saved ? "Saved" : "Save TTS Settings"}
+      </button>
+    </div>
+  );
+}
+
 export function SettingsPage() {
   return (
     <div className="p-8">
@@ -171,6 +353,14 @@ export function SettingsPage() {
           Connection Profiles
         </h2>
         <ConnectionManager />
+      </section>
+
+      <section className="mt-8">
+        <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-zinc-200">
+          <Volume2 className="h-5 w-5 text-indigo-400" />
+          Text-to-Speech
+        </h2>
+        <TtsSettingsSection />
       </section>
     </div>
   );

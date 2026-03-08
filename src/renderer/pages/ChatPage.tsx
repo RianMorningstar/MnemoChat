@@ -39,6 +39,7 @@ import {
   classifyMessageExpression,
   switchSwipe,
   createSwipeAlternative,
+  getSetting,
 } from "@/lib/api";
 import { getSiblingLeafId } from "@/lib/branch-utils";
 import { pickNextCharacter } from "@/lib/group-utils";
@@ -105,6 +106,9 @@ export function ChatPage() {
   const [regexRulesMap, setRegexRulesMap] = useState<Record<string, RegexSubstitution[]>>({});
   const [branchInfo, setBranchInfo] = useState<BranchInfo | null>(null);
   const [branchPointActive, setBranchPointActive] = useState(false);
+  const [ttsEnabled, setTtsEnabled] = useState(false);
+  const [ttsDefaultProvider, setTtsDefaultProvider] = useState<string | null>(null);
+  const [ttsDefaultVoice, setTtsDefaultVoice] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [generationError, setGenerationError] = useState<string | null>(null);
@@ -175,13 +179,16 @@ export function ChatPage() {
       setPendingCharacterId(null);
       try {
         // Load presets, models, chat list, active connection, personas, and characters in parallel
-        const [presetsData, models, chats, connections, personas, chars] = await Promise.all([
+        const [presetsData, models, chats, connections, personas, chars, ttsEn, ttsProv, ttsVc] = await Promise.all([
           getPresets(),
           getAvailableModels(),
           getChats(),
           getConnections().catch(() => []),
           getPersonas().catch(() => []),
           getCharacters().catch(() => []),
+          getSetting("tts_enabled").catch(() => null),
+          getSetting("tts_default_provider").catch(() => null),
+          getSetting("tts_default_voice").catch(() => null),
         ]);
 
         if (cancelled) return;
@@ -191,6 +198,9 @@ export function ChatPage() {
         setAvailableModels(models);
         setChatList(chats);
         setAllCharacters(chars.map(c => ({ id: c.id, name: c.name, portraitUrl: c.portraitUrl ?? "" })));
+        setTtsEnabled(ttsEn?.value === "true");
+        setTtsDefaultProvider(ttsProv?.value || null);
+        setTtsDefaultVoice(ttsVc?.value || null);
 
         const characterId = searchParams.get("character");
 
@@ -772,6 +782,9 @@ export function ChatPage() {
       onRemoveCharacter={onRemoveCharacter}
       quickReplies={quickReplies}
       regexRulesMap={regexRulesMap}
+      ttsEnabled={ttsEnabled}
+      ttsDefaultProvider={ttsDefaultProvider}
+      ttsDefaultVoice={ttsDefaultVoice}
     />
     </>
   );
