@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
-import { X, ImageIcon, Loader2, Trash2, Sparkles } from "lucide-react";
+import { X, ImageIcon, Loader2, Trash2, Sparkles, UserCircle, Copy } from "lucide-react";
 import {
   generateImage,
   getGeneratedImageUrl,
   getChatImageGallery,
   deleteGeneratedImage,
+  setPortraitFromGeneratedImage,
 } from "@/lib/api";
 import type { ImageGenResult } from "@shared/image-gen-types";
 import { cn } from "@/lib/utils";
@@ -16,6 +17,7 @@ interface ImageGenPanelProps {
   promptPrefix?: string | null;
   onClose: () => void;
   onImageGenerated?: (result: ImageGenResult) => void;
+  onPortraitSet?: (portraitUrl: string) => void;
 }
 
 export function ImageGenPanel({
@@ -25,6 +27,7 @@ export function ImageGenPanel({
   promptPrefix,
   onClose,
   onImageGenerated,
+  onPortraitSet,
 }: ImageGenPanelProps) {
   const [gallery, setGallery] = useState<ImageGenResult[]>([]);
   const [loading, setLoading] = useState(true);
@@ -62,6 +65,24 @@ export function ImageGenPanel({
   const handleDelete = useCallback(async (imageId: string) => {
     await deleteGeneratedImage(imageId);
     setGallery((prev) => prev.filter((img) => img.id !== imageId));
+  }, []);
+
+  const [portraitFlash, setPortraitFlash] = useState<string | null>(null);
+
+  const handleSetPortrait = useCallback(async (imageId: string) => {
+    try {
+      const { portraitUrl } = await setPortraitFromGeneratedImage(imageId);
+      onPortraitSet?.(portraitUrl);
+      setPortraitFlash(imageId);
+      setTimeout(() => setPortraitFlash(null), 1500);
+    } catch (err) {
+      console.error("Failed to set portrait:", err);
+    }
+  }, [onPortraitSet]);
+
+  const handleCopyPrompt = useCallback((img: ImageGenResult) => {
+    setPrompt(img.prompt);
+    setLightboxImage(null);
   }, []);
 
   return (
@@ -156,15 +177,43 @@ export function ImageGenPanel({
                     loading="lazy"
                   />
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors" />
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDelete(img.id);
-                    }}
-                    className="absolute top-1 right-1 rounded-full bg-black/60 p-0.5 opacity-0 group-hover:opacity-100 transition-opacity text-red-400 hover:text-red-300"
-                  >
-                    <Trash2 className="h-2.5 w-2.5" />
-                  </button>
+                  <div className="absolute top-1 right-1 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSetPortrait(img.id);
+                      }}
+                      title="Set as portrait"
+                      className="rounded-full bg-black/60 p-0.5 text-indigo-400 hover:text-indigo-300"
+                    >
+                      <UserCircle className="h-2.5 w-2.5" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCopyPrompt(img);
+                      }}
+                      title="Copy prompt"
+                      className="rounded-full bg-black/60 p-0.5 text-zinc-400 hover:text-zinc-200"
+                    >
+                      <Copy className="h-2.5 w-2.5" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(img.id);
+                      }}
+                      title="Delete"
+                      className="rounded-full bg-black/60 p-0.5 text-red-400 hover:text-red-300"
+                    >
+                      <Trash2 className="h-2.5 w-2.5" />
+                    </button>
+                  </div>
+                  {portraitFlash === img.id && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/50 pointer-events-none">
+                      <span className="text-[9px] font-medium text-indigo-300">Portrait set!</span>
+                    </div>
+                  )}
                   <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <p className="text-[8px] text-zinc-300 line-clamp-2">{img.prompt}</p>
                   </div>
@@ -202,6 +251,22 @@ export function ImageGenPanel({
                 {lightboxImage.width}x{lightboxImage.height} · {lightboxImage.provider}
                 {lightboxImage.seed != null ? ` · seed: ${lightboxImage.seed}` : ""}
               </p>
+              <div className="flex gap-2 mt-2">
+                <button
+                  onClick={() => handleSetPortrait(lightboxImage.id)}
+                  className="flex items-center gap-1 rounded-md bg-indigo-600/80 px-2.5 py-1 text-[10px] font-medium text-white hover:bg-indigo-500 transition-colors"
+                >
+                  <UserCircle className="h-3 w-3" />
+                  Set as Portrait
+                </button>
+                <button
+                  onClick={() => handleCopyPrompt(lightboxImage)}
+                  className="flex items-center gap-1 rounded-md bg-zinc-700/80 px-2.5 py-1 text-[10px] font-medium text-zinc-200 hover:bg-zinc-600 transition-colors"
+                >
+                  <Copy className="h-3 w-3" />
+                  Copy Prompt
+                </button>
+              </div>
             </div>
           </div>
         </div>

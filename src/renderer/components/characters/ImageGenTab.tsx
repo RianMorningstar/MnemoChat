@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { ImageIcon, Loader2, Trash2, X } from "lucide-react";
+import { ImageIcon, Loader2, Trash2, X, UserCircle, Copy } from "lucide-react";
 import type { Character } from "@shared/character-types";
 import type { ImageGenSettings, ImageGenResult } from "@shared/image-gen-types";
 import { IMAGE_GEN_DEFAULTS } from "@shared/image-gen-types";
@@ -9,6 +9,7 @@ import {
   getImageGallery,
   deleteGeneratedImage,
   deleteAllGeneratedImages,
+  setPortraitFromGeneratedImage,
 } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -75,6 +76,36 @@ export function ImageGenTab({ character, onChange }: ImageGenTabProps) {
     await deleteAllGeneratedImages(character.id);
     setGallery([]);
   }, [character.id]);
+
+  const [portraitFlash, setPortraitFlash] = useState<string | null>(null);
+
+  const handleSetPortrait = useCallback(async (imageId: string) => {
+    try {
+      const { portraitUrl } = await setPortraitFromGeneratedImage(imageId);
+      onChange({ portraitUrl });
+      setPortraitFlash(imageId);
+      setTimeout(() => setPortraitFlash(null), 1500);
+    } catch (err) {
+      console.error("Failed to set portrait:", err);
+    }
+  }, [onChange]);
+
+  const handleCopyParams = useCallback((img: ImageGenResult) => {
+    setQuickPrompt(img.prompt);
+    const updates: Partial<ImageGenSettings> = {};
+    if (img.settings.steps) updates.steps = img.settings.steps;
+    if (img.settings.cfgScale) updates.cfgScale = img.settings.cfgScale;
+    if (img.settings.width) updates.width = img.settings.width;
+    if (img.settings.height) updates.height = img.settings.height;
+    if (img.settings.negativePrompt) updates.negativePrompt = img.settings.negativePrompt;
+    if (img.seed != null) updates.seed = img.seed;
+    if (Object.keys(updates).length > 0) {
+      handleSettingsChange(updates);
+    }
+    setLightboxImage(null);
+    // Scroll to Quick Generate section
+    document.getElementById("quick-generate-section")?.scrollIntoView({ behavior: "smooth" });
+  }, [handleSettingsChange]);
 
   return (
     <div className="space-y-6">
@@ -193,7 +224,7 @@ export function ImageGenTab({ character, onChange }: ImageGenTabProps) {
       </div>
 
       {/* Quick Generate */}
-      <div className="border-t border-zinc-800 pt-4 space-y-2">
+      <div id="quick-generate-section" className="border-t border-zinc-800 pt-4 space-y-2">
         <h4 className="text-xs font-medium text-zinc-400">Quick Generate</h4>
         <div className="flex gap-2">
           <input
@@ -272,15 +303,43 @@ export function ImageGenTab({ character, onChange }: ImageGenTabProps) {
                   loading="lazy"
                 />
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors" />
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDelete(img.id);
-                  }}
-                  className="absolute top-1 right-1 rounded-full bg-black/60 p-1 opacity-0 group-hover:opacity-100 transition-opacity text-red-400 hover:text-red-300"
-                >
-                  <Trash2 className="h-3 w-3" />
-                </button>
+                <div className="absolute top-1 right-1 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSetPortrait(img.id);
+                    }}
+                    title="Set as portrait"
+                    className="rounded-full bg-black/60 p-1 text-indigo-400 hover:text-indigo-300"
+                  >
+                    <UserCircle className="h-3 w-3" />
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCopyParams(img);
+                    }}
+                    title="Copy params"
+                    className="rounded-full bg-black/60 p-1 text-zinc-400 hover:text-zinc-200"
+                  >
+                    <Copy className="h-3 w-3" />
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(img.id);
+                    }}
+                    title="Delete"
+                    className="rounded-full bg-black/60 p-1 text-red-400 hover:text-red-300"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+                </div>
+                {portraitFlash === img.id && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/50 pointer-events-none">
+                    <span className="text-[10px] font-medium text-indigo-300">Portrait set!</span>
+                  </div>
+                )}
                 <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                   <p className="text-[9px] text-zinc-300 line-clamp-2">{img.prompt}</p>
                 </div>
@@ -317,6 +376,22 @@ export function ImageGenTab({ character, onChange }: ImageGenTabProps) {
                 {lightboxImage.width}x{lightboxImage.height} · {lightboxImage.provider}
                 {lightboxImage.seed != null ? ` · seed: ${lightboxImage.seed}` : ""}
               </p>
+              <div className="flex gap-2 mt-2">
+                <button
+                  onClick={() => handleSetPortrait(lightboxImage.id)}
+                  className="flex items-center gap-1 rounded-md bg-indigo-600/80 px-2.5 py-1 text-[10px] font-medium text-white hover:bg-indigo-500 transition-colors"
+                >
+                  <UserCircle className="h-3 w-3" />
+                  Set as Portrait
+                </button>
+                <button
+                  onClick={() => handleCopyParams(lightboxImage)}
+                  className="flex items-center gap-1 rounded-md bg-zinc-700/80 px-2.5 py-1 text-[10px] font-medium text-zinc-200 hover:bg-zinc-600 transition-colors"
+                >
+                  <Copy className="h-3 w-3" />
+                  Copy Params
+                </button>
+              </div>
             </div>
           </div>
         </div>

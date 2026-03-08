@@ -283,6 +283,43 @@ export async function imageGenRoutes(app: FastifyInstance) {
     }
   );
 
+  // Set a generated image as the character's portrait
+  app.post<{ Params: { imageId: string } }>(
+    "/api/image-gen/images/:imageId/set-portrait",
+    async (request, reply) => {
+      const { imageId } = request.params;
+      const record = db.select().from(generatedImages).where(eq(generatedImages.id, imageId)).get();
+      if (!record) {
+        return reply.status(404).send({ error: "Image not found" });
+      }
+      if (!record.characterId) {
+        return reply.status(400).send({ error: "Image is not linked to a character" });
+      }
+
+      const charDir = record.characterId;
+      const filePath = getImageGenFilePath(charDir, imageId);
+      if (!filePath || !fs.existsSync(filePath)) {
+        return reply.status(404).send({ error: "Image file not found on disk" });
+      }
+
+      const ext = path.extname(filePath).toLowerCase();
+      const mimeType =
+        ext === ".jpg" || ext === ".jpeg" ? "image/jpeg" :
+        ext === ".webp" ? "image/webp" :
+        "image/png";
+
+      const buffer = fs.readFileSync(filePath);
+      const dataUrl = `data:${mimeType};base64,${buffer.toString("base64")}`;
+
+      db.update(characters)
+        .set({ portraitUrl: dataUrl })
+        .where(eq(characters.id, record.characterId))
+        .run();
+
+      return { ok: true, portraitUrl: dataUrl };
+    }
+  );
+
   // Delete a specific generated image
   app.delete<{ Params: { imageId: string } }>(
     "/api/image-gen/images/:imageId",

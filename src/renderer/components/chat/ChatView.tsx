@@ -643,6 +643,9 @@ export function ChatView({
             characterId={chat.characterId}
             characterName={chat.characterName}
             onClose={() => setImageGenPanelOpen(false)}
+            onPortraitSet={() => {
+              // Portrait was updated server-side; no local state to refresh here
+            }}
           />
         )}
 

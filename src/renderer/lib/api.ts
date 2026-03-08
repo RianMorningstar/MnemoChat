@@ -1149,3 +1149,9 @@ export async function deleteAllGeneratedImages(characterId: string): Promise<voi
   const res = await fetch(`${API_BASE}/api/image-gen/gallery/${characterId}`, { method: "DELETE" });
   if (!res.ok) throw new Error(`API ${res.status}: ${res.statusText}`);
 }
+
+export async function setPortraitFromGeneratedImage(imageId: string): Promise<{ portraitUrl: string }> {
+  const res = await fetch(`${API_BASE}/api/image-gen/images/${imageId}/set-portrait`, { method: "POST" });
+  if (!res.ok) throw new Error(`API ${res.status}: ${res.statusText}`);
+  return res.json();
+}
