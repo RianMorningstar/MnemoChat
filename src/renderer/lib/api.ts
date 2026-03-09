@@ -28,6 +28,7 @@ import type {
 import type { SpriteInfo } from "@shared/expression-types";
 import type { TtsProviderType, TtsVoice, TtsSettings } from "@shared/tts-types";
 import type { ImageGenProviderType, ImageGenRequest, ImageGenResult } from "@shared/image-gen-types";
+import type { EmbeddingStatus, VectorSearchResult } from "@shared/vector-memory-types";
 
 async function json<T>(res: Response): Promise<T> {
   if (!res.ok) throw new Error(`API ${res.status}: ${res.statusText}`);
@@ -1154,4 +1155,43 @@ export async function setPortraitFromGeneratedImage(imageId: string): Promise<{ 
   const res = await fetch(`${API_BASE}/api/image-gen/images/${imageId}/set-portrait`, { method: "POST" });
   if (!res.ok) throw new Error(`API ${res.status}: ${res.statusText}`);
   return res.json();
+}
+
+// ── Vector Memory ──────────────────────────────────────
+
+export async function getVectorMemoryStatus(chatId: string): Promise<EmbeddingStatus> {
+  return json(await fetch(`${API_BASE}/api/chats/${chatId}/vector-memory/status`));
+}
+
+export async function embedAllMessages(chatId: string): Promise<{ embedded: number }> {
+  const res = await fetch(`${API_BASE}/api/chats/${chatId}/vector-memory/embed-all`, {
+    method: "POST",
+  });
+  if (!res.ok) throw new Error(`API ${res.status}: ${res.statusText}`);
+  return res.json();
+}
+
+export async function searchVectorMemory(
+  chatId: string,
+  query: string,
+  topK: number = 5
+): Promise<VectorSearchResult[]> {
+  const res = await fetch(`${API_BASE}/api/chats/${chatId}/vector-memory/search`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query, topK }),
+  });
+  if (!res.ok) throw new Error(`API ${res.status}: ${res.statusText}`);
+  return res.json();
+}
+
+export async function clearVectorMemory(chatId: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/chats/${chatId}/vector-memory`, {
+    method: "DELETE",
+  });
+  if (!res.ok) throw new Error(`API ${res.status}: ${res.statusText}`);
+}
+
+export async function getEmbeddingModels(): Promise<Record<string, string[]>> {
+  return json(await fetch(`${API_BASE}/api/vector-memory/models`));
 }

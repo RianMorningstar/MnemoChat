@@ -26,6 +26,12 @@ import {
   type ProviderPreset,
 } from "../lib/providers";
 import type { ProviderType } from "../../../shared/types";
+import { appSettings } from "../../db/schema";
+import { resolveEmbeddingConfig } from "./vector-memory";
+import { getEmbedding } from "../lib/embedding-providers";
+import { embedBranchMessages, searchSimilarMessages } from "../lib/vector-memory";
+import { buildQueryText, formatMemoryInjection } from "../lib/vector-utils";
+import { DEFAULT_VECTOR_MEMORY_SETTINGS } from "../../../shared/vector-memory-types";
 
 function generateId(): string {
   return crypto.randomUUID();
@@ -336,6 +342,60 @@ export async function generateRoutes(app: FastifyInstance) {
         // Lorebook: after_example
         const loreAfterExampleMsg = loreBucketMessage(loreAfterExample);
         if (loreAfterExampleMsg) providerMessages.push(loreAfterExampleMsg);
+
+        // ── Vector Memory Retrieval ──────────────────────────
+        const vmEnabled = db.select().from(appSettings).where(eq(appSettings.key, "vector_memory_enabled")).get();
+        if (vmEnabled?.value === "true" && chatMessages.length > 0) {
+          try {
+            const embConfig = resolveEmbeddingConfig();
+            const insertCount = parseInt(db.select().from(appSettings).where(eq(appSettings.key, "vector_memory_insert_count")).get()?.value || "") || DEFAULT_VECTOR_MEMORY_SETTINGS.insertCount;
+            const scoreThreshold = parseFloat(db.select().from(appSettings).where(eq(appSettings.key, "vector_memory_score_threshold")).get()?.value || "") || DEFAULT_VECTOR_MEMORY_SETTINGS.scoreThreshold;
+            const protectCount = parseInt(db.select().from(appSettings).where(eq(appSettings.key, "vector_memory_protect_count")).get()?.value || "") || DEFAULT_VECTOR_MEMORY_SETTINGS.protectCount;
+            const queryDepth = parseInt(db.select().from(appSettings).where(eq(appSettings.key, "vector_memory_query_depth")).get()?.value || "") || DEFAULT_VECTOR_MEMORY_SETTINGS.queryDepth;
+            const chunkSize = parseInt(db.select().from(appSettings).where(eq(appSettings.key, "vector_memory_chunk_size")).get()?.value || "") || DEFAULT_VECTOR_MEMORY_SETTINGS.chunkSize;
+            const template = db.select().from(appSettings).where(eq(appSettings.key, "vector_memory_template")).get()?.value || DEFAULT_VECTOR_MEMORY_SETTINGS.template;
+
+            // Lazy-embed any un-embedded messages
+            await embedBranchMessages(chatId, chatMessages, embConfig, chunkSize);
+
+            // Build query from recent user messages
+            const queryText = buildQueryText(
+              chatMessages.map((m) => ({ role: m.role, content: m.content || "" })),
+              queryDepth
+            );
+
+            if (queryText.trim()) {
+              const queryVec = await getEmbedding(queryText, embConfig);
+              const queryFloat32 = new Float32Array(queryVec);
+
+              // Protected set: last N messages (already in context)
+              const branchIds = new Set(chatMessages.map((m) => m.id));
+              const protectedIds = new Set(
+                chatMessages.slice(-protectCount).map((m) => m.id)
+              );
+
+              const results = searchSimilarMessages(
+                chatId,
+                queryFloat32,
+                branchIds,
+                protectedIds,
+                insertCount,
+                scoreThreshold,
+                embConfig.model
+              );
+
+              if (results.length > 0) {
+                const memoryContent = formatMemoryInjection(results, template);
+                providerMessages.push({
+                  role: "system",
+                  content: sub(memoryContent),
+                });
+              }
+            }
+          } catch (err) {
+            console.error("[vector-memory] Retrieval failed, skipping:", err);
+          }
+        }
 
         // Post-history instructions will be injected after messages
         const postInstructions = char.postHistoryInstructions;

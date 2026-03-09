@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
 import { ConnectionManager } from "@/components/settings/ConnectionManager";
 import { getSetting, setSetting, getTokenStatus, listTtsVoices, listImageGenModels, checkImageGenConnection } from "@/lib/api";
-import { Check, Loader2, Eye, EyeOff, ExternalLink, Volume2, ImageIcon } from "lucide-react";
+import { Check, Loader2, Eye, EyeOff, ExternalLink, Volume2, ImageIcon, Brain } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { TtsProviderType, TtsVoice } from "@shared/tts-types";
 import type { ImageGenProviderType } from "@shared/image-gen-types";
 import { IMAGE_GEN_PROVIDER_INFO, IMAGE_GEN_DEFAULTS, IMAGE_RESOLUTIONS } from "@shared/image-gen-types";
+import type { EmbeddingProviderType } from "@shared/vector-memory-types";
+import { EMBEDDING_PROVIDER_INFO, DEFAULT_VECTOR_MEMORY_SETTINGS } from "@shared/vector-memory-types";
 
 function MnemoTokenSection() {
   const [token, setToken] = useState("");
@@ -632,6 +634,214 @@ function ImageGenSettingsSection() {
   );
 }
 
+function VectorMemorySettingsSection() {
+  const defaults = DEFAULT_VECTOR_MEMORY_SETTINGS;
+  const [enabled, setEnabled] = useState(false);
+  const [provider, setProvider] = useState<EmbeddingProviderType>(defaults.provider);
+  const [model, setModel] = useState(defaults.model);
+  const [openaiKey, setOpenaiKey] = useState("");
+  const [insertCount, setInsertCount] = useState(defaults.insertCount);
+  const [scoreThreshold, setScoreThreshold] = useState(defaults.scoreThreshold);
+  const [protectCount, setProtectCount] = useState(defaults.protectCount);
+  const [queryDepth, setQueryDepth] = useState(defaults.queryDepth);
+  const [chunkSize, setChunkSize] = useState(defaults.chunkSize);
+  const [template, setTemplate] = useState(defaults.template);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const keys = [
+        "vector_memory_enabled", "vector_memory_provider", "vector_memory_model",
+        "vector_memory_openai_api_key", "vector_memory_insert_count",
+        "vector_memory_score_threshold", "vector_memory_protect_count",
+        "vector_memory_query_depth", "vector_memory_chunk_size", "vector_memory_template",
+      ];
+      const results = await Promise.all(keys.map((k) => getSetting(k)));
+      if (results[0]?.value === "true") setEnabled(true);
+      if (results[1]?.value) setProvider(results[1].value as EmbeddingProviderType);
+      if (results[2]?.value) setModel(results[2].value);
+      if (results[3]?.value) setOpenaiKey(results[3].value);
+      if (results[4]?.value) setInsertCount(parseInt(results[4].value, 10));
+      if (results[5]?.value) setScoreThreshold(parseFloat(results[5].value));
+      if (results[6]?.value) setProtectCount(parseInt(results[6].value, 10));
+      if (results[7]?.value) setQueryDepth(parseInt(results[7].value, 10));
+      if (results[8]?.value) setChunkSize(parseInt(results[8].value, 10));
+      if (results[9]?.value) setTemplate(results[9].value);
+    })();
+  }, []);
+
+  const handleProviderChange = useCallback((newProvider: EmbeddingProviderType) => {
+    setProvider(newProvider);
+    setModel(EMBEDDING_PROVIDER_INFO[newProvider].defaultModel);
+  }, []);
+
+  const handleSave = useCallback(async () => {
+    setSaving(true);
+    await Promise.all([
+      setSetting("vector_memory_enabled", enabled ? "true" : "false"),
+      setSetting("vector_memory_provider", provider),
+      setSetting("vector_memory_model", model),
+      setSetting("vector_memory_openai_api_key", openaiKey),
+      setSetting("vector_memory_insert_count", String(insertCount)),
+      setSetting("vector_memory_score_threshold", String(scoreThreshold)),
+      setSetting("vector_memory_protect_count", String(protectCount)),
+      setSetting("vector_memory_query_depth", String(queryDepth)),
+      setSetting("vector_memory_chunk_size", String(chunkSize)),
+      setSetting("vector_memory_template", template),
+    ]);
+    setSaving(false);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  }, [enabled, provider, model, openaiKey, insertCount, scoreThreshold, protectCount, queryDepth, chunkSize, template]);
+
+  const providerInfo = EMBEDDING_PROVIDER_INFO[provider];
+
+  return (
+    <div className="space-y-5">
+      {/* Enable toggle */}
+      <label className="flex items-center gap-3 cursor-pointer">
+        <input
+          type="checkbox"
+          checked={enabled}
+          onChange={(e) => setEnabled(e.target.checked)}
+          className="h-4 w-4 rounded border-zinc-600 bg-zinc-800 accent-indigo-500"
+        />
+        <span className="text-sm text-zinc-200">Enable Semantic Memory</span>
+      </label>
+
+      <p className="text-xs text-zinc-500">
+        When enabled, past messages are embedded as vectors and relevant context is automatically retrieved during generation.
+      </p>
+
+      {/* Provider selector */}
+      <div>
+        <label className="mb-1 block text-sm text-zinc-400">Embedding Provider</label>
+        <select
+          value={provider}
+          onChange={(e) => handleProviderChange(e.target.value as EmbeddingProviderType)}
+          className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-200"
+        >
+          {(Object.keys(EMBEDDING_PROVIDER_INFO) as EmbeddingProviderType[]).map((p) => (
+            <option key={p} value={p}>{EMBEDDING_PROVIDER_INFO[p].label}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Model */}
+      <div>
+        <label className="mb-1 block text-sm text-zinc-400">Model</label>
+        <input
+          type="text"
+          value={model}
+          onChange={(e) => setModel(e.target.value)}
+          placeholder={providerInfo.defaultModel}
+          className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-200"
+        />
+      </div>
+
+      {/* OpenAI API key */}
+      {provider === "openai" && (
+        <div>
+          <label className="mb-1 block text-sm text-zinc-400">OpenAI API Key</label>
+          <input
+            type="password"
+            value={openaiKey}
+            onChange={(e) => setOpenaiKey(e.target.value)}
+            placeholder="sk-..."
+            className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-200"
+          />
+          <p className="mt-1 text-xs text-zinc-500">Falls back to your active OpenAI connection profile key if empty.</p>
+        </div>
+      )}
+
+      {/* Retrieval settings */}
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="mb-1 block text-sm text-zinc-400">Memories to Inject ({insertCount})</label>
+          <input
+            type="range"
+            min={1} max={10} step={1}
+            value={insertCount}
+            onChange={(e) => setInsertCount(parseInt(e.target.value, 10))}
+            className="w-full accent-indigo-500"
+          />
+        </div>
+        <div>
+          <label className="mb-1 block text-sm text-zinc-400">Score Threshold ({scoreThreshold.toFixed(2)})</label>
+          <input
+            type="range"
+            min={0} max={1} step={0.05}
+            value={scoreThreshold}
+            onChange={(e) => setScoreThreshold(parseFloat(e.target.value))}
+            className="w-full accent-indigo-500"
+          />
+        </div>
+        <div>
+          <label className="mb-1 block text-sm text-zinc-400">Protect Recent ({protectCount})</label>
+          <input
+            type="range"
+            min={0} max={20} step={1}
+            value={protectCount}
+            onChange={(e) => setProtectCount(parseInt(e.target.value, 10))}
+            className="w-full accent-indigo-500"
+          />
+        </div>
+        <div>
+          <label className="mb-1 block text-sm text-zinc-400">Query Depth ({queryDepth})</label>
+          <input
+            type="range"
+            min={1} max={5} step={1}
+            value={queryDepth}
+            onChange={(e) => setQueryDepth(parseInt(e.target.value, 10))}
+            className="w-full accent-indigo-500"
+          />
+        </div>
+      </div>
+
+      {/* Chunk size */}
+      <div>
+        <label className="mb-1 block text-sm text-zinc-400">Chunk Size ({chunkSize} chars)</label>
+        <input
+          type="range"
+          min={100} max={1000} step={50}
+          value={chunkSize}
+          onChange={(e) => setChunkSize(parseInt(e.target.value, 10))}
+          className="w-full accent-indigo-500"
+        />
+      </div>
+
+      {/* Template */}
+      <div>
+        <label className="mb-1 block text-sm text-zinc-400">Injection Template</label>
+        <textarea
+          value={template}
+          onChange={(e) => setTemplate(e.target.value)}
+          rows={3}
+          placeholder={defaults.template}
+          className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-200 font-mono"
+        />
+        <p className="mt-1 text-xs text-zinc-500">{"{{text}} is replaced with retrieved memories."}</p>
+      </div>
+
+      {/* Save button */}
+      <button
+        onClick={handleSave}
+        disabled={saving}
+        className={cn(
+          "flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium transition-colors",
+          saved
+            ? "bg-green-600/20 text-green-400"
+            : "bg-indigo-600 text-white hover:bg-indigo-500 disabled:opacity-40"
+        )}
+      >
+        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : saved ? <Check className="h-4 w-4" /> : null}
+        {saved ? "Saved" : "Save Memory Settings"}
+      </button>
+    </div>
+  );
+}
+
 export function SettingsPage() {
   return (
     <div className="p-8">
@@ -670,6 +880,14 @@ export function SettingsPage() {
           Image Generation
         </h2>
         <ImageGenSettingsSection />
+      </section>
+
+      <section className="mt-8">
+        <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-zinc-200">
+          <Brain className="h-5 w-5 text-indigo-400" />
+          Semantic Memory
+        </h2>
+        <VectorMemorySettingsSection />
       </section>
     </div>
   );

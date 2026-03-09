@@ -10,6 +10,7 @@ import {
   getDescendantIds,
   findAllLeaves,
 } from "../lib/branch-logic";
+import { deleteMessageEmbeddings } from "../lib/vector-memory";
 
 function generateId(): string {
   return crypto.randomUUID();
@@ -153,6 +154,9 @@ export async function messageRoutes(app: FastifyInstance) {
       .where(eq(messages.id, id))
       .run();
 
+    // Clear stale embeddings so they re-embed with new content
+    deleteMessageEmbeddings(id);
+
     updateChatCounts(msg.chatId);
 
     return { ok: true };
@@ -174,10 +178,11 @@ export async function messageRoutes(app: FastifyInstance) {
 
     const idsToDelete = getDescendantIds(id, allMessages);
 
-    // Delete swipe alternatives and bookmarks for all affected messages
+    // Delete swipe alternatives, bookmarks, and embeddings for all affected messages
     for (const delId of idsToDelete) {
       db.delete(swipeAlternatives).where(eq(swipeAlternatives.messageId, delId)).run();
       db.delete(bookmarks).where(eq(bookmarks.messageId, delId)).run();
+      deleteMessageEmbeddings(delId);
       db.delete(messages).where(eq(messages.id, delId)).run();
     }
 
@@ -325,6 +330,7 @@ export async function messageRoutes(app: FastifyInstance) {
     for (const delId of idsToDelete) {
       db.delete(swipeAlternatives).where(eq(swipeAlternatives.messageId, delId)).run();
       db.delete(bookmarks).where(eq(bookmarks.messageId, delId)).run();
+      deleteMessageEmbeddings(delId);
       db.delete(messages).where(eq(messages.id, delId)).run();
     }
 

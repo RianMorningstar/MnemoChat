@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, real, primaryKey } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, real, blob, primaryKey } from "drizzle-orm/sqlite-core";
 
 export const appSettings = sqliteTable("app_settings", {
   key: text("key").primaryKey(),
@@ -313,6 +313,20 @@ export const generatedImages = sqliteTable("generated_images", {
   width: integer("width").default(512),
   height: integer("height").default(512),
   seed: integer("seed"),
+  createdAt: text("created_at").notNull(),
+});
+
+// ── Vector Memory ─────────────────────────────────────
+
+export const messageEmbeddings = sqliteTable("message_embeddings", {
+  id: text("id").primaryKey(),
+  messageId: text("message_id").notNull(),
+  chatId: text("chat_id").notNull(),
+  chunkIndex: integer("chunk_index").notNull().default(0),
+  chunkText: text("chunk_text").notNull(),
+  embedding: blob("embedding", { mode: "buffer" }).notNull(),
+  embeddingModel: text("embedding_model").notNull(),
+  dimensions: integer("dimensions").notNull(),
   createdAt: text("created_at").notNull(),
 });
 
