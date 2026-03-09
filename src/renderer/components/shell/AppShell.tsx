@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router";
+import { useTranslation } from "react-i18next";
 import {
   PanelLeftClose,
   PanelLeft,
@@ -21,15 +22,6 @@ import { getPersonas, setDefaultPersona as apiSetDefaultPersona, createPersona }
 import type { Persona } from "@shared/library-types";
 import logoUrl from "@/assets/mnemo-logo.svg?url";
 
-const navigationItems: NavItem[] = [
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Chat & Roleplay", href: "/chat", icon: MessageSquare },
-  { label: "Characters", href: "/characters", icon: UserCircle },
-  { label: "Library", href: "/library", icon: Grid3X3 },
-  { label: "Story Mode", href: "/story", icon: BookOpen },
-  { label: "Settings", href: "/settings", icon: Settings },
-];
-
 interface AppShellProps {
   children: React.ReactNode;
 }
@@ -37,6 +29,16 @@ interface AppShellProps {
 export function AppShell({ children }: AppShellProps) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useTranslation("common");
+
+  const navigationItems: NavItem[] = useMemo(() => [
+    { label: t("nav.dashboard"), href: "/dashboard", icon: LayoutDashboard },
+    { label: t("nav.chat"), href: "/chat", icon: MessageSquare },
+    { label: t("nav.characters"), href: "/characters", icon: UserCircle },
+    { label: t("nav.library"), href: "/library", icon: Grid3X3 },
+    { label: t("nav.story"), href: "/story", icon: BookOpen },
+    { label: t("nav.settings"), href: "/settings", icon: Settings },
+  ], [t]);
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [personas, setPersonas] = useState<Persona[]>([]);

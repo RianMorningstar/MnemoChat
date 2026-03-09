@@ -1,23 +1,27 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
+import { useTranslation } from "react-i18next";
 import { Users, MessageSquare, FolderOpen, LetterText, User } from "lucide-react";
 import { getCharacters, getChats, getProjects } from "@/lib/api";
 import type { Character, ChatListItem, Project } from "@shared/types";
 
-function relativeTime(dateStr: string | null): string {
-  if (!dateStr) return "";
-  const now = Date.now();
-  const then = new Date(dateStr).getTime();
-  const seconds = Math.floor((now - then) / 1000);
-  if (seconds < 60) return "just now";
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 30) return `${days}d ago`;
-  const months = Math.floor(days / 30);
-  return `${months}mo ago`;
+function useRelativeTime() {
+  const { t } = useTranslation("common");
+  return function relativeTime(dateStr: string | null): string {
+    if (!dateStr) return "";
+    const now = Date.now();
+    const then = new Date(dateStr).getTime();
+    const seconds = Math.floor((now - then) / 1000);
+    if (seconds < 60) return t("time.justNow");
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return t("time.minutesAgo", { count: minutes });
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return t("time.hoursAgo", { count: hours });
+    const days = Math.floor(hours / 24);
+    if (days < 30) return t("time.daysAgo", { count: days });
+    const months = Math.floor(days / 30);
+    return t("time.monthsAgo", { count: months });
+  };
 }
 
 const statCardStyle =
@@ -25,6 +29,9 @@ const statCardStyle =
 
 export function DashboardPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation("dashboard");
+  const { t: tc } = useTranslation("common");
+  const relativeTime = useRelativeTime();
   const [characters, setCharacters] = useState<Character[]>([]);
   const [chats, setChats] = useState<ChatListItem[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -71,10 +78,10 @@ export function DashboardPage() {
   return (
     <div className="p-6">
       <h1 className="font-heading text-2xl font-semibold text-zinc-100">
-        Dashboard
+        {t("title")}
       </h1>
       <p className="mt-1 text-sm text-zinc-400">
-        Welcome back. Here's an overview of your activity.
+        {t("subtitle")}
       </p>
 
       {/* Stats row */}
@@ -84,7 +91,7 @@ export function DashboardPage() {
             <Users className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-xs text-zinc-400">Characters</p>
+            <p className="text-xs text-zinc-400">{t("stats.characters")}</p>
             <p className="text-lg font-semibold text-zinc-100">
               {characters.length}
             </p>
@@ -95,7 +102,7 @@ export function DashboardPage() {
             <MessageSquare className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-xs text-zinc-400">Chats</p>
+            <p className="text-xs text-zinc-400">{t("stats.chats")}</p>
             <p className="text-lg font-semibold text-zinc-100">
               {chats.length}
             </p>
@@ -106,7 +113,7 @@ export function DashboardPage() {
             <FolderOpen className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-xs text-zinc-400">Projects</p>
+            <p className="text-xs text-zinc-400">{t("stats.projects")}</p>
             <p className="text-lg font-semibold text-zinc-100">
               {projects.length}
             </p>
@@ -117,7 +124,7 @@ export function DashboardPage() {
             <LetterText className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-xs text-zinc-400">Words Written</p>
+            <p className="text-xs text-zinc-400">{t("stats.wordsWritten")}</p>
             <p className="text-lg font-semibold text-zinc-100">
               {totalWords.toLocaleString()}
             </p>
@@ -128,10 +135,10 @@ export function DashboardPage() {
       {/* Recent chats */}
       <section className="mt-8">
         <h2 className="font-heading text-lg font-semibold text-zinc-100">
-          Recent Chats
+          {t("recentChats.title")}
         </h2>
         {recentChats.length === 0 ? (
-          <p className="mt-3 text-sm text-zinc-500">No chats yet</p>
+          <p className="mt-3 text-sm text-zinc-500">{t("recentChats.empty")}</p>
         ) : (
           <div className="mt-3 space-y-1">
             {recentChats.map((chat) => (
@@ -164,7 +171,7 @@ export function DashboardPage() {
                     {relativeTime(chat.lastMessageAt)}
                   </p>
                   <p className="text-xs text-zinc-600">
-                    {chat.messageCount} msgs
+                    {tc("count.msgs", { count: chat.messageCount })}
                   </p>
                 </div>
               </button>
@@ -176,10 +183,10 @@ export function DashboardPage() {
       {/* Recent characters */}
       <section className="mt-8">
         <h2 className="font-heading text-lg font-semibold text-zinc-100">
-          Recent Characters
+          {t("recentCharacters.title")}
         </h2>
         {recentCharacters.length === 0 ? (
-          <p className="mt-3 text-sm text-zinc-500">No characters yet</p>
+          <p className="mt-3 text-sm text-zinc-500">{t("recentCharacters.empty")}</p>
         ) : (
           <div className="mt-3 grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6">
             {recentCharacters.map((char) => (
@@ -200,7 +207,7 @@ export function DashboardPage() {
                   </div>
                 )}
                 <p className="w-full truncate text-center text-sm text-zinc-300">
-                  {char.name || "Unnamed"}
+                  {char.name || tc("unnamed")}
                 </p>
               </button>
             ))}

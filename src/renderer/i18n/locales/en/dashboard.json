@@ -1,0 +1,12 @@
+{
+  "title": "Dashboard",
+  "subtitle": "Welcome back. Here's an overview of your activity.",
+  "stats.characters": "Characters",
+  "stats.chats": "Chats",
+  "stats.projects": "Projects",
+  "stats.wordsWritten": "Words Written",
+  "recentChats.title": "Recent Chats",
+  "recentChats.empty": "No chats yet",
+  "recentCharacters.title": "Recent Characters",
+  "recentCharacters.empty": "No characters yet"
+}

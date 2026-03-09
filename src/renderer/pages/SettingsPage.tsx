@@ -1,15 +1,49 @@
 import { useState, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { ConnectionManager } from "@/components/settings/ConnectionManager";
 import { getSetting, setSetting, getTokenStatus, listTtsVoices, listImageGenModels, checkImageGenConnection } from "@/lib/api";
-import { Check, Loader2, Eye, EyeOff, ExternalLink, Volume2, ImageIcon, Brain } from "lucide-react";
+import { Check, Loader2, Eye, EyeOff, ExternalLink, Volume2, ImageIcon, Brain, Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { LANGUAGE_OPTIONS } from "@/i18n";
 import type { TtsProviderType, TtsVoice } from "@shared/tts-types";
 import type { ImageGenProviderType } from "@shared/image-gen-types";
 import { IMAGE_GEN_PROVIDER_INFO, IMAGE_GEN_DEFAULTS, IMAGE_RESOLUTIONS } from "@shared/image-gen-types";
 import type { EmbeddingProviderType } from "@shared/vector-memory-types";
 import { EMBEDDING_PROVIDER_INFO, DEFAULT_VECTOR_MEMORY_SETTINGS } from "@shared/vector-memory-types";
 
+function LanguageSection() {
+  const { t, i18n } = useTranslation("settings");
+  const [language, setLanguage] = useState(i18n.language);
+
+  async function handleChange(lang: string) {
+    setLanguage(lang);
+    await i18n.changeLanguage(lang);
+    await setSetting("ui_language", lang);
+  }
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="mb-1 block text-sm text-zinc-400">
+          {t("language.label")}
+        </label>
+        <select
+          value={language}
+          onChange={(e) => handleChange(e.target.value)}
+          className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-200"
+        >
+          {LANGUAGE_OPTIONS.map((l) => (
+            <option key={l.code} value={l.code}>{l.label}</option>
+          ))}
+        </select>
+        <p className="mt-1 text-xs text-zinc-500">{t("language.description")}</p>
+      </div>
+    </div>
+  );
+}
+
 function MnemoTokenSection() {
+  const { t } = useTranslation("settings");
   const [token, setToken] = useState("");
   const [savedToken, setSavedToken] = useState("");
   const [saving, setSaving] = useState(false);
@@ -64,20 +98,20 @@ function MnemoTokenSection() {
     <div className="space-y-4">
       <div>
         <label className="mb-1.5 block text-sm font-medium text-zinc-300">
-          Personal API Token
+          {t("account.tokenLabel")}
         </label>
         <p className="mb-3 text-xs text-zinc-500">
-          Generate a token from your{" "}
+          {t("account.tokenHint", { interpolation: { escapeValue: false } }).split("<link>")[0]}
           <a
             href="https://mnemo.studio/settings"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-0.5 text-indigo-400 hover:text-indigo-300"
           >
-            mnemo.studio settings
+            {t("account.tokenHint").match(/<link>(.*?)<\/link>/)?.[1] ?? "mnemo.studio settings"}
             <ExternalLink className="h-3 w-3" />
-          </a>{" "}
-          to unlock personalized recommendations and sync your favorites.
+          </a>
+          {t("account.tokenHint", { interpolation: { escapeValue: false } }).split("</link>")[1] ?? ""}
         </p>
         <div className="flex gap-2">
           <div className="relative flex-1">
@@ -85,7 +119,7 @@ function MnemoTokenSection() {
               type={showToken ? "text" : "password"}
               value={token}
               onChange={(e) => setToken(e.target.value)}
-              placeholder="Paste your personal API token..."
+              placeholder={t("account.tokenPlaceholder")}
               className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 py-2 pl-3 pr-10 text-sm text-zinc-100 outline-none placeholder:text-zinc-500 focus:border-indigo-500/50"
             />
             <button
@@ -114,7 +148,7 @@ function MnemoTokenSection() {
             ) : saved ? (
               <Check className="h-4 w-4" />
             ) : null}
-            {saved ? "Saved" : "Save"}
+            {saved ? t("common:action.saved") : t("common:action.save")}
           </button>
           {savedToken && (
             <button
@@ -122,7 +156,7 @@ function MnemoTokenSection() {
               disabled={saving}
               className="rounded-lg border border-zinc-700 px-4 py-2 text-sm text-zinc-400 hover:text-zinc-200 disabled:opacity-40"
             >
-              Clear
+              {t("common:action.clear")}
             </button>
           )}
         </div>
@@ -141,12 +175,13 @@ function MnemoTokenSection() {
         >
           {status?.hasToken && status?.username ? (
             <>
-              Connected as <span className="font-medium text-green-200">{status.username}</span>
+              {t("account.connectedAs", { username: "" }).split("<bold>")[0]}
+              <span className="font-medium text-green-200">{status.username}</span>
             </>
           ) : status?.hasToken && status?.error ? (
-            <>Token saved but could not verify — {status.error}</>
+            <>{t("account.tokenError", { error: status.error })}</>
           ) : (
-            <>No token configured — using public API with limited access</>
+            <>{t("account.noToken")}</>
           )}
         </div>
       )}
@@ -155,6 +190,7 @@ function MnemoTokenSection() {
 }
 
 function TtsSettingsSection() {
+  const { t } = useTranslation("settings");
   const [ttsEnabled, setTtsEnabled] = useState(false);
   const [autoPlay, setAutoPlay] = useState(false);
   const [emotionEnabled, setEmotionEnabled] = useState(true);
@@ -227,7 +263,7 @@ function TtsSettingsSection() {
           onChange={(e) => setTtsEnabled(e.target.checked)}
           className="h-4 w-4 rounded border-zinc-600 bg-zinc-800 accent-indigo-500"
         />
-        <span className="text-sm text-zinc-200">Enable Text-to-Speech</span>
+        <span className="text-sm text-zinc-200">{t("tts.enable")}</span>
       </label>
 
       <label className="flex items-center gap-3 cursor-pointer">
@@ -237,7 +273,7 @@ function TtsSettingsSection() {
           onChange={(e) => setAutoPlay(e.target.checked)}
           className="h-4 w-4 rounded border-zinc-600 bg-zinc-800 accent-indigo-500"
         />
-        <span className="text-sm text-zinc-200">Auto-play AI responses</span>
+        <span className="text-sm text-zinc-200">{t("tts.autoPlay")}</span>
       </label>
 
       <label className="flex items-center gap-3 cursor-pointer">
@@ -247,20 +283,20 @@ function TtsSettingsSection() {
           onChange={(e) => setEmotionEnabled(e.target.checked)}
           className="h-4 w-4 rounded border-zinc-600 bg-zinc-800 accent-indigo-500"
         />
-        <span className="text-sm text-zinc-200">Emotion-aware voice modulation</span>
-        <span className="text-[10px] text-indigo-400/70">Uses expression classification to adjust tone</span>
+        <span className="text-sm text-zinc-200">{t("tts.emotionAware")}</span>
+        <span className="text-[10px] text-indigo-400/70">{t("tts.emotionHint")}</span>
       </label>
 
       {/* Default provider */}
       <div className="space-y-2">
-        <label className="text-xs font-medium text-zinc-400">Default Provider</label>
+        <label className="text-xs font-medium text-zinc-400">{t("tts.defaultProvider")}</label>
         <select
           value={provider}
           onChange={(e) => { setProvider(e.target.value as TtsProviderType); setVoice(""); }}
           className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2 text-sm text-zinc-200 outline-none focus:border-indigo-500/50"
         >
-          <option value="">None</option>
-          <option value="system">System (free)</option>
+          <option value="">{t("common:label.none")}</option>
+          <option value="system">{t("tts.systemFree")}</option>
           <option value="openai">OpenAI</option>
           <option value="elevenlabs">ElevenLabs</option>
         </select>
@@ -269,10 +305,10 @@ function TtsSettingsSection() {
       {/* Default voice */}
       {provider && provider !== "system" && (
         <div className="space-y-2">
-          <label className="text-xs font-medium text-zinc-400">Default Voice</label>
+          <label className="text-xs font-medium text-zinc-400">{t("tts.defaultVoice")}</label>
           {loadingVoices ? (
             <div className="flex items-center gap-2 text-xs text-zinc-500">
-              <Loader2 className="h-3 w-3 animate-spin" /> Loading voices...
+              <Loader2 className="h-3 w-3 animate-spin" /> {t("tts.loadingVoices")}
             </div>
           ) : (
             <select
@@ -280,7 +316,7 @@ function TtsSettingsSection() {
               onChange={(e) => setVoice(e.target.value)}
               className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2 text-sm text-zinc-200 outline-none focus:border-indigo-500/50"
             >
-              <option value="">Select a voice</option>
+              <option value="">{t("tts.selectVoice")}</option>
               {voices.map((v) => (
                 <option key={v.id} value={v.id}>{v.name}</option>
               ))}
@@ -292,7 +328,7 @@ function TtsSettingsSection() {
       {/* API Keys */}
       {(provider === "openai" || !provider) && (
         <div className="space-y-2">
-          <label className="text-xs font-medium text-zinc-400">OpenAI TTS API Key</label>
+          <label className="text-xs font-medium text-zinc-400">{t("tts.openaiKey")}</label>
           <input
             type="password"
             value={openaiKey}
@@ -300,18 +336,18 @@ function TtsSettingsSection() {
             placeholder="sk-..."
             className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2 text-sm text-zinc-100 outline-none placeholder:text-zinc-500 focus:border-indigo-500/50"
           />
-          <p className="text-[10px] text-zinc-600">Can be a separate key from your chat provider</p>
+          <p className="text-[10px] text-zinc-600">{t("tts.openaiKeyHint")}</p>
         </div>
       )}
 
       {(provider === "elevenlabs" || !provider) && (
         <div className="space-y-2">
-          <label className="text-xs font-medium text-zinc-400">ElevenLabs API Key</label>
+          <label className="text-xs font-medium text-zinc-400">{t("tts.elevenlabsKey")}</label>
           <input
             type="password"
             value={elevenlabsKey}
             onChange={(e) => setElevenlabsKey(e.target.value)}
-            placeholder="Enter your ElevenLabs API key..."
+            placeholder={t("tts.elevenlabsPlaceholder")}
             className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2 text-sm text-zinc-100 outline-none placeholder:text-zinc-500 focus:border-indigo-500/50"
           />
         </div>
@@ -329,7 +365,7 @@ function TtsSettingsSection() {
         )}
       >
         {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : saved ? <Check className="h-4 w-4" /> : null}
-        {saved ? "Saved" : "Save TTS Settings"}
+        {saved ? t("common:action.saved") : t("tts.saveButton")}
       </button>
     </div>
   );
@@ -338,6 +374,7 @@ function TtsSettingsSection() {
 const IMAGE_GEN_PROVIDERS = Object.entries(IMAGE_GEN_PROVIDER_INFO) as [ImageGenProviderType, typeof IMAGE_GEN_PROVIDER_INFO[ImageGenProviderType]][];
 
 function ImageGenSettingsSection() {
+  const { t } = useTranslation("settings");
   const [enabled, setEnabled] = useState(false);
   const [provider, setProvider] = useState<ImageGenProviderType | "">("");
   const [endpoint, setEndpoint] = useState("");
@@ -444,18 +481,18 @@ function ImageGenSettingsSection() {
           onChange={(e) => setEnabled(e.target.checked)}
           className="h-4 w-4 rounded border-zinc-600 bg-zinc-800 accent-indigo-500"
         />
-        <span className="text-sm text-zinc-200">Enable Image Generation</span>
+        <span className="text-sm text-zinc-200">{t("imageGen.enable")}</span>
       </label>
 
       {/* Provider */}
       <div className="space-y-2">
-        <label className="text-xs font-medium text-zinc-400">Provider</label>
+        <label className="text-xs font-medium text-zinc-400">{t("imageGen.provider")}</label>
         <select
           value={provider}
           onChange={(e) => handleProviderChange(e.target.value as ImageGenProviderType | "")}
           className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2 text-sm text-zinc-200 outline-none focus:border-indigo-500/50"
         >
-          <option value="">None</option>
+          <option value="">{t("common:label.none")}</option>
           {IMAGE_GEN_PROVIDERS.map(([key, info]) => (
             <option key={key} value={key}>{info.label}</option>
           ))}
@@ -465,7 +502,7 @@ function ImageGenSettingsSection() {
       {/* Endpoint */}
       {provider && (
         <div className="space-y-2">
-          <label className="text-xs font-medium text-zinc-400">Endpoint</label>
+          <label className="text-xs font-medium text-zinc-400">{t("imageGen.endpoint")}</label>
           <div className="flex gap-2">
             <input
               type="text"
@@ -487,12 +524,12 @@ function ImageGenSettingsSection() {
               )}
             >
               {checking ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
-              {connectionOk === true ? "Connected" : connectionOk === false ? "Failed" : "Test"}
+              {connectionOk === true ? t("common:status.connected") : connectionOk === false ? t("common:status.failed") : t("common:action.test")}
             </button>
           </div>
           {provider === "automatic1111" && (
             <p className="text-[10px] text-zinc-600">
-              Start Stable Diffusion WebUI with the <code className="text-zinc-500">--api</code> flag
+              {t("imageGen.a1111Hint")}
             </p>
           )}
         </div>
@@ -501,7 +538,7 @@ function ImageGenSettingsSection() {
       {/* API Keys */}
       {(provider === "openai" || (!provider && needsApiKey)) && (
         <div className="space-y-2">
-          <label className="text-xs font-medium text-zinc-400">OpenAI API Key</label>
+          <label className="text-xs font-medium text-zinc-400">{t("imageGen.openaiKey")}</label>
           <input
             type="password"
             value={openaiKey}
@@ -514,7 +551,7 @@ function ImageGenSettingsSection() {
 
       {provider === "stability" && (
         <div className="space-y-2">
-          <label className="text-xs font-medium text-zinc-400">Stability AI API Key</label>
+          <label className="text-xs font-medium text-zinc-400">{t("imageGen.stabilityKey")}</label>
           <input
             type="password"
             value={stabilityKey}
@@ -528,10 +565,10 @@ function ImageGenSettingsSection() {
       {/* Model */}
       {provider && (
         <div className="space-y-2">
-          <label className="text-xs font-medium text-zinc-400">Model</label>
+          <label className="text-xs font-medium text-zinc-400">{t("imageGen.model")}</label>
           {loadingModels ? (
             <div className="flex items-center gap-2 text-xs text-zinc-500">
-              <Loader2 className="h-3 w-3 animate-spin" /> Loading models...
+              <Loader2 className="h-3 w-3 animate-spin" /> {t("imageGen.loadingModels")}
             </div>
           ) : (
             <select
@@ -539,7 +576,7 @@ function ImageGenSettingsSection() {
               onChange={(e) => setModel(e.target.value)}
               className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2 text-sm text-zinc-200 outline-none focus:border-indigo-500/50"
             >
-              <option value="">Default</option>
+              <option value="">{t("common:label.default")}</option>
               {models.map((m) => (
                 <option key={m} value={m}>{m}</option>
               ))}
@@ -551,11 +588,11 @@ function ImageGenSettingsSection() {
       {/* Generation defaults */}
       {provider && (
         <div className="space-y-4">
-          <h3 className="text-xs font-medium text-zinc-400">Default Generation Parameters</h3>
+          <h3 className="text-xs font-medium text-zinc-400">{t("imageGen.defaultParams")}</h3>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className="text-[10px] text-zinc-500">Steps: {steps}</label>
+              <label className="text-[10px] text-zinc-500">{t("imageGen.steps", { value: steps })}</label>
               <input
                 type="range"
                 min={1}
@@ -567,7 +604,7 @@ function ImageGenSettingsSection() {
             </div>
 
             <div className="space-y-1">
-              <label className="text-[10px] text-zinc-500">CFG Scale: {cfgScale}</label>
+              <label className="text-[10px] text-zinc-500">{t("imageGen.cfgScale", { value: cfgScale })}</label>
               <input
                 type="range"
                 min={1}
@@ -580,7 +617,7 @@ function ImageGenSettingsSection() {
             </div>
 
             <div className="col-span-2 space-y-1">
-              <label className="text-[10px] text-zinc-500">Resolution</label>
+              <label className="text-[10px] text-zinc-500">{t("imageGen.resolution")}</label>
               <select
                 value={`${width}x${height}`}
                 onChange={(e) => {
@@ -604,11 +641,11 @@ function ImageGenSettingsSection() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-[10px] text-zinc-500">Default Negative Prompt</label>
+            <label className="text-[10px] text-zinc-500">{t("imageGen.negativePrompt")}</label>
             <textarea
               value={negativePrompt}
               onChange={(e) => setNegativePrompt(e.target.value)}
-              placeholder="low quality, blurry, deformed..."
+              placeholder={t("imageGen.negativePromptPlaceholder")}
               rows={2}
               className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2 text-sm text-zinc-100 outline-none placeholder:text-zinc-500 focus:border-indigo-500/50 resize-none"
             />
@@ -628,13 +665,14 @@ function ImageGenSettingsSection() {
         )}
       >
         {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : saved ? <Check className="h-4 w-4" /> : null}
-        {saved ? "Saved" : "Save Image Gen Settings"}
+        {saved ? t("common:action.saved") : t("imageGen.saveButton")}
       </button>
     </div>
   );
 }
 
 function VectorMemorySettingsSection() {
+  const { t } = useTranslation("settings");
   const defaults = DEFAULT_VECTOR_MEMORY_SETTINGS;
   const [enabled, setEnabled] = useState(false);
   const [provider, setProvider] = useState<EmbeddingProviderType>(defaults.provider);
@@ -707,16 +745,16 @@ function VectorMemorySettingsSection() {
           onChange={(e) => setEnabled(e.target.checked)}
           className="h-4 w-4 rounded border-zinc-600 bg-zinc-800 accent-indigo-500"
         />
-        <span className="text-sm text-zinc-200">Enable Semantic Memory</span>
+        <span className="text-sm text-zinc-200">{t("vectorMemory.enable")}</span>
       </label>
 
       <p className="text-xs text-zinc-500">
-        When enabled, past messages are embedded as vectors and relevant context is automatically retrieved during generation.
+        {t("vectorMemory.description")}
       </p>
 
       {/* Provider selector */}
       <div>
-        <label className="mb-1 block text-sm text-zinc-400">Embedding Provider</label>
+        <label className="mb-1 block text-sm text-zinc-400">{t("vectorMemory.provider")}</label>
         <select
           value={provider}
           onChange={(e) => handleProviderChange(e.target.value as EmbeddingProviderType)}
@@ -730,7 +768,7 @@ function VectorMemorySettingsSection() {
 
       {/* Model */}
       <div>
-        <label className="mb-1 block text-sm text-zinc-400">Model</label>
+        <label className="mb-1 block text-sm text-zinc-400">{t("vectorMemory.model")}</label>
         <input
           type="text"
           value={model}
@@ -743,7 +781,7 @@ function VectorMemorySettingsSection() {
       {/* OpenAI API key */}
       {provider === "openai" && (
         <div>
-          <label className="mb-1 block text-sm text-zinc-400">OpenAI API Key</label>
+          <label className="mb-1 block text-sm text-zinc-400">{t("vectorMemory.openaiKey")}</label>
           <input
             type="password"
             value={openaiKey}
@@ -751,14 +789,14 @@ function VectorMemorySettingsSection() {
             placeholder="sk-..."
             className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-200"
           />
-          <p className="mt-1 text-xs text-zinc-500">Falls back to your active OpenAI connection profile key if empty.</p>
+          <p className="mt-1 text-xs text-zinc-500">{t("vectorMemory.openaiKeyHint")}</p>
         </div>
       )}
 
       {/* Retrieval settings */}
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="mb-1 block text-sm text-zinc-400">Memories to Inject ({insertCount})</label>
+          <label className="mb-1 block text-sm text-zinc-400">{t("vectorMemory.insertCount", { count: insertCount })}</label>
           <input
             type="range"
             min={1} max={10} step={1}
@@ -768,7 +806,7 @@ function VectorMemorySettingsSection() {
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm text-zinc-400">Score Threshold ({scoreThreshold.toFixed(2)})</label>
+          <label className="mb-1 block text-sm text-zinc-400">{t("vectorMemory.scoreThreshold", { value: scoreThreshold.toFixed(2) })}</label>
           <input
             type="range"
             min={0} max={1} step={0.05}
@@ -778,7 +816,7 @@ function VectorMemorySettingsSection() {
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm text-zinc-400">Protect Recent ({protectCount})</label>
+          <label className="mb-1 block text-sm text-zinc-400">{t("vectorMemory.protectCount", { count: protectCount })}</label>
           <input
             type="range"
             min={0} max={20} step={1}
@@ -788,7 +826,7 @@ function VectorMemorySettingsSection() {
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm text-zinc-400">Query Depth ({queryDepth})</label>
+          <label className="mb-1 block text-sm text-zinc-400">{t("vectorMemory.queryDepth", { count: queryDepth })}</label>
           <input
             type="range"
             min={1} max={5} step={1}
@@ -801,7 +839,7 @@ function VectorMemorySettingsSection() {
 
       {/* Chunk size */}
       <div>
-        <label className="mb-1 block text-sm text-zinc-400">Chunk Size ({chunkSize} chars)</label>
+        <label className="mb-1 block text-sm text-zinc-400">{t("vectorMemory.chunkSize", { count: chunkSize })}</label>
         <input
           type="range"
           min={100} max={1000} step={50}
@@ -813,7 +851,7 @@ function VectorMemorySettingsSection() {
 
       {/* Template */}
       <div>
-        <label className="mb-1 block text-sm text-zinc-400">Injection Template</label>
+        <label className="mb-1 block text-sm text-zinc-400">{t("vectorMemory.template")}</label>
         <textarea
           value={template}
           onChange={(e) => setTemplate(e.target.value)}
@@ -821,7 +859,7 @@ function VectorMemorySettingsSection() {
           placeholder={defaults.template}
           className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-200 font-mono"
         />
-        <p className="mt-1 text-xs text-zinc-500">{"{{text}} is replaced with retrieved memories."}</p>
+        <p className="mt-1 text-xs text-zinc-500">{t("vectorMemory.templateHint")}</p>
       </div>
 
       {/* Save button */}
@@ -836,32 +874,42 @@ function VectorMemorySettingsSection() {
         )}
       >
         {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : saved ? <Check className="h-4 w-4" /> : null}
-        {saved ? "Saved" : "Save Memory Settings"}
+        {saved ? t("common:action.saved") : t("vectorMemory.saveButton")}
       </button>
     </div>
   );
 }
 
 export function SettingsPage() {
+  const { t } = useTranslation("settings");
+
   return (
     <div className="p-8">
       <h1 className="font-heading text-2xl font-semibold text-zinc-100">
-        Settings
+        {t("title")}
       </h1>
       <p className="mt-1 text-sm text-zinc-400">
-        Configure your preferences and manage your account.
+        {t("subtitle")}
       </p>
 
       <section className="mt-8">
+        <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-zinc-200">
+          <Globe className="h-5 w-5 text-indigo-400" />
+          {t("language.title")}
+        </h2>
+        <LanguageSection />
+      </section>
+
+      <section className="mt-8">
         <h2 className="mb-4 text-lg font-semibold text-zinc-200">
-          mnemo.studio Account
+          {t("account.title")}
         </h2>
         <MnemoTokenSection />
       </section>
 
       <section className="mt-8">
         <h2 className="mb-4 text-lg font-semibold text-zinc-200">
-          Connection Profiles
+          {t("connections.title")}
         </h2>
         <ConnectionManager />
       </section>
@@ -869,7 +917,7 @@ export function SettingsPage() {
       <section className="mt-8">
         <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-zinc-200">
           <Volume2 className="h-5 w-5 text-indigo-400" />
-          Text-to-Speech
+          {t("tts.title")}
         </h2>
         <TtsSettingsSection />
       </section>
@@ -877,7 +925,7 @@ export function SettingsPage() {
       <section className="mt-8">
         <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-zinc-200">
           <ImageIcon className="h-5 w-5 text-indigo-400" />
-          Image Generation
+          {t("imageGen.title")}
         </h2>
         <ImageGenSettingsSection />
       </section>
@@ -885,7 +933,7 @@ export function SettingsPage() {
       <section className="mt-8">
         <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-zinc-200">
           <Brain className="h-5 w-5 text-indigo-400" />
-          Semantic Memory
+          {t("vectorMemory.title")}
         </h2>
         <VectorMemorySettingsSection />
       </section>
