@@ -21,6 +21,7 @@
   "dependencies": {
     "@fastify/cors": "^11.2.0",
     "@fastify/multipart": "^9.4.0",
+    "@huggingface/transformers": "^3.8.1",
     "@tailwindcss/vite": "^4.2.1",
     "@types/pdfmake": "^0.3.2",
     "adm-zip": "^0.5.16",

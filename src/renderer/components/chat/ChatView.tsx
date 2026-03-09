@@ -14,6 +14,7 @@ import {
   GitBranch,
   Image,
   ImageIcon,
+  Brain,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { ChatRoleplayProps, ExportScope, ExportFormat } from '@shared/chat-types'
@@ -26,6 +27,7 @@ import { GroupCharacterStrip } from './GroupCharacterStrip'
 import { BranchPanel } from './BranchPanel'
 import { SpritePanel } from './SpritePanel'
 import { ImageGenPanel } from './ImageGenPanel'
+import { VectorMemoryPanel } from './VectorMemoryPanel'
 import { useTtsPlayback } from '@/lib/tts-playback'
 import type { TtsProviderType } from '@shared/tts-types'
 
@@ -94,6 +96,7 @@ export function ChatView({
   const [branchPanelOpen, setBranchPanelOpen] = useState(false)
   const [spritePanelOpen, setSpritePanelOpen] = useState(false)
   const [imageGenPanelOpen, setImageGenPanelOpen] = useState(false)
+  const [memoryPanelOpen, setMemoryPanelOpen] = useState(false)
   const [chatListOpen, setChatListOpen] = useState(false)
   const [modelMenuOpen, setModelMenuOpen] = useState(false)
   const [exportMenuOpen, setExportMenuOpen] = useState(false)
@@ -374,6 +377,18 @@ export function ChatView({
           <GitBranch className="h-4 w-4" />
         </button>
 
+        {/* Vector memory panel toggle */}
+        <button
+          onClick={() => setMemoryPanelOpen(!memoryPanelOpen)}
+          className={cn(
+            'rounded-md p-1.5 transition-colors hover:bg-zinc-800 hover:text-zinc-300',
+            memoryPanelOpen ? 'text-indigo-400' : 'text-zinc-500'
+          )}
+          title={memoryPanelOpen ? 'Hide semantic memory' : 'Show semantic memory'}
+        >
+          <Brain className="h-4 w-4" />
+        </button>
+
       </div>
 
       {/* Main area */}
@@ -646,6 +661,14 @@ export function ChatView({
             onPortraitSet={() => {
               // Portrait was updated server-side; no local state to refresh here
             }}
+          />
+        )}
+
+        {/* Vector memory panel */}
+        {memoryPanelOpen && (
+          <VectorMemoryPanel
+            chatId={chat.id}
+            onClose={() => setMemoryPanelOpen(false)}
           />
         )}
 
