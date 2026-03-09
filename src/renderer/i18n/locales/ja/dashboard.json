@@ -1,0 +1,12 @@
+{
+  "title": "ダッシュボード",
+  "subtitle": "おかえりなさい。アクティビティの概要です。",
+  "stats.characters": "キャラクター",
+  "stats.chats": "チャット",
+  "stats.projects": "プロジェクト",
+  "stats.wordsWritten": "執筆文字数",
+  "recentChats.title": "最近のチャット",
+  "recentChats.empty": "チャットはまだありません",
+  "recentCharacters.title": "最近のキャラクター",
+  "recentCharacters.empty": "キャラクターはまだありません"
+}

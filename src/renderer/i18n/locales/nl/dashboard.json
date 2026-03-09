@@ -1,0 +1,12 @@
+{
+  "title": "Dashboard",
+  "subtitle": "Welkom terug. Hier is een overzicht van je activiteit.",
+  "stats.characters": "Personages",
+  "stats.chats": "Chats",
+  "stats.projects": "Projecten",
+  "stats.wordsWritten": "Woorden geschreven",
+  "recentChats.title": "Recente chats",
+  "recentChats.empty": "Nog geen chats",
+  "recentCharacters.title": "Recente personages",
+  "recentCharacters.empty": "Nog geen personages"
+}

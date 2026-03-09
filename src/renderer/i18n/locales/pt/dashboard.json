@@ -1,0 +1,12 @@
+{
+  "title": "Painel",
+  "subtitle": "Bem-vindo de volta. Aqui está um resumo da sua atividade.",
+  "stats.characters": "Personagens",
+  "stats.chats": "Conversas",
+  "stats.projects": "Projetos",
+  "stats.wordsWritten": "Palavras escritas",
+  "recentChats.title": "Conversas recentes",
+  "recentChats.empty": "Nenhuma conversa ainda",
+  "recentCharacters.title": "Personagens recentes",
+  "recentCharacters.empty": "Nenhum personagem ainda"
+}

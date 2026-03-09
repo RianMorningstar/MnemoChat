@@ -1,0 +1,12 @@
+{
+  "title": "Översikt",
+  "subtitle": "Välkommen tillbaka. Här är en sammanfattning av din aktivitet.",
+  "stats.characters": "Karaktärer",
+  "stats.chats": "Chattar",
+  "stats.projects": "Projekt",
+  "stats.wordsWritten": "Skrivna ord",
+  "recentChats.title": "Senaste chattar",
+  "recentChats.empty": "Inga chattar ännu",
+  "recentCharacters.title": "Senaste karaktärer",
+  "recentCharacters.empty": "Inga karaktärer ännu"
+}

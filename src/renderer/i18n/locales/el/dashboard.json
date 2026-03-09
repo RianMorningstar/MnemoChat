@@ -1,0 +1,12 @@
+{
+  "title": "Πίνακας Ελέγχου",
+  "subtitle": "Καλώς ήρθατε ξανά. Ακολουθεί μια επισκόπηση της δραστηριότητάς σας.",
+  "stats.characters": "Χαρακτήρες",
+  "stats.chats": "Συνομιλίες",
+  "stats.projects": "Έργα",
+  "stats.wordsWritten": "Γραμμένες Λέξεις",
+  "recentChats.title": "Πρόσφατες Συνομιλίες",
+  "recentChats.empty": "Δεν υπάρχουν συνομιλίες ακόμα",
+  "recentCharacters.title": "Πρόσφατοι Χαρακτήρες",
+  "recentCharacters.empty": "Δεν υπάρχουν χαρακτήρες ακόμα"
+}

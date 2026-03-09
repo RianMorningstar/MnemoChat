@@ -41,6 +41,7 @@ import {
   createSwipeAlternative,
   getSetting,
 } from "@/lib/api";
+import { useTranslation } from "react-i18next";
 import { getSiblingLeafId } from "@/lib/branch-utils";
 import { pickNextCharacter } from "@/lib/group-utils";
 import type { QuickReply, RegexSubstitution } from "@shared/character-types";
@@ -82,6 +83,7 @@ export function ChatPage() {
   const { chatId } = useParams<{ chatId: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { t } = useTranslation("chat");
 
   const [chat, setChat] = useState<Chat | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -164,7 +166,7 @@ export function ChatPage() {
       // Default pending character to primary
       setPendingCharacterId((prev) => prev ?? chatData.characterId);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load chat");
+      setError(e instanceof Error ? e.message : t("error.loadChat"));
     }
   }, []);
 
@@ -232,7 +234,7 @@ export function ChatPage() {
         }
       } catch (e) {
         if (!cancelled) {
-          setError(e instanceof Error ? e.message : "Failed to initialize");
+          setError(e instanceof Error ? e.message : t("error.initialize"));
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -677,7 +679,7 @@ export function ChatPage() {
             onClick={() => navigate("/characters")}
             className="mt-3 rounded-lg bg-zinc-800 px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-700"
           >
-            Back to Characters
+            {t("error.backToCharacters")}
           </button>
         </div>
       </div>
@@ -689,15 +691,15 @@ export function ChatPage() {
     return (
       <div className="flex h-full items-center justify-center">
         <div className="text-center">
-          <h2 className="text-lg font-semibold text-zinc-200">No chats yet</h2>
+          <h2 className="text-lg font-semibold text-zinc-200">{t("empty.title")}</h2>
           <p className="mt-1 text-sm text-zinc-500">
-            Pick a character from the library to start a conversation.
+            {t("empty.subtitle")}
           </p>
           <button
             onClick={() => navigate("/characters")}
             className="mt-4 rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-400"
           >
-            Browse Characters
+            {t("empty.browseCharacters")}
           </button>
         </div>
       </div>

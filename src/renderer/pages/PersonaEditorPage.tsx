@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router";
+import { useTranslation } from "react-i18next";
 import { ArrowLeft, User } from "lucide-react";
 import { getPersona, updatePersona } from "@/lib/api";
 import type { Persona } from "@shared/library-types";
@@ -7,6 +8,7 @@ import type { Persona } from "@shared/library-types";
 export function PersonaEditorPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation('library');
   const [persona, setPersona] = useState<Persona | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -62,13 +64,13 @@ export function PersonaEditorPage() {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4">
         <p className="text-sm text-red-400">
-          {error || "Persona not found"}
+          {error || t('personaEditor.notFound')}
         </p>
         <button
           onClick={handleBack}
           className="rounded-md bg-zinc-800 px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-700"
         >
-          Back to Library
+          {t('personaEditor.backToLibrary')}
         </button>
       </div>
     );
@@ -87,10 +89,10 @@ export function PersonaEditorPage() {
           </button>
           <div>
             <h1 className="font-heading text-xl font-semibold text-zinc-100">
-              Edit Persona
+              {t('personaEditor.title')}
             </h1>
             <p className="text-sm text-zinc-500">
-              Customize how you appear in conversations.
+              {t('personaEditor.subtitle')}
             </p>
           </div>
         </div>
@@ -117,7 +119,7 @@ export function PersonaEditorPage() {
               htmlFor="persona-name"
               className="mb-1.5 block text-sm font-medium text-zinc-300"
             >
-              Name
+              {t('personaEditor.name')}
             </label>
             <input
               id="persona-name"
@@ -133,7 +135,7 @@ export function PersonaEditorPage() {
               htmlFor="persona-description"
               className="mb-1.5 block text-sm font-medium text-zinc-300"
             >
-              Description
+              {t('personaEditor.description')}
             </label>
             <textarea
               id="persona-description"
@@ -149,7 +151,7 @@ export function PersonaEditorPage() {
               htmlFor="persona-avatar"
               className="mb-1.5 block text-sm font-medium text-zinc-300"
             >
-              Avatar URL
+              {t('personaEditor.avatarUrl')}
             </label>
             <input
               id="persona-avatar"
@@ -168,14 +170,14 @@ export function PersonaEditorPage() {
             onClick={handleBack}
             className="rounded-lg px-5 py-2.5 text-sm font-medium text-zinc-400 transition-colors hover:text-zinc-200"
           >
-            Cancel
+            {t('personaEditor.cancel')}
           </button>
           <button
             onClick={handleSave}
             disabled={!name.trim() || saving}
             className="rounded-lg bg-indigo-500 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {saving ? "Saving…" : "Save Changes"}
+            {saving ? t('personaEditor.saving') : t('personaEditor.saveChanges')}
           </button>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Plus, Search, ChevronDown, FolderOpen } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type {
@@ -20,23 +21,7 @@ type ProjectListProps = Pick<
   | 'onExport'
 >
 
-const statusFilterLabels: Record<string, string> = {
-  all: 'All Projects',
-  drafting: 'Drafting',
-  'in-progress': 'In Progress',
-  complete: 'Complete',
-  archived: 'Archived',
-}
-
 type SortKey = 'updated' | 'created' | 'title' | 'words' | 'scenes'
-
-const sortLabels: Record<SortKey, string> = {
-  updated: 'Last Edited',
-  created: 'Date Created',
-  title: 'Title',
-  words: 'Word Count',
-  scenes: 'Scene Count',
-}
 
 function sortProjects(projects: Project[], sortBy: SortKey): Project[] {
   return [...projects].sort((a, b) => {
@@ -64,6 +49,23 @@ export function ProjectList({
   onChangeProjectStatus,
   onExport,
 }: ProjectListProps) {
+  const { t } = useTranslation('story')
+
+  const statusFilterLabels: Record<string, string> = {
+    all: t('status.all'),
+    drafting: t('status.drafting'),
+    'in-progress': t('status.inProgress'),
+    complete: t('status.complete'),
+    archived: t('status.archived'),
+  }
+
+  const sortLabels: Record<SortKey, string> = {
+    updated: t('sort.updated'),
+    created: t('sort.created'),
+    title: t('sort.title'),
+    words: t('sort.words'),
+    scenes: t('sort.scenes'),
+  }
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [sortBy, setSortBy] = useState<SortKey>('updated')
@@ -98,11 +100,10 @@ export function ProjectList({
             className="text-lg font-bold text-zinc-100"
             style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}
           >
-            Projects
+            {t('projects.title')}
           </h1>
           <p className="mt-0.5 text-xs tabular-nums text-zinc-500">
-            {projects.length} projects &middot; {totalScenes} scenes &middot;{' '}
-            {totalWords >= 1000 ? `${(totalWords / 1000).toFixed(1)}k` : totalWords} words
+            {t('projects.stats', { projectCount: projects.length, sceneCount: totalScenes, wordCount: totalWords >= 1000 ? `${(totalWords / 1000).toFixed(1)}k` : totalWords })}
           </p>
         </div>
         <button
@@ -110,7 +111,7 @@ export function ProjectList({
           className="flex items-center gap-2 rounded-xl bg-indigo-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-400"
         >
           <Plus className="h-4 w-4" />
-          New Project
+          {t('projects.newProject')}
         </button>
       </div>
 
@@ -123,7 +124,7 @@ export function ProjectList({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search projects, characters..."
+            placeholder={t('projects.search')}
             className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 py-2 pl-10 pr-4 text-sm text-zinc-100 outline-none placeholder:text-zinc-500 focus:border-indigo-500/50"
           />
         </div>
@@ -197,7 +198,7 @@ export function ProjectList({
 
       {/* Result count */}
       <div className="px-6 pb-2 text-[11px] text-zinc-600">
-        {sorted.length} project{sorted.length !== 1 ? 's' : ''}
+        {sorted.length === 1 ? t('projects.resultCountOne') : t('projects.resultCount', { count: sorted.length })}
         {statusFilter !== 'all' && ` (${statusFilterLabels[statusFilter].toLowerCase()})`}
       </div>
 
@@ -208,15 +209,15 @@ export function ProjectList({
             <FolderOpen className="mb-4 h-12 w-12 text-zinc-700" />
             <p className="text-sm text-zinc-500">
               {searchQuery || statusFilter !== 'all'
-                ? 'No projects match your filters.'
-                : 'No projects yet.'}
+                ? t('projects.noMatch')
+                : t('projects.empty')}
             </p>
             {!searchQuery && statusFilter === 'all' && (
               <button
                 onClick={onCreateProject}
                 className="mt-3 text-sm font-medium text-indigo-400 transition-colors hover:text-indigo-300"
               >
-                Create your first project
+                {t('projects.createFirst')}
               </button>
             )}
           </div>

@@ -1,0 +1,12 @@
+{
+  "title": "Dasbor",
+  "subtitle": "Selamat datang kembali. Berikut ringkasan aktivitas Anda.",
+  "stats.characters": "Karakter",
+  "stats.chats": "Obrolan",
+  "stats.projects": "Proyek",
+  "stats.wordsWritten": "Kata Ditulis",
+  "recentChats.title": "Obrolan Terbaru",
+  "recentChats.empty": "Belum ada obrolan",
+  "recentCharacters.title": "Karakter Terbaru",
+  "recentCharacters.empty": "Belum ada karakter"
+}

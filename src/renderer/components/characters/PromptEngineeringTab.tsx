@@ -1,4 +1,5 @@
 import type { Character } from "@shared/character-types";
+import { useTranslation } from "react-i18next";
 
 interface PromptEngineeringTabProps {
   character: Character;
@@ -9,16 +10,16 @@ export function PromptEngineeringTab({
   character,
   onChange,
 }: PromptEngineeringTabProps) {
+  const { t } = useTranslation('characters');
   return (
     <div className="space-y-6">
       {/* System Prompt */}
       <div>
         <label className="mb-1 block text-sm font-medium text-zinc-300">
-          System Prompt
+          {t('prompts.systemPrompt')}
         </label>
         <p className="mb-2 text-xs text-zinc-500">
-          Placed at the beginning of the conversation context. Use this for core
-          instructions that define character behavior.
+          {t('prompts.systemPromptDesc')}
         </p>
         <textarea
           value={character.systemPrompt || ""}
@@ -32,11 +33,10 @@ export function PromptEngineeringTab({
       {/* Post-History Instructions */}
       <div>
         <label className="mb-1 block text-sm font-medium text-zinc-300">
-          Post-History Instructions
+          {t('prompts.postHistory')}
         </label>
         <p className="mb-2 text-xs text-zinc-500">
-          Injected after the conversation history, right before the model
-          generates a response.
+          {t('prompts.postHistoryDesc')}
         </p>
         <textarea
           value={character.postHistoryInstructions || ""}
@@ -52,11 +52,10 @@ export function PromptEngineeringTab({
       {/* Author's Note */}
       <div>
         <label className="mb-1 block text-sm font-medium text-zinc-300">
-          Author's Note
+          {t('prompts.authorsNote')}
         </label>
         <p className="mb-2 text-xs text-zinc-500">
-          Becomes the default Scene Direction when starting a new chat with this
-          character. Can be overridden per-chat.
+          {t('prompts.authorsNoteDesc')}
         </p>
         <textarea
           value={character.authorNote || ""}
@@ -66,7 +65,7 @@ export function PromptEngineeringTab({
           className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 font-mono text-sm text-zinc-200 placeholder-zinc-500 focus:border-indigo-500 focus:outline-none"
         />
         <div className="mt-2 flex items-center gap-3">
-          <label className="text-xs text-zinc-400">Injection depth</label>
+          <label className="text-xs text-zinc-400">{t('prompts.injectionDepth')}</label>
           <input
             type="number"
             min={1}
@@ -80,7 +79,7 @@ export function PromptEngineeringTab({
             className="w-16 rounded-md border border-zinc-700 bg-zinc-800 px-2 py-1 text-sm text-zinc-200 focus:border-indigo-500 focus:outline-none"
           />
           <span className="text-xs text-zinc-500">
-            messages from the end of context
+            {t('prompts.injectionDepthHint')}
           </span>
         </div>
       </div>
@@ -88,11 +87,10 @@ export function PromptEngineeringTab({
       {/* Example Dialogues */}
       <div>
         <label className="mb-1 block text-sm font-medium text-zinc-300">
-          Example Dialogues
+          {t('prompts.exampleDialogues')}
         </label>
         <p className="mb-2 text-xs text-zinc-500">
-          Example message exchanges to guide the model's tone and style. Each
-          entry is one dialogue sample.
+          {t('prompts.exampleDialoguesDesc')}
         </p>
         {character.exampleDialogues.map((dialogue, i) => (
           <div key={i} className="mb-2 flex gap-2">
@@ -116,7 +114,7 @@ export function PromptEngineeringTab({
               }}
               className="self-start rounded px-2 py-2 text-sm text-red-400 hover:bg-red-900/20"
             >
-              Remove
+              {t('basic.remove')}
             </button>
           </div>
         ))}
@@ -128,7 +126,7 @@ export function PromptEngineeringTab({
           }
           className="text-sm text-indigo-400 hover:text-indigo-300"
         >
-          + Add dialogue
+          {t('prompts.addDialogue')}
         </button>
       </div>
     </div>

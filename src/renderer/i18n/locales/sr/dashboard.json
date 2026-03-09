@@ -1,0 +1,12 @@
+{
+  "title": "Контролна табла",
+  "subtitle": "Добро дошли назад. Ево прегледа ваше активности.",
+  "stats.characters": "Ликови",
+  "stats.chats": "Ћаскања",
+  "stats.projects": "Пројекти",
+  "stats.wordsWritten": "Написане речи",
+  "recentChats.title": "Недавна ћаскања",
+  "recentChats.empty": "Још нема ћаскања",
+  "recentCharacters.title": "Недавни ликови",
+  "recentCharacters.empty": "Још нема ликова"
+}

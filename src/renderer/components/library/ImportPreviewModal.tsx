@@ -1,4 +1,5 @@
 import { BookOpen, Loader2, Upload, User } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 
 export type ImportPreview =
@@ -36,12 +37,13 @@ export function ImportPreviewModal({
   onCancel,
   loading = false,
 }: ImportPreviewModalProps) {
+  const { t } = useTranslation('library');
   const title =
     preview.type === "character"
-      ? "Import Character"
+      ? t('import.character')
       : preview.type === "lorebook"
-        ? "Import Lorebook"
-        : "Import Persona";
+        ? t('import.lorebook')
+        : t('import.persona');
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
@@ -74,7 +76,7 @@ export function ImportPreviewModal({
             disabled={loading}
             className="rounded-lg px-4 py-2 text-sm font-medium text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-200 disabled:opacity-50"
           >
-            Cancel
+            {t('import.cancel')}
           </button>
           <button
             onClick={onConfirm}
@@ -86,7 +88,7 @@ export function ImportPreviewModal({
             ) : (
               <Upload className="h-3.5 w-3.5" />
             )}
-            {loading ? "Importing..." : "Import"}
+            {loading ? t('import.importing') : t('import.confirm')}
           </button>
         </div>
       </div>
@@ -148,6 +150,7 @@ function LorebookPreview({
 }: {
   preview: Extract<ImportPreview, { type: "lorebook" }>;
 }) {
+  const { t } = useTranslation('library');
   return (
     <div className="flex gap-4">
       {/* Icon */}
@@ -171,7 +174,7 @@ function LorebookPreview({
           {preview.name}
         </h3>
         <p className="mt-1 text-[11px] tabular-nums text-zinc-500">
-          {preview.entryCount} {preview.entryCount === 1 ? "entry" : "entries"}
+          {preview.entryCount === 1 ? t('import.entryOne', { count: preview.entryCount }) : t('import.entry', { count: preview.entryCount })}
         </p>
         {preview.tags.length > 0 && (
           <div className="mt-1.5 flex flex-wrap gap-1">

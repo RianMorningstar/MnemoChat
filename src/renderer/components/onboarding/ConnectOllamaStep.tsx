@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   CheckCircle2,
   XCircle,
@@ -30,6 +31,7 @@ export function ConnectOllamaStep({
   onConnect,
   onNext,
 }: ConnectOllamaStepProps) {
+  const { t } = useTranslation('onboarding');
   const [selectedType, setSelectedType] = useState<ProviderType>("ollama");
   const [manualUrl, setManualUrl] = useState("");
   const [apiKey, setApiKey] = useState("");
@@ -59,16 +61,16 @@ export function ConnectOllamaStep({
         className="mb-2 text-2xl font-bold tracking-tight text-zinc-100 sm:text-3xl"
         style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}
       >
-        Connect to an AI Provider
+        {t('connect.title')}
       </h2>
       <p className="mb-8 text-zinc-500">
-        MnemoChat needs an AI backend to generate responses.
+        {t('connect.subtitle')}
       </p>
 
       {/* Provider selector */}
       <div className="mb-6 w-full max-w-md">
         <label className="mb-2 block text-xs font-medium text-zinc-400">
-          Provider
+          {t('connect.provider')}
         </label>
         <div className="flex flex-wrap gap-2">
           {PROVIDER_OPTIONS.map((type) => (
@@ -91,7 +93,7 @@ export function ConnectOllamaStep({
         {/* Endpoint URL */}
         <div>
           <label className="mb-1.5 block text-xs font-medium text-zinc-400">
-            {isLocal ? "Endpoint URL" : "API Base URL"}
+            {isLocal ? t('connect.endpointUrl') : t('connect.apiBaseUrl')}
           </label>
           <input
             type="text"
@@ -106,14 +108,14 @@ export function ConnectOllamaStep({
         {requiresKey && (
           <div>
             <label className="mb-1.5 block text-xs font-medium text-zinc-400">
-              API Key
+              {t('connect.apiKey')}
             </label>
             <div className="relative">
               <input
                 type={showApiKey ? "text" : "password"}
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
-                placeholder={`${PROVIDER_LABELS[selectedType]} API key`}
+                placeholder={t('connect.apiKeyPlaceholder', { provider: PROVIDER_LABELS[selectedType] })}
                 className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 pr-10 text-sm text-zinc-200 placeholder-zinc-600 outline-none transition-colors focus:border-indigo-500"
                 style={{ fontFamily: "'JetBrains Mono', monospace" }}
               />
@@ -132,7 +134,7 @@ export function ConnectOllamaStep({
         {isChecking && (
           <div className="flex items-center gap-3 py-2">
             <Loader2 className="h-5 w-5 animate-spin text-indigo-400" strokeWidth={1.5} />
-            <p className="text-sm text-zinc-400">Checking connection…</p>
+            <p className="text-sm text-zinc-400">{t('connect.checking')}</p>
           </div>
         )}
 
@@ -140,10 +142,10 @@ export function ConnectOllamaStep({
           <div className="flex items-center gap-3 py-2">
             <CheckCircle2 className="h-5 w-5 text-emerald-400" strokeWidth={1.5} />
             <div>
-              <p className="text-sm font-medium text-zinc-100">Connected</p>
+              <p className="text-sm font-medium text-zinc-100">{t('connect.connected')}</p>
               {modelCount > 0 && (
                 <p className="text-xs text-zinc-500">
-                  {modelCount} model{modelCount !== 1 ? "s" : ""} available
+                  {modelCount === 1 ? t('connect.modelsAvailableOne', { count: modelCount }) : t('connect.modelsAvailable', { count: modelCount })}
                 </p>
               )}
             </div>
@@ -155,8 +157,8 @@ export function ConnectOllamaStep({
             <XCircle className="h-5 w-5 text-red-400" strokeWidth={1.5} />
             <p className="text-sm text-zinc-400">
               {isLocal
-                ? "Couldn't reach the endpoint. Make sure the service is running."
-                : "Couldn't connect. Check your API key and endpoint."}
+                ? t('connect.unreachableLocal')
+                : t('connect.unreachableCloud')}
             </p>
           </div>
         )}
@@ -166,7 +168,7 @@ export function ConnectOllamaStep({
           disabled={!canConnect || isChecking}
           className="w-full rounded-lg bg-zinc-700 px-4 py-2 text-sm font-medium text-zinc-200 transition-colors hover:bg-zinc-600 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {isChecking ? "Checking…" : "Test Connection"}
+          {isChecking ? t('connect.checkingButton') : t('connect.testConnection')}
         </button>
       </div>
 
@@ -179,7 +181,7 @@ export function ConnectOllamaStep({
             : "cursor-not-allowed bg-zinc-800 text-zinc-600"
         }`}
       >
-        Continue
+        {t('connect.continue')}
       </button>
     </div>
   );

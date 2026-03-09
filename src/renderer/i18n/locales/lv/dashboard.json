@@ -1,0 +1,12 @@
+{
+  "title": "Panelis",
+  "subtitle": "Laipni lūdzam atpakaļ. Šeit ir jūsu aktivitātes pārskats.",
+  "stats.characters": "Varoņi",
+  "stats.chats": "Tērzēšanas",
+  "stats.projects": "Projekti",
+  "stats.wordsWritten": "Uzrakstīti vārdi",
+  "recentChats.title": "Nesenās tērzēšanas",
+  "recentChats.empty": "Tērzēšanu vēl nav",
+  "recentCharacters.title": "Nesenie varoņi",
+  "recentCharacters.empty": "Varoņu vēl nav"
+}

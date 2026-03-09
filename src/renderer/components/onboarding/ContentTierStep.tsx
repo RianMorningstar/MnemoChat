@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { ContentTierOption, ContentTier } from "@shared/types";
 import { Shield, Flame } from "lucide-react";
 
@@ -17,6 +18,7 @@ export function ContentTierStep({
   onConfirmAge,
   onNext,
 }: ContentTierStepProps) {
+  const { t } = useTranslation('onboarding');
   const [ageConfirmed, setAgeConfirmed] = useState(false);
   const selectedOption = options.find((o) => o.id === selectedTier);
 
@@ -35,14 +37,14 @@ export function ContentTierStep({
         className="mb-2 text-4xl font-bold tracking-tight text-zinc-100 sm:text-5xl"
         style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}
       >
-        MnemoChat
+        {t('contentTier.title')}
       </h1>
       <p className="mb-12 text-zinc-500">
-        Your characters. Your stories. Your rules.
+        {t('contentTier.tagline')}
       </p>
 
       <p className="mb-8 text-lg font-medium text-zinc-300">
-        How do you want to use MnemoChat?
+        {t('contentTier.question')}
       </p>
 
       <div className="grid w-full max-w-xl grid-cols-1 gap-4 sm:grid-cols-2">
@@ -95,7 +97,7 @@ export function ContentTierStep({
             className="flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 border-zinc-600 transition-colors hover:border-indigo-500"
           />
           <span className="text-sm text-zinc-400">
-            I am 18 years of age or older.
+            {t('contentTier.ageConfirm')}
           </span>
         </div>
       )}
@@ -118,7 +120,7 @@ export function ContentTierStep({
             </svg>
           </div>
           <span className="text-sm text-zinc-300">
-            I am 18 years of age or older.
+            {t('contentTier.ageConfirm')}
           </span>
         </div>
       )}
@@ -132,7 +134,7 @@ export function ContentTierStep({
             : "cursor-not-allowed bg-zinc-800 text-zinc-600"
         }`}
       >
-        Continue
+        {t('contentTier.continue')}
       </button>
     </div>
   );

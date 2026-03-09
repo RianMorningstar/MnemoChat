@@ -1,0 +1,12 @@
+{
+  "title": "Hallintapaneeli",
+  "subtitle": "Tervetuloa takaisin. Tässä on katsaus toimintaasi.",
+  "stats.characters": "Hahmot",
+  "stats.chats": "Keskustelut",
+  "stats.projects": "Projektit",
+  "stats.wordsWritten": "Kirjoitettuja sanoja",
+  "recentChats.title": "Viimeisimmät keskustelut",
+  "recentChats.empty": "Ei keskusteluja vielä",
+  "recentCharacters.title": "Viimeisimmät hahmot",
+  "recentCharacters.empty": "Ei hahmoja vielä"
+}

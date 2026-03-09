@@ -1,0 +1,12 @@
+{
+  "title": "Панель управления",
+  "subtitle": "С возвращением. Вот обзор вашей активности.",
+  "stats.characters": "Персонажи",
+  "stats.chats": "Чаты",
+  "stats.projects": "Проекты",
+  "stats.wordsWritten": "Написано слов",
+  "recentChats.title": "Недавние чаты",
+  "recentChats.empty": "Чатов пока нет",
+  "recentCharacters.title": "Недавние персонажи",
+  "recentCharacters.empty": "Персонажей пока нет"
+}

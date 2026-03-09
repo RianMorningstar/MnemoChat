@@ -1,0 +1,12 @@
+{
+  "title": "Panel",
+  "subtitle": "Bienvenido de vuelta. Aqu\u00ed tienes un resumen de tu actividad.",
+  "stats.characters": "Personajes",
+  "stats.chats": "Chats",
+  "stats.projects": "Proyectos",
+  "stats.wordsWritten": "Palabras escritas",
+  "recentChats.title": "Chats recientes",
+  "recentChats.empty": "A\u00fan no hay chats",
+  "recentCharacters.title": "Personajes recientes",
+  "recentCharacters.empty": "A\u00fan no hay personajes"
+}

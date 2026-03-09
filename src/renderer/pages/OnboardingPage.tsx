@@ -1,31 +1,31 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router";
+import { useTranslation } from "react-i18next";
 import type { ContentTier, ConnectionState, OllamaModel, ContentTierOption, ProviderType } from "@shared/types";
 import { OnboardingWizard } from "@/components/onboarding";
 import { getSetting, setSetting, createConnection, activateConnection, getConnections, createPersona, setDefaultPersona } from "@/lib/api";
 import { checkProviderHealth, fetchProviderModels } from "@/lib/ollama";
 
-const CONTENT_TIER_OPTIONS: ContentTierOption[] = [
-  {
-    id: "sfw",
-    label: "Safe for Work",
-    description:
-      "Family-friendly content only. All NSFW content, characters, and prompts are hidden.",
-    requiresAgeConfirmation: false,
-  },
-  {
-    id: "nsfw",
-    label: "Unrestricted",
-    description:
-      "Full access to all content types including mature themes and characters.",
-    requiresAgeConfirmation: true,
-  },
-];
-
 const DEFAULT_ENDPOINT = "http://localhost:11434";
 
 export function OnboardingPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation('onboarding');
+
+  const CONTENT_TIER_OPTIONS: ContentTierOption[] = [
+    {
+      id: "sfw",
+      label: t('contentTier.sfw'),
+      description: t('contentTier.sfwDesc'),
+      requiresAgeConfirmation: false,
+    },
+    {
+      id: "nsfw",
+      label: t('contentTier.nsfw'),
+      description: t('contentTier.nsfwDesc'),
+      requiresAgeConfirmation: true,
+    },
+  ];
   const [loading, setLoading] = useState(true);
   const [connectionState, setConnectionState] = useState<ConnectionState>("unknown");
   const [endpoint, setEndpoint] = useState<string>(DEFAULT_ENDPOINT);

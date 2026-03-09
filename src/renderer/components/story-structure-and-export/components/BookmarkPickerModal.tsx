@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { X, Search, MessageSquare, Bookmark, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getChats, getChatBookmarks, getMessages } from "@/lib/api";
@@ -19,6 +20,7 @@ interface BookmarkPickerModalProps {
 }
 
 export function BookmarkPickerModal({ onConfirm, onClose }: BookmarkPickerModalProps) {
+  const { t } = useTranslation('story');
   const [step, setStep] = useState<"chat" | "bookmarks">("chat");
   const [chats, setChats] = useState<ChatListItem[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -46,7 +48,7 @@ export function BookmarkPickerModal({ onConfirm, onClose }: BookmarkPickerModalP
     ]);
     setBookmarks(bm);
     setMessages(msgResult.messages);
-    setSceneTitle(chat.title || "Untitled Scene");
+    setSceneTitle(chat.title || t('bookmarkPicker.untitledScene'));
     setLoading(false);
   }
 
@@ -66,8 +68,8 @@ export function BookmarkPickerModal({ onConfirm, onClose }: BookmarkPickerModalP
     const contentBlocks = selectedBookmarks.map((bm) => {
       const msg = messages.find((m) => m.id === bm.messageId);
       return {
-        bookmarkLabel: bm.label || "Bookmark",
-        speaker: msg?.role === "assistant" ? (selectedChat.characterName ?? "") : "You",
+        bookmarkLabel: bm.label || t('bookmarkPicker.bookmark'),
+        speaker: msg?.role === "assistant" ? (selectedChat.characterName ?? "") : t('bookmarkPicker.you'),
         sourceMessageId: bm.messageId,
         text: msg?.content ?? "",
       };
@@ -99,7 +101,7 @@ export function BookmarkPickerModal({ onConfirm, onClose }: BookmarkPickerModalP
             className="text-base font-bold text-zinc-100"
             style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}
           >
-            {step === "chat" ? "Select Chat" : "Select Bookmarks"}
+            {step === "chat" ? t('bookmarkPicker.selectChat') : t('bookmarkPicker.selectBookmarks')}
           </h3>
           <button
             onClick={onClose}
@@ -123,7 +125,7 @@ export function BookmarkPickerModal({ onConfirm, onClose }: BookmarkPickerModalP
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search chats..."
+                  placeholder={t('bookmarkPicker.searchChats')}
                   className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 py-2 pl-10 pr-4 text-sm text-zinc-100 outline-none placeholder:text-zinc-500 focus:border-indigo-500/50"
                 />
               </div>
@@ -137,16 +139,16 @@ export function BookmarkPickerModal({ onConfirm, onClose }: BookmarkPickerModalP
                     <MessageSquare className="h-4 w-4 shrink-0 text-zinc-500" />
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm text-zinc-200">
-                        {chat.title || "Untitled Chat"}
+                        {chat.title || t('bookmarkPicker.untitledChat')}
                       </div>
                       <div className="mt-0.5 text-[10px] text-zinc-500">
-                        {chat.characterName} &middot; {chat.bookmarkCount ?? 0} bookmarks
+                        {chat.characterName} &middot; {t('bookmarkPicker.bookmarks', { count: chat.bookmarkCount ?? 0 })}
                       </div>
                     </div>
                   </button>
                 ))}
                 {filteredChats.length === 0 && (
-                  <p className="py-8 text-center text-sm text-zinc-500">No chats found.</p>
+                  <p className="py-8 text-center text-sm text-zinc-500">{t('bookmarkPicker.noChats')}</p>
                 )}
               </div>
             </>
@@ -154,7 +156,7 @@ export function BookmarkPickerModal({ onConfirm, onClose }: BookmarkPickerModalP
             <>
               <div className="mb-4">
                 <label className="mb-1.5 block text-[10px] font-medium uppercase tracking-widest text-zinc-600">
-                  Scene Title
+                  {t('bookmarkPicker.sceneTitle')}
                 </label>
                 <input
                   type="text"
@@ -165,12 +167,12 @@ export function BookmarkPickerModal({ onConfirm, onClose }: BookmarkPickerModalP
               </div>
 
               <label className="mb-2 block text-[10px] font-medium uppercase tracking-widest text-zinc-600">
-                Bookmarks ({selectedBookmarkIds.size} selected)
+                {t('bookmarkPicker.bookmarksSelected', { count: selectedBookmarkIds.size })}
               </label>
 
               {bookmarks.length === 0 ? (
                 <p className="py-8 text-center text-sm text-zinc-500">
-                  This chat has no bookmarks.
+                  {t('bookmarkPicker.noBookmarks')}
                 </p>
               ) : (
                 <div className="space-y-1.5">
@@ -202,7 +204,7 @@ export function BookmarkPickerModal({ onConfirm, onClose }: BookmarkPickerModalP
                           <div className="flex items-center gap-2">
                             <Bookmark className="h-3 w-3 text-indigo-400" />
                             <span className="text-xs font-medium text-zinc-300">
-                              {bm.label || "Bookmark"}
+                              {bm.label || t('bookmarkPicker.bookmark')}
                             </span>
                           </div>
                           <p className="mt-1 line-clamp-2 text-xs text-zinc-500">
@@ -230,14 +232,14 @@ export function BookmarkPickerModal({ onConfirm, onClose }: BookmarkPickerModalP
                 }}
                 className="text-sm text-zinc-400 transition-colors hover:text-zinc-200"
               >
-                Back
+                {t('bookmarkPicker.back')}
               </button>
               <button
                 onClick={handleConfirm}
                 disabled={selectedBookmarkIds.size === 0}
                 className="rounded-xl bg-indigo-500 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-400 disabled:opacity-40 disabled:hover:bg-indigo-500"
               >
-                Create Scene ({selectedBookmarkIds.size})
+                {t('bookmarkPicker.createScene', { count: selectedBookmarkIds.size })}
               </button>
             </>
           ) : (

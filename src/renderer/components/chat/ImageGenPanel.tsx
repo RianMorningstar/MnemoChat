@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { X, ImageIcon, Loader2, Trash2, Sparkles, UserCircle, Copy } from "lucide-react";
 import {
   generateImage,
@@ -34,6 +35,7 @@ export function ImageGenPanel({
   const [prompt, setPrompt] = useState("");
   const [generating, setGenerating] = useState(false);
   const [lightboxImage, setLightboxImage] = useState<ImageGenResult | null>(null);
+  const { t } = useTranslation('chat');
 
   // Load chat gallery
   useEffect(() => {
@@ -92,7 +94,7 @@ export function ImageGenPanel({
         <div className="flex h-10 items-center justify-between border-b border-zinc-800 px-3">
           <div className="flex items-center gap-1.5">
             <ImageIcon className="h-3.5 w-3.5 text-indigo-400" />
-            <span className="text-xs font-medium text-zinc-400">Image Gen</span>
+            <span className="text-xs font-medium text-zinc-400">{t('imageGen.title')}</span>
           </div>
           <button
             onClick={onClose}
@@ -123,7 +125,7 @@ export function ImageGenPanel({
                   handleGenerate();
                 }
               }}
-              placeholder="Describe the image..."
+              placeholder={t('imageGen.placeholder')}
               disabled={generating}
               className="flex-1 rounded-md border border-zinc-700 bg-zinc-800/50 px-2.5 py-1.5 text-xs text-zinc-100 outline-none placeholder:text-zinc-500 focus:border-indigo-500/50"
             />
@@ -145,7 +147,7 @@ export function ImageGenPanel({
           {generating && (
             <p className="text-[10px] text-zinc-500 flex items-center gap-1">
               <Loader2 className="h-2.5 w-2.5 animate-spin" />
-              Generating image...
+              {t('imageGen.generating')}
             </p>
           )}
         </div>
@@ -154,13 +156,13 @@ export function ImageGenPanel({
         <div className="flex-1 overflow-y-auto p-3">
           {loading ? (
             <div className="flex items-center justify-center gap-2 py-8 text-xs text-zinc-500">
-              <Loader2 className="h-3 w-3 animate-spin" /> Loading...
+              <Loader2 className="h-3 w-3 animate-spin" /> {t('imageGen.loading')}
             </div>
           ) : gallery.length === 0 ? (
             <div className="flex flex-col items-center gap-2 py-8 text-zinc-600">
               <ImageIcon className="h-8 w-8" />
-              <span className="text-xs">No images yet</span>
-              <span className="text-[10px]">Type a prompt above to generate</span>
+              <span className="text-xs">{t('imageGen.empty')}</span>
+              <span className="text-[10px]">{t('imageGen.emptyHint')}</span>
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-2">
@@ -183,7 +185,7 @@ export function ImageGenPanel({
                         e.stopPropagation();
                         handleSetPortrait(img.id);
                       }}
-                      title="Set as portrait"
+                      title={t('imageGen.setAsPortrait')}
                       className="rounded-full bg-black/60 p-0.5 text-indigo-400 hover:text-indigo-300"
                     >
                       <UserCircle className="h-2.5 w-2.5" />
@@ -193,7 +195,7 @@ export function ImageGenPanel({
                         e.stopPropagation();
                         handleCopyPrompt(img);
                       }}
-                      title="Copy prompt"
+                      title={t('imageGen.copyPrompt')}
                       className="rounded-full bg-black/60 p-0.5 text-zinc-400 hover:text-zinc-200"
                     >
                       <Copy className="h-2.5 w-2.5" />
@@ -203,7 +205,7 @@ export function ImageGenPanel({
                         e.stopPropagation();
                         handleDelete(img.id);
                       }}
-                      title="Delete"
+                      title={t('message.delete')}
                       className="rounded-full bg-black/60 p-0.5 text-red-400 hover:text-red-300"
                     >
                       <Trash2 className="h-2.5 w-2.5" />
@@ -211,7 +213,7 @@ export function ImageGenPanel({
                   </div>
                   {portraitFlash === img.id && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/50 pointer-events-none">
-                      <span className="text-[9px] font-medium text-indigo-300">Portrait set!</span>
+                      <span className="text-[9px] font-medium text-indigo-300">{t('imageGen.portraitSet')}</span>
                     </div>
                   )}
                   <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -257,14 +259,14 @@ export function ImageGenPanel({
                   className="flex items-center gap-1 rounded-md bg-indigo-600/80 px-2.5 py-1 text-[10px] font-medium text-white hover:bg-indigo-500 transition-colors"
                 >
                   <UserCircle className="h-3 w-3" />
-                  Set as Portrait
+                  {t('imageGen.setAsPortrait')}
                 </button>
                 <button
                   onClick={() => handleCopyPrompt(lightboxImage)}
                   className="flex items-center gap-1 rounded-md bg-zinc-700/80 px-2.5 py-1 text-[10px] font-medium text-zinc-200 hover:bg-zinc-600 transition-colors"
                 >
                   <Copy className="h-3 w-3" />
-                  Copy Prompt
+                  {t('imageGen.copyPrompt')}
                 </button>
               </div>
             </div>

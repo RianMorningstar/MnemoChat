@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router";
+import { useTranslation } from "react-i18next";
 import { CharacterEditor } from "@/components/characters";
 import {
   getCharacter,
@@ -20,6 +21,7 @@ import type { LibraryLorebook } from "@shared/library-types";
 export function CharacterEditorPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation('characters');
   const [character, setCharacter] = useState<Character | null>(null);
   const [lorebookEntries, setLorebookEntries] = useState<LorebookEntry[]>([]);
   const [attachedLorebooks, setAttachedLorebooks] = useState<LibraryLorebook[]>([]);
@@ -138,13 +140,13 @@ export function CharacterEditorPage() {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4">
         <p className="text-sm text-red-400">
-          {error || "Character not found"}
+          {error || t('error.notFound')}
         </p>
         <button
           onClick={() => navigate("/characters")}
           className="rounded-md bg-zinc-800 px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-700"
         >
-          Back to Library
+          {t('error.backToLibrary')}
         </button>
       </div>
     );

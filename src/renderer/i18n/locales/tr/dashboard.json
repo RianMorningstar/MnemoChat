@@ -1,0 +1,12 @@
+{
+  "title": "Kontrol Paneli",
+  "subtitle": "Tekrar hoş geldiniz. İşte etkinliklerinize genel bir bakış.",
+  "stats.characters": "Karakterler",
+  "stats.chats": "Sohbetler",
+  "stats.projects": "Projeler",
+  "stats.wordsWritten": "Yazılan Kelimeler",
+  "recentChats.title": "Son Sohbetler",
+  "recentChats.empty": "Henüz sohbet yok",
+  "recentCharacters.title": "Son Karakterler",
+  "recentCharacters.empty": "Henüz karakter yok"
+}

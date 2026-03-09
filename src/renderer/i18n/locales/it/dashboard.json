@@ -1,0 +1,12 @@
+{
+  "title": "Dashboard",
+  "subtitle": "Bentornato. Ecco una panoramica della tua attività.",
+  "stats.characters": "Personaggi",
+  "stats.chats": "Chat",
+  "stats.projects": "Progetti",
+  "stats.wordsWritten": "Parole scritte",
+  "recentChats.title": "Chat recenti",
+  "recentChats.empty": "Nessuna chat ancora",
+  "recentCharacters.title": "Personaggi recenti",
+  "recentCharacters.empty": "Nessun personaggio ancora"
+}

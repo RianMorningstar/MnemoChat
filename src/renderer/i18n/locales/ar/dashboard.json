@@ -1,0 +1,12 @@
+{
+  "title": "لوحة التحكم",
+  "subtitle": "مرحباً بعودتك. إليك نظرة عامة على نشاطك.",
+  "stats.characters": "الشخصيات",
+  "stats.chats": "الدردشات",
+  "stats.projects": "المشاريع",
+  "stats.wordsWritten": "الكلمات المكتوبة",
+  "recentChats.title": "الدردشات الأخيرة",
+  "recentChats.empty": "لا توجد دردشات بعد",
+  "recentCharacters.title": "الشخصيات الأخيرة",
+  "recentCharacters.empty": "لا توجد شخصيات بعد"
+}

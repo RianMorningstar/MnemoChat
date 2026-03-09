@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   ArrowLeft,
   Download,
@@ -54,29 +55,9 @@ type ProjectDetailProps = Pick<
   onUpdateCoverImage?: (projectId: string, dataUrl: string | null) => void
 }
 
-const statusConfig: Record<ProjectStatus, { label: string; color: string }> = {
-  drafting: { label: 'Drafting', color: 'bg-zinc-700/60 text-zinc-400' },
-  'in-progress': { label: 'In Progress', color: 'bg-indigo-500/15 text-indigo-400' },
-  complete: { label: 'Complete', color: 'bg-teal-500/15 text-teal-400' },
-  archived: { label: 'Archived', color: 'bg-zinc-700/40 text-zinc-500' },
-}
-
-const sceneStatusConfig: Record<string, { label: string; color: string }> = {
-  placeholder: { label: 'Placeholder', color: 'text-zinc-600' },
-  draft: { label: 'Draft', color: 'text-amber-500/70' },
-  final: { label: 'Final', color: 'text-teal-500/70' },
-}
-
 function formatWordCount(n: number): string {
   if (n >= 1000) return `${(n / 1000).toFixed(1)}k`
   return String(n)
-}
-
-const exportFormatLabels: Record<ExportFormat, string> = {
-  'prose-md': 'Prose (Markdown)',
-  'prose-txt': 'Prose (Plain Text)',
-  json: 'JSON (Structured)',
-  pdf: 'PDF (Formatted)',
 }
 
 export function ProjectDetail({
@@ -101,6 +82,28 @@ export function ProjectDetail({
   onExecuteExport,
   onUpdateCoverImage,
 }: ProjectDetailProps) {
+  const { t } = useTranslation('story')
+
+  const statusConfig: Record<ProjectStatus, { label: string; color: string }> = {
+    drafting: { label: t('status.drafting'), color: 'bg-zinc-700/60 text-zinc-400' },
+    'in-progress': { label: t('status.inProgress'), color: 'bg-indigo-500/15 text-indigo-400' },
+    complete: { label: t('status.complete'), color: 'bg-teal-500/15 text-teal-400' },
+    archived: { label: t('status.archived'), color: 'bg-zinc-700/40 text-zinc-500' },
+  }
+
+  const sceneStatusConfig: Record<string, { label: string; color: string }> = {
+    placeholder: { label: t('scene.placeholder'), color: 'text-zinc-600' },
+    draft: { label: t('scene.draft'), color: 'text-amber-500/70' },
+    final: { label: t('scene.final'), color: 'text-teal-500/70' },
+  }
+
+  const exportFormatLabels: Record<ExportFormat, string> = {
+    'prose-md': t('export.proseMd'),
+    'prose-txt': t('export.proseTxt'),
+    json: t('export.json'),
+    pdf: t('export.pdf'),
+  }
+
   const [statusMenuOpen, setStatusMenuOpen] = useState(false)
   const coverInputRef = useRef<HTMLInputElement>(null)
 
@@ -167,7 +170,7 @@ export function ProjectDetail({
           className="flex items-center gap-2 rounded-xl bg-indigo-500 px-3.5 py-1.5 text-sm font-medium text-white transition-colors hover:bg-indigo-400"
         >
           <Download className="h-3.5 w-3.5" />
-          Export Project
+          {t('detail.exportProject')}
         </button>
       </div>
 
@@ -178,7 +181,7 @@ export function ProjectDetail({
           {/* Scene list header */}
           <div className="flex items-center justify-between px-6 py-3">
             <h2 className="text-xs font-medium uppercase tracking-widest text-zinc-500">
-              Scenes ({orderedScenes.length})
+              {t('detail.scenesCount', { count: orderedScenes.length })}
             </h2>
             <div className="relative">
               <button
@@ -186,7 +189,7 @@ export function ProjectDetail({
                 className="flex items-center gap-1.5 rounded-lg bg-zinc-800 px-3 py-1.5 text-xs font-medium text-zinc-300 transition-colors hover:bg-zinc-700"
               >
                 <Plus className="h-3 w-3" />
-                Add Scene
+                {t('detail.addScene')}
               </button>
               {addSceneMenuOpen && (
                 <>
@@ -201,8 +204,8 @@ export function ProjectDetail({
                     >
                       <Bookmark className="h-3.5 w-3.5 text-indigo-400" />
                       <div>
-                        <div className="font-medium">From Bookmarks</div>
-                        <div className="mt-0.5 text-[10px] text-zinc-500">Assemble from chat bookmarks</div>
+                        <div className="font-medium">{t('detail.fromBookmarks')}</div>
+                        <div className="mt-0.5 text-[10px] text-zinc-500">{t('detail.fromBookmarksDesc')}</div>
                       </div>
                     </button>
                     <button
@@ -214,8 +217,8 @@ export function ProjectDetail({
                     >
                       <FileText className="h-3.5 w-3.5 text-zinc-500" />
                       <div>
-                        <div className="font-medium">Placeholder</div>
-                        <div className="mt-0.5 text-[10px] text-zinc-500">Empty slot to fill later</div>
+                        <div className="font-medium">{t('detail.placeholder')}</div>
+                        <div className="mt-0.5 text-[10px] text-zinc-500">{t('detail.placeholderDesc')}</div>
                       </div>
                     </button>
                   </div>
@@ -279,7 +282,7 @@ export function ProjectDetail({
                       </button>
                     )}
                     {isPlaceholder && !scene.sourceChatTitle && (
-                      <p className="mt-0.5 text-[10px] italic text-zinc-700">No content yet</p>
+                      <p className="mt-0.5 text-[10px] italic text-zinc-700">{t('detail.noContentYet')}</p>
                     )}
                   </div>
 
@@ -297,7 +300,7 @@ export function ProjectDetail({
                           openExportModal(scene.id, 'scene')
                         }}
                         className="rounded p-1 text-zinc-500 transition-colors hover:bg-zinc-700 hover:text-zinc-200"
-                        title="Export scene"
+                        title={t('detail.exportScene')}
                       >
                         <Download className="h-3.5 w-3.5" />
                       </button>
@@ -308,7 +311,7 @@ export function ProjectDetail({
                         onDeleteScene?.(scene.id)
                       }}
                       className="rounded p-1 text-zinc-500 transition-colors hover:bg-red-500/20 hover:text-red-400"
-                      title="Delete scene"
+                      title={t('detail.deleteScene')}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
@@ -320,9 +323,9 @@ export function ProjectDetail({
             {orderedScenes.length === 0 && (
               <div className="flex flex-col items-center py-16 text-center">
                 <FileText className="mb-3 h-10 w-10 text-zinc-700" />
-                <p className="text-sm text-zinc-500">No scenes yet.</p>
+                <p className="text-sm text-zinc-500">{t('detail.noScenes')}</p>
                 <p className="mt-1 text-xs text-zinc-600">
-                  Add scenes from chat bookmarks or create placeholders.
+                  {t('detail.noScenesHint')}
                 </p>
               </div>
             )}
@@ -335,14 +338,14 @@ export function ProjectDetail({
           <div className="mb-6">
             <div className="mb-1.5 flex items-center justify-between">
               <label className="text-[10px] font-medium uppercase tracking-widest text-zinc-600">
-                Cover Image
+                {t('detail.coverImage')}
               </label>
               {project.coverImage && (
                 <button
                   onClick={() => onUpdateCoverImage?.(project.id, null)}
                   className="text-[10px] text-zinc-600 transition-colors hover:text-red-400"
                 >
-                  Remove
+                  {t('detail.removeCover')}
                 </button>
               )}
             </div>
@@ -364,7 +367,7 @@ export function ProjectDetail({
                   onClick={() => coverInputRef.current?.click()}
                   className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity hover:opacity-100"
                 >
-                  <span className="text-xs font-medium text-white">Change</span>
+                  <span className="text-xs font-medium text-white">{t('detail.changeCover')}</span>
                 </button>
               </div>
             ) : (
@@ -373,7 +376,7 @@ export function ProjectDetail({
                 className="flex h-24 w-full items-center justify-center gap-2 rounded-lg border border-dashed border-zinc-700 text-zinc-600 transition-colors hover:border-zinc-500 hover:text-zinc-400"
               >
                 <ImageIcon className="h-4 w-4" />
-                <span className="text-xs">Upload cover image</span>
+                <span className="text-xs">{t('detail.uploadCover')}</span>
               </button>
             )}
           </div>
@@ -381,7 +384,7 @@ export function ProjectDetail({
           {/* Title & Description */}
           <div className="mb-6">
             <label className="mb-1.5 block text-[10px] font-medium uppercase tracking-widest text-zinc-600">
-              Title
+              {t('detail.titleLabel')}
             </label>
             <h2
               className="text-lg font-bold text-zinc-100"
@@ -399,14 +402,14 @@ export function ProjectDetail({
               className="mt-2 flex items-center gap-1 text-xs text-indigo-400 transition-colors hover:text-indigo-300"
             >
               <Pencil className="h-3 w-3" />
-              Edit
+              {t('detail.edit')}
             </button>
           </div>
 
           {/* Status */}
           <div className="mb-6">
             <label className="mb-1.5 block text-[10px] font-medium uppercase tracking-widest text-zinc-600">
-              Status
+              {t('detail.statusLabel')}
             </label>
             <div className="relative">
               <button
@@ -449,7 +452,7 @@ export function ProjectDetail({
           <div className="mb-6">
             <div className="mb-2 flex items-center justify-between">
               <label className="text-[10px] font-medium uppercase tracking-widest text-zinc-600">
-                Cast
+                {t('detail.cast')}
               </label>
               <button
                 onClick={() => onAddCharacter?.(project.id)}
@@ -459,7 +462,7 @@ export function ProjectDetail({
               </button>
             </div>
             {project.characterNames.length === 0 ? (
-              <p className="text-xs italic text-zinc-600">No characters linked</p>
+              <p className="text-xs italic text-zinc-600">{t('detail.noCharacters')}</p>
             ) : (
               <div className="flex flex-wrap gap-2">
                 {project.characterNames.map((name, i) => (
@@ -487,7 +490,7 @@ export function ProjectDetail({
           <div className="mb-6">
             <div className="mb-2 flex items-center justify-between">
               <label className="text-[10px] font-medium uppercase tracking-widest text-zinc-600">
-                Lorebooks
+                {t('detail.lorebooks')}
               </label>
               <button
                 onClick={() => onAddLorebook?.(project.id)}
@@ -497,7 +500,7 @@ export function ProjectDetail({
               </button>
             </div>
             {project.lorebookNames.length === 0 ? (
-              <p className="text-xs italic text-zinc-600">No lorebooks attached</p>
+              <p className="text-xs italic text-zinc-600">{t('detail.noLorebooks')}</p>
             ) : (
               <div className="space-y-1.5">
                 {project.lorebookNames.map((name, i) => (
@@ -522,32 +525,32 @@ export function ProjectDetail({
           {/* Stats */}
           <div>
             <label className="mb-2 block text-[10px] font-medium uppercase tracking-widest text-zinc-600">
-              Stats
+              {t('detail.statsLabel')}
             </label>
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-lg bg-zinc-800/60 p-3">
                 <p className="text-lg font-bold tabular-nums text-zinc-200">
                   {formatWordCount(project.wordCount)}
                 </p>
-                <p className="text-[10px] text-zinc-500">words</p>
+                <p className="text-[10px] text-zinc-500">{t('detail.statWords')}</p>
               </div>
               <div className="rounded-lg bg-zinc-800/60 p-3">
                 <p className="text-lg font-bold tabular-nums text-zinc-200">
                   {project.sceneCount}
                 </p>
-                <p className="text-[10px] text-zinc-500">scenes</p>
+                <p className="text-[10px] text-zinc-500">{t('detail.statScenes')}</p>
               </div>
               <div className="rounded-lg bg-zinc-800/60 p-3">
                 <p className="text-lg font-bold tabular-nums text-zinc-200">
                   {project.characterNames.length}
                 </p>
-                <p className="text-[10px] text-zinc-500">characters</p>
+                <p className="text-[10px] text-zinc-500">{t('detail.statCharacters')}</p>
               </div>
               <div className="rounded-lg bg-zinc-800/60 p-3">
                 <p className="text-lg font-bold tabular-nums text-zinc-200">
                   {scenes.filter((s) => s.sourceChatId).length}
                 </p>
-                <p className="text-[10px] text-zinc-500">chat sessions</p>
+                <p className="text-[10px] text-zinc-500">{t('detail.statChatSessions')}</p>
               </div>
             </div>
           </div>
@@ -564,7 +567,7 @@ export function ProjectDetail({
                 className="text-base font-bold text-zinc-100"
                 style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}
               >
-                Export
+                {t('export.title')}
               </h3>
               <button
                 onClick={() => setExportModalOpen(false)}
@@ -577,7 +580,7 @@ export function ProjectDetail({
             {/* Scope */}
             <div className="mb-4">
               <label className="mb-1.5 block text-[10px] font-medium uppercase tracking-widest text-zinc-600">
-                Scope
+                {t('export.scope')}
               </label>
               <div className="flex gap-2">
                 {(['scene', 'project'] as ExportScope[]).map((s) => (
@@ -591,7 +594,7 @@ export function ProjectDetail({
                         : 'border-zinc-700 bg-zinc-800/50 text-zinc-400 hover:text-zinc-200'
                     )}
                   >
-                    {s === 'scene' ? 'This Scene' : 'All Scenes'}
+                    {s === 'scene' ? t('export.thisScene') : t('export.allScenes')}
                   </button>
                 ))}
               </div>
@@ -600,7 +603,7 @@ export function ProjectDetail({
             {/* Format */}
             <div className="mb-4">
               <label className="mb-1.5 block text-[10px] font-medium uppercase tracking-widest text-zinc-600">
-                Format
+                {t('export.format')}
               </label>
               <div className="space-y-1.5">
                 {(exportFormats ?? []).map((fmt) => (
@@ -629,11 +632,11 @@ export function ProjectDetail({
                   onChange={(e) => setExportCharHeaders(e.target.checked)}
                   className="h-3.5 w-3.5 rounded border-zinc-600 bg-zinc-800 text-indigo-500 focus:ring-indigo-500/30"
                 />
-                Character name headers
+                {t('export.charHeaders')}
               </label>
               {exportFormat === 'pdf' && (
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-zinc-500">PDF style:</span>
+                  <span className="text-xs text-zinc-500">{t('export.pdfStyle')}</span>
                   {(pdfStyleOptions ?? []).map((style) => (
                     <button
                       key={style}
@@ -658,7 +661,7 @@ export function ProjectDetail({
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-500 py-3 text-sm font-medium text-white transition-colors hover:bg-indigo-400"
             >
               <Download className="h-4 w-4" />
-              Export
+              {t('export.button')}
             </button>
           </div>
         </div>

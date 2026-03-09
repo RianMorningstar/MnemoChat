@@ -1,0 +1,12 @@
+{
+  "title": "Skydelis",
+  "subtitle": "Sveiki sugrįžę. Štai jūsų veiklos apžvalga.",
+  "stats.characters": "Personažai",
+  "stats.chats": "Pokalbiai",
+  "stats.projects": "Projektai",
+  "stats.wordsWritten": "Parašyta žodžių",
+  "recentChats.title": "Naujausi pokalbiai",
+  "recentChats.empty": "Pokalbių dar nėra",
+  "recentCharacters.title": "Naujausi personažai",
+  "recentCharacters.empty": "Personažų dar nėra"
+}

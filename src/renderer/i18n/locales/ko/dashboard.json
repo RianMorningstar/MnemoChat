@@ -1,0 +1,12 @@
+{
+  "title": "대시보드",
+  "subtitle": "돌아오셨군요. 활동 요약입니다.",
+  "stats.characters": "캐릭터",
+  "stats.chats": "채팅",
+  "stats.projects": "프로젝트",
+  "stats.wordsWritten": "작성한 단어 수",
+  "recentChats.title": "최근 채팅",
+  "recentChats.empty": "아직 채팅이 없습니다",
+  "recentCharacters.title": "최근 캐릭터",
+  "recentCharacters.empty": "아직 캐릭터가 없습니다"
+}

@@ -1,0 +1,12 @@
+{
+  "title": "डैशबोर्ड",
+  "subtitle": "फिर से स्वागत है। यहां आपकी गतिविधि का अवलोकन है।",
+  "stats.characters": "पात्र",
+  "stats.chats": "चैट्स",
+  "stats.projects": "प्रोजेक्ट्स",
+  "stats.wordsWritten": "लिखे गए शब्द",
+  "recentChats.title": "हाल की चैट्स",
+  "recentChats.empty": "अभी तक कोई चैट नहीं",
+  "recentCharacters.title": "हाल के पात्र",
+  "recentCharacters.empty": "अभी तक कोई पात्र नहीं"
+}

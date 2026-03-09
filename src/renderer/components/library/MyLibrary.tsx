@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   Search,
   Grid3X3,
@@ -80,6 +81,7 @@ export function MyLibrary({
   onImportLorebook,
   onImportPersona,
 }: MyLibraryProps) {
+  const { t } = useTranslation('library')
   const charFileInputRef = useRef<HTMLInputElement>(null)
   const lorebookFileInputRef = useRef<HTMLInputElement>(null)
   const personaFileInputRef = useRef<HTMLInputElement>(null)
@@ -89,12 +91,12 @@ export function MyLibrary({
   const [activeCollection, setActiveCollection] = useState<string | null>(null)
   const [activeTier, setActiveTier] = useState<ContentTier | null>(null)
   const [sortMenuOpen, setSortMenuOpen] = useState(false)
-  const [activeSortLabel, setActiveSortLabel] = useState('Recently Chatted')
+  const [activeSortLabel, setActiveSortLabel] = useState('')
 
   const contentTypes: { id: LibraryContentType; label: string; count: number }[] = [
-    { id: 'characters', label: 'Characters', count: libraryCharacters.length },
-    { id: 'lorebooks', label: 'Lorebooks', count: lorebooks.length },
-    { id: 'personas', label: 'Personas', count: personas.length },
+    { id: 'characters', label: t('contentType.characters'), count: libraryCharacters.length },
+    { id: 'lorebooks', label: t('contentType.lorebooks'), count: lorebooks.length },
+    { id: 'personas', label: t('contentType.personas'), count: personas.length },
   ]
 
   const filteredCharacters = libraryCharacters.filter((c) => {
@@ -106,9 +108,9 @@ export function MyLibrary({
   })
 
   const densities: { id: GridDensity; icon: typeof LayoutGrid; label: string }[] = [
-    { id: 'comfortable', icon: LayoutGrid, label: 'Comfortable' },
-    { id: 'compact', icon: Grid3X3, label: 'Compact' },
-    { id: 'list', icon: List, label: 'List' },
+    { id: 'comfortable', icon: LayoutGrid, label: t('density.comfortable') },
+    { id: 'compact', icon: Grid3X3, label: t('density.compact') },
+    { id: 'list', icon: List, label: t('density.list') },
   ]
 
   return (
@@ -154,7 +156,7 @@ export function MyLibrary({
           {charDragOver && (
             <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-indigo-500/5">
               <div className="rounded-xl border-2 border-dashed border-indigo-500/50 px-8 py-4 text-sm font-medium text-indigo-400">
-                Drop to import character
+                {t('import.dropCharacter')}
               </div>
             </div>
           )}
@@ -211,7 +213,7 @@ export function MyLibrary({
                   setSearchQuery(e.target.value)
                   onSearch?.(e.target.value)
                 }}
-                placeholder="Search characters..."
+                placeholder={t('search.characters')}
                 className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 py-2 pl-10 pr-4 text-sm text-zinc-100 outline-none placeholder:text-zinc-500 focus:border-indigo-500/50"
               />
             </div>
@@ -242,7 +244,7 @@ export function MyLibrary({
                 onClick={() => setSortMenuOpen(!sortMenuOpen)}
                 className="flex items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2 text-xs text-zinc-400 transition-colors hover:text-zinc-200"
               >
-                {activeSortLabel}
+                {activeSortLabel || sortOptions[0]?.label || t('sort.recentlyChatted')}
                 <ChevronDown className="h-3 w-3" />
               </button>
               {sortMenuOpen && (
@@ -305,13 +307,13 @@ export function MyLibrary({
               title="Import character (.png or .json)"
             >
               <Upload className="h-3.5 w-3.5" />
-              Import
+              {t('import.button')}
             </button>
           </div>
 
           {/* Result count */}
           <div className="px-6 pb-2 text-[11px] text-zinc-600">
-            {filteredCharacters.length} characters
+            {filteredCharacters.length} {t('contentType.characters').toLowerCase()}
             {activeCollection && ` in ${collections.find((c) => c.id === activeCollection)?.name}`}
           </div>
 
@@ -381,7 +383,7 @@ export function MyLibrary({
           {lorebookDragOver && (
             <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-indigo-500/5">
               <div className="rounded-xl border-2 border-dashed border-indigo-500/50 px-8 py-4 text-sm font-medium text-indigo-400">
-                Drop to import lorebook
+                {t('import.dropLorebook')}
               </div>
             </div>
           )}
@@ -404,7 +406,7 @@ export function MyLibrary({
               className="flex items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-1.5 text-xs text-zinc-400 transition-colors hover:border-indigo-500/40 hover:text-zinc-200"
             >
               <Upload className="h-3.5 w-3.5" />
-              Import Lorebook
+              {t('import.importLorebook')}
             </button>
           </div>
 
@@ -498,14 +500,14 @@ export function MyLibrary({
               className="flex items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-1.5 text-xs text-zinc-400 transition-colors hover:border-indigo-500/40 hover:text-zinc-200"
             >
               <Upload className="h-3.5 w-3.5" />
-              Import
+              {t('import.button')}
             </button>
             <button
               onClick={onCreatePersona}
               className="flex items-center gap-1.5 rounded-lg bg-indigo-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-indigo-400"
             >
               <Plus className="h-3.5 w-3.5" />
-              Create Persona
+              {t('persona.createPersona')}
             </button>
           </div>
           <div
@@ -548,6 +550,7 @@ interface PersonaCardProps {
 }
 
 function PersonaCard({ persona, isCompact, onEdit, onSetDefault, onDuplicate, onDelete }: PersonaCardProps) {
+  const { t } = useTranslation('library')
   const [hovered, setHovered] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
 
@@ -600,7 +603,7 @@ function PersonaCard({ persona, isCompact, onEdit, onSetDefault, onDuplicate, on
         {persona.isDefault && (
           <div className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-indigo-500/80 px-2 py-0.5 text-[9px] font-medium text-white backdrop-blur-sm">
             <Star className="h-3 w-3" fill="currentColor" />
-            Default
+            {t('persona.default')}
           </div>
         )}
 
@@ -609,7 +612,7 @@ function PersonaCard({ persona, isCompact, onEdit, onSetDefault, onDuplicate, on
           <div className="absolute inset-0 flex flex-col justify-between bg-black/60 p-3 backdrop-blur-[2px]">
             <div className="flex justify-end">
               <span className="rounded bg-zinc-900/80 px-1.5 py-0.5 text-[10px] tabular-nums text-zinc-400">
-                Last used: {new Date(persona.lastUsed).toLocaleDateString()}
+                {t('persona.lastUsed', { date: new Date(persona.lastUsed).toLocaleDateString() })}
               </span>
             </div>
             <div>
@@ -623,13 +626,13 @@ function PersonaCard({ persona, isCompact, onEdit, onSetDefault, onDuplicate, on
                   onClick={(e) => { e.stopPropagation(); onEdit?.() }}
                   className="flex-1 rounded-md bg-indigo-500 py-1.5 text-center text-[11px] font-medium text-white transition-colors hover:bg-indigo-400"
                 >
-                  Edit
+                  {t('persona.edit')}
                 </button>
                 {!persona.isDefault && (
                   <button
                     onClick={(e) => { e.stopPropagation(); onSetDefault?.() }}
                     className="rounded-md bg-zinc-700/80 p-1.5 text-zinc-300 transition-colors hover:bg-zinc-600"
-                    title="Set as default"
+                    title={t('persona.setAsDefault')}
                   >
                     <Star className="h-3.5 w-3.5" />
                   </button>
@@ -647,13 +650,13 @@ function PersonaCard({ persona, isCompact, onEdit, onSetDefault, onDuplicate, on
                         onClick={(e) => { e.stopPropagation(); onDuplicate?.(); setMenuOpen(false) }}
                         className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[11px] text-zinc-300 hover:bg-zinc-700"
                       >
-                        <Copy className="h-3 w-3" /> Duplicate
+                        <Copy className="h-3 w-3" /> {t('persona.duplicate')}
                       </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); onDelete?.(); setMenuOpen(false) }}
                         className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[11px] text-red-400 hover:bg-zinc-700"
                       >
-                        <Trash2 className="h-3 w-3" /> Delete
+                        <Trash2 className="h-3 w-3" /> {t('persona.delete')}
                       </button>
                     </div>
                   )}

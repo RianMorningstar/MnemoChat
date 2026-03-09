@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { Brain, Trash2, X, Search, Loader2, Database } from "lucide-react";
 import {
   getVectorMemoryStatus,
@@ -21,6 +22,7 @@ export function VectorMemoryPanel({ chatId, onClose }: VectorMemoryPanelProps) {
   const [searching, setSearching] = useState(false);
   const [results, setResults] = useState<VectorSearchResult[]>([]);
   const [confirmClear, setConfirmClear] = useState(false);
+  const { t } = useTranslation('chat');
 
   const refreshStatus = useCallback(() => {
     getVectorMemoryStatus(chatId).then(setStatus).catch(console.error);
@@ -79,7 +81,7 @@ export function VectorMemoryPanel({ chatId, onClose }: VectorMemoryPanelProps) {
       <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-3">
         <div className="flex items-center gap-2 text-sm font-medium text-zinc-200">
           <Brain className="h-4 w-4" />
-          Semantic Memory
+          {t('memory.title')}
         </div>
         <button
           onClick={onClose}
@@ -96,7 +98,7 @@ export function VectorMemoryPanel({ chatId, onClose }: VectorMemoryPanelProps) {
             <div className="flex items-center justify-between text-xs text-zinc-400 mb-2">
               <span className="flex items-center gap-1.5">
                 <Database className="h-3.5 w-3.5" />
-                Embeddings
+                {t('memory.embeddings')}
               </span>
               <span>{status.embeddedMessages} / {status.totalMessages}</span>
             </div>
@@ -108,7 +110,7 @@ export function VectorMemoryPanel({ chatId, onClose }: VectorMemoryPanelProps) {
               />
             </div>
             <div className="mt-2 text-xs text-zinc-500">
-              Model: {status.embeddingModel}
+              {t('memory.model', { model: status.embeddingModel })}
             </div>
           </div>
         )}
@@ -121,7 +123,7 @@ export function VectorMemoryPanel({ chatId, onClose }: VectorMemoryPanelProps) {
             className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-indigo-500 disabled:opacity-40"
           >
             {embedding ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Database className="h-3.5 w-3.5" />}
-            {embedding ? "Embedding..." : "Embed All"}
+            {embedding ? t('memory.embedding') : t('memory.embedAll')}
           </button>
           {confirmClear ? (
             <div className="flex gap-1">
@@ -130,13 +132,13 @@ export function VectorMemoryPanel({ chatId, onClose }: VectorMemoryPanelProps) {
                 disabled={clearing}
                 className="rounded-lg bg-red-600 px-3 py-2 text-xs font-medium text-white hover:bg-red-500 disabled:opacity-40"
               >
-                {clearing ? "..." : "Confirm"}
+                {clearing ? "..." : t('memory.confirm')}
               </button>
               <button
                 onClick={() => setConfirmClear(false)}
                 className="rounded-lg bg-zinc-700 px-3 py-2 text-xs text-zinc-300 hover:bg-zinc-600"
               >
-                Cancel
+                {t('common:action.cancel')}
               </button>
             </div>
           ) : (
@@ -145,7 +147,7 @@ export function VectorMemoryPanel({ chatId, onClose }: VectorMemoryPanelProps) {
               className="flex items-center gap-1.5 rounded-lg bg-zinc-700 px-3 py-2 text-xs text-zinc-300 transition-colors hover:bg-zinc-600"
             >
               <Trash2 className="h-3.5 w-3.5" />
-              Clear
+              {t('memory.clear')}
             </button>
           )}
         </div>
@@ -158,7 +160,7 @@ export function VectorMemoryPanel({ chatId, onClose }: VectorMemoryPanelProps) {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              placeholder="Search memories..."
+              placeholder={t('memory.searchPlaceholder')}
               className="flex-1 rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-200 placeholder:text-zinc-500"
             />
             <button
@@ -175,7 +177,7 @@ export function VectorMemoryPanel({ chatId, onClose }: VectorMemoryPanelProps) {
         {results.length > 0 && (
           <div className="space-y-2">
             <div className="text-xs font-medium text-zinc-400">
-              Results ({results.length})
+              {t('memory.results', { count: results.length })}
             </div>
             {results.map((r, i) => (
               <div

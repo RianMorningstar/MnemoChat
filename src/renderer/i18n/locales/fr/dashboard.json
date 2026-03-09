@@ -1,0 +1,12 @@
+{
+  "title": "Tableau de bord",
+  "subtitle": "Bon retour. Voici un aperçu de votre activité.",
+  "stats.characters": "Personnages",
+  "stats.chats": "Discussions",
+  "stats.projects": "Projets",
+  "stats.wordsWritten": "Mots écrits",
+  "recentChats.title": "Discussions récentes",
+  "recentChats.empty": "Aucune discussion pour le moment",
+  "recentCharacters.title": "Personnages récents",
+  "recentCharacters.empty": "Aucun personnage pour le moment"
+}

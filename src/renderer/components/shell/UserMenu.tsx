@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { ChevronUp, User, Check, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Persona } from "@shared/library-types";
@@ -21,7 +22,8 @@ export function UserMenu({
   onSwitchPersona,
   onCreatePersona,
 }: UserMenuProps) {
-  const displayName = persona?.name || "Default Persona";
+  const { t } = useTranslation("common");
+  const displayName = persona?.name || t("label.defaultPersona");
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -43,7 +45,7 @@ export function UserMenu({
       {open && !collapsed && personas.length > 0 && (
         <div className="absolute bottom-full left-2 right-2 mb-1 rounded-lg border border-zinc-700 bg-zinc-800 py-1 shadow-xl">
           <div className="px-3 py-1.5 text-xs font-medium text-zinc-500">
-            Switch Persona
+            {t("label.switchPersona")}
           </div>
           {personas.map((p) => (
             <button
@@ -80,7 +82,7 @@ export function UserMenu({
             className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-zinc-400 transition-colors hover:bg-zinc-700/60 hover:text-zinc-200"
           >
             <Plus className="h-4 w-4" strokeWidth={1.5} />
-            <span>Create new persona</span>
+            <span>{t("label.createNewPersona")}</span>
           </button>
         </div>
       )}
@@ -111,7 +113,7 @@ export function UserMenu({
               <p className="truncate text-sm font-medium text-zinc-200">
                 {displayName}
               </p>
-              <p className="text-xs text-zinc-500">Persona</p>
+              <p className="text-xs text-zinc-500">{t("label.persona")}</p>
             </div>
             <ChevronUp
               className={cn(

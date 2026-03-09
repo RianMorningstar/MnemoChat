@@ -1,0 +1,12 @@
+{
+  "title": "仪表盘",
+  "subtitle": "欢迎回来。以下是您的活动概览。",
+  "stats.characters": "角色",
+  "stats.chats": "聊天",
+  "stats.projects": "项目",
+  "stats.wordsWritten": "已写字数",
+  "recentChats.title": "最近的聊天",
+  "recentChats.empty": "暂无聊天记录",
+  "recentCharacters.title": "最近的角色",
+  "recentCharacters.empty": "暂无角色"
+}

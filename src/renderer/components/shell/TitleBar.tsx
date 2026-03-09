@@ -1,6 +1,8 @@
+import { useTranslation } from "react-i18next";
 import logoUrl from "@/assets/mnemo-logo.svg?url";
 
 export function TitleBar() {
+  const { t } = useTranslation("common");
   const isMac = window.electronAPI?.platform === "darwin";
 
   return (
@@ -31,7 +33,7 @@ export function TitleBar() {
           <button
             onClick={() => window.electronAPI?.minimize()}
             className="flex h-8 w-12 items-center justify-center text-zinc-400 hover:bg-zinc-700 hover:text-zinc-100 transition-colors"
-            aria-label="Minimize"
+            aria-label={t('titleBar.minimize')}
           >
             <svg width="10" height="1" viewBox="0 0 10 1" fill="currentColor">
               <rect width="10" height="1" />
@@ -40,7 +42,7 @@ export function TitleBar() {
           <button
             onClick={() => window.electronAPI?.maximize()}
             className="flex h-8 w-12 items-center justify-center text-zinc-400 hover:bg-zinc-700 hover:text-zinc-100 transition-colors"
-            aria-label="Maximize"
+            aria-label={t('titleBar.maximize')}
           >
             <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1">
               <rect x="0.5" y="0.5" width="9" height="9" />
@@ -49,7 +51,7 @@ export function TitleBar() {
           <button
             onClick={() => window.electronAPI?.close()}
             className="flex h-8 w-12 items-center justify-center text-zinc-400 hover:bg-red-600 hover:text-white transition-colors"
-            aria-label="Close"
+            aria-label={t('titleBar.close')}
           >
             <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.2">
               <line x1="0" y1="0" x2="10" y2="10" />

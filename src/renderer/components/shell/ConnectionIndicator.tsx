@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { getConnections } from "@/lib/api";
 import { checkOllamaHealth } from "@/lib/ollama";
 import type { ConnectionState } from "@shared/types";
@@ -14,6 +15,7 @@ const dotColor: Record<ConnectionState, string> = {
 };
 
 export function ConnectionIndicator({ collapsed }: ConnectionIndicatorProps) {
+  const { t } = useTranslation("common");
   const [state, setState] = useState<ConnectionState>("unknown");
   const [endpoint, setEndpoint] = useState<string | null>(null);
   const [modelName, setModelName] = useState<string | null>(null);
@@ -52,15 +54,15 @@ export function ConnectionIndicator({ collapsed }: ConnectionIndicatorProps) {
 
   const label =
     state === "connected"
-      ? modelName || endpoint || "Connected"
+      ? modelName || endpoint || t("status.connected")
       : state === "unreachable"
-        ? "Disconnected"
-        : "Checking...";
+        ? t("status.disconnected")
+        : t("status.checking");
 
   return (
     <div
       className="flex items-center gap-2.5 px-3 py-2"
-      title={collapsed ? `${label} (${endpoint || "no profile"})` : undefined}
+      title={collapsed ? `${label} (${endpoint || t("label.noProfile")})` : undefined}
     >
       <span className={`h-2 w-2 shrink-0 rounded-full ${dotColor[state]}`} />
       {!collapsed && (

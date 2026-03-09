@@ -1,0 +1,12 @@
+{
+  "title": "Панель керування",
+  "subtitle": "З поверненням. Ось огляд вашої активності.",
+  "stats.characters": "Персонажі",
+  "stats.chats": "Чати",
+  "stats.projects": "Проєкти",
+  "stats.wordsWritten": "Написано слів",
+  "recentChats.title": "Останні чати",
+  "recentChats.empty": "Чатів ще немає",
+  "recentCharacters.title": "Останні персонажі",
+  "recentCharacters.empty": "Персонажів ще немає"
+}

@@ -1,0 +1,12 @@
+{
+  "title": "Töölaud",
+  "subtitle": "Tere tulemast tagasi. Siin on ülevaade sinu tegevusest.",
+  "stats.characters": "Tegelased",
+  "stats.chats": "Vestlused",
+  "stats.projects": "Projektid",
+  "stats.wordsWritten": "Kirjutatud sõnu",
+  "recentChats.title": "Hiljutised vestlused",
+  "recentChats.empty": "Vestlusi pole veel",
+  "recentCharacters.title": "Hiljutised tegelased",
+  "recentCharacters.empty": "Tegelasi pole veel"
+}

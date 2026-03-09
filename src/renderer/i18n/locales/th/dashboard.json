@@ -1,0 +1,12 @@
+{
+  "title": "แดชบอร์ด",
+  "subtitle": "ยินดีต้อนรับกลับ นี่คือภาพรวมกิจกรรมของคุณ",
+  "stats.characters": "ตัวละคร",
+  "stats.chats": "แชท",
+  "stats.projects": "โปรเจกต์",
+  "stats.wordsWritten": "คำที่เขียน",
+  "recentChats.title": "แชทล่าสุด",
+  "recentChats.empty": "ยังไม่มีแชท",
+  "recentCharacters.title": "ตัวละครล่าสุด",
+  "recentCharacters.empty": "ยังไม่มีตัวละคร"
+}

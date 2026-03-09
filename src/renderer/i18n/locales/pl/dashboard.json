@@ -1,0 +1,12 @@
+{
+  "title": "Panel",
+  "subtitle": "Witaj ponownie. Oto przegląd Twojej aktywności.",
+  "stats.characters": "Postacie",
+  "stats.chats": "Czaty",
+  "stats.projects": "Projekty",
+  "stats.wordsWritten": "Napisane słowa",
+  "recentChats.title": "Ostatnie czaty",
+  "recentChats.empty": "Brak czatów",
+  "recentCharacters.title": "Ostatnie postacie",
+  "recentCharacters.empty": "Brak postaci"
+}

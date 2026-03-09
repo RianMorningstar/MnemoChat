@@ -1,4 +1,5 @@
 import { Heart, Download, UserPlus, X, BookOpen, FileCode } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
 import type { DiscoverCard } from './types'
 
@@ -40,6 +41,7 @@ export function CardDetailOverlay({
   onFollowCreator,
   onOpenCreatorProfile,
 }: CardDetailOverlayProps) {
+  const { t } = useTranslation('library')
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
@@ -88,7 +90,7 @@ export function CardDetailOverlay({
               <Heart className="h-3 w-3" /> {formatCount(card.likeCount)}
             </span>
             <span className="flex items-center gap-1">
-              <Download className="h-3 w-3" /> {formatCount(card.importCount)} imports
+              <Download className="h-3 w-3" /> {t('detail.imports', { count: card.importCount })}
             </span>
           </div>
 
@@ -110,7 +112,7 @@ export function CardDetailOverlay({
 
           <div className="mt-5">
             <h4 className="mb-1.5 text-[10px] font-medium uppercase tracking-widest text-zinc-600">
-              Description
+              {t('detail.description')}
             </h4>
             <p className="text-sm leading-relaxed text-zinc-300 whitespace-pre-line">
               {card.description || card.descriptionPreview}
@@ -120,7 +122,7 @@ export function CardDetailOverlay({
           {card.greeting && (
             <div className="mt-5">
               <h4 className="mb-1.5 text-[10px] font-medium uppercase tracking-widest text-zinc-600">
-                Greeting Preview
+                {t('detail.greetingPreview')}
               </h4>
               <p className="text-sm leading-relaxed text-zinc-400 italic line-clamp-4">
                 {card.greeting}
@@ -137,12 +139,12 @@ export function CardDetailOverlay({
             {card.lorebookEntryCount > 0 && (
               <div className="flex items-center gap-1.5 text-xs text-zinc-500">
                 <BookOpen className="h-3.5 w-3.5" />
-                {card.lorebookEntryCount} lorebook entries
+                {t('detail.lorebookEntries', { count: card.lorebookEntryCount })}
               </div>
             )}
             <div className="flex items-center gap-1.5 text-xs text-zinc-500">
               <FileCode className="h-3.5 w-3.5" />
-              Spec {card.specVersion.toUpperCase()}
+              {t('detail.spec', { version: card.specVersion.toUpperCase() })}
             </div>
           </div>
 
@@ -152,7 +154,7 @@ export function CardDetailOverlay({
               className="flex items-center justify-center gap-2 rounded-xl bg-indigo-500 py-3 text-sm font-medium text-white transition-colors hover:bg-indigo-400"
             >
               <Download className="h-4 w-4" />
-              Import to Library
+              {t('import.importToLibrary')}
             </button>
             <div className="flex gap-2">
               <button
@@ -160,14 +162,14 @@ export function CardDetailOverlay({
                 className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-zinc-700 bg-zinc-800/50 py-2.5 text-sm font-medium text-zinc-300 transition-colors hover:bg-zinc-700 hover:text-zinc-100"
               >
                 <Heart className="h-4 w-4" />
-                Like
+                {t('detail.like')}
               </button>
               <button
                 onClick={onFollowCreator}
                 className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-zinc-700 bg-zinc-800/50 py-2.5 text-sm font-medium text-zinc-300 transition-colors hover:bg-zinc-700 hover:text-zinc-100"
               >
                 <UserPlus className="h-4 w-4" />
-                Follow @{card.creatorName}
+                {t('detail.follow', { name: card.creatorName })}
               </button>
             </div>
           </div>
