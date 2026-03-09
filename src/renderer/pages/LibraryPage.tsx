@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { MyLibrary } from "@/components/library/MyLibrary";
 import { DiscoverFeed } from "@/components/library/DiscoverFeed";
@@ -46,14 +47,6 @@ import type {
   LibrarySortOptionItem,
 } from "@shared/library-types";
 
-const SORT_OPTIONS: LibrarySortOptionItem[] = [
-  { id: "last_chatted", label: "Recently Chatted" },
-  { id: "last_imported", label: "Recently Imported" },
-  { id: "alphabetical", label: "Alphabetical" },
-  { id: "most_chatted", label: "Most Chatted" },
-  { id: "date_created", label: "Date Created" },
-];
-
 const FEED_TABS: DiscoverFeedTab[] = [
   "featured",
   "trending",
@@ -65,6 +58,15 @@ const FEED_TABS: DiscoverFeedTab[] = [
 export function LibraryPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { t } = useTranslation('library');
+
+  const SORT_OPTIONS: LibrarySortOptionItem[] = [
+    { id: "last_chatted", label: t('sort.recentlyChatted') },
+    { id: "last_imported", label: t('sort.recentlyImported') },
+    { id: "alphabetical", label: t('sort.alphabetical') },
+    { id: "most_chatted", label: t('sort.mostChatted') },
+    { id: "date_created", label: t('sort.dateCreated') },
+  ];
   const [loading, setLoading] = useState(true);
 
   // Tab state — persisted in URL so it survives remounts
@@ -504,10 +506,10 @@ export function LibraryPage() {
       {/* Page header + top-level tabs */}
       <div className="px-6 pt-6 pb-0">
         <h1 className="font-heading text-2xl font-semibold text-zinc-100">
-          Library
+          {t('title')}
         </h1>
         <p className="mt-1 text-sm text-zinc-400">
-          Browse and organize your content collection.
+          {t('subtitle')}
         </p>
         <div className="mt-4 flex items-center gap-1">
           {(["my-library", "discover"] as const).map((tab) => (
@@ -521,7 +523,7 @@ export function LibraryPage() {
                   : "text-zinc-500 hover:text-zinc-300"
               )}
             >
-              {tab === "my-library" ? "My Library" : "Discover"}
+              {tab === "my-library" ? t('tab.myLibrary') : t('tab.discover')}
             </button>
           ))}
         </div>

@@ -1,4 +1,5 @@
 import type { QuickReply } from '@shared/character-types'
+import { useTranslation } from 'react-i18next'
 
 interface QuickReplyPopoverProps {
   characterReplies: QuickReply[]
@@ -13,6 +14,7 @@ export function QuickReplyPopover({
   onSelect,
   onClose,
 }: QuickReplyPopoverProps) {
+  const { t } = useTranslation('chat')
   const hasCharacter = characterReplies.length > 0
   const hasGlobal = globalReplies.length > 0
   const empty = !hasCharacter && !hasGlobal
@@ -23,16 +25,16 @@ export function QuickReplyPopover({
       <div className="absolute bottom-full left-0 z-20 mb-2 w-72 rounded-lg border border-zinc-700 bg-zinc-800 p-3 shadow-xl">
         {empty ? (
           <p className="text-center text-xs text-zinc-500">
-            No quick replies configured.
+            {t('quickReplies.empty')}
             <br />
-            Add them in the character editor or app settings.
+            {t('quickReplies.emptyHint')}
           </p>
         ) : (
           <>
             {hasCharacter && (
               <div>
                 <p className="mb-1.5 text-[10px] font-medium uppercase tracking-widest text-zinc-500">
-                  Character
+                  {t('quickReplies.character')}
                 </p>
                 <div className="flex flex-wrap gap-1.5">
                   {characterReplies.map((reply, i) => (
@@ -54,7 +56,7 @@ export function QuickReplyPopover({
             {hasGlobal && (
               <div>
                 <p className="mb-1.5 text-[10px] font-medium uppercase tracking-widest text-zinc-500">
-                  Global
+                  {t('quickReplies.global')}
                 </p>
                 <div className="flex flex-wrap gap-1.5">
                   {globalReplies.map((reply, i) => (

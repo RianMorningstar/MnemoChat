@@ -30,6 +30,7 @@ import { ImageGenPanel } from './ImageGenPanel'
 import { VectorMemoryPanel } from './VectorMemoryPanel'
 import { useTtsPlayback } from '@/lib/tts-playback'
 import type { TtsProviderType } from '@shared/tts-types'
+import { useTranslation } from 'react-i18next'
 
 export function ChatView({
   chat,
@@ -92,6 +93,7 @@ export function ChatView({
   ttsDefaultVoice,
 }: ChatRoleplayProps) {
   const tts = useTtsPlayback()
+  const { t } = useTranslation('chat')
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [branchPanelOpen, setBranchPanelOpen] = useState(false)
   const [spritePanelOpen, setSpritePanelOpen] = useState(false)
@@ -165,7 +167,7 @@ export function ChatView({
                   {char.id !== chat.characterId && onRemoveCharacter && (
                     <button
                       onClick={() => onRemoveCharacter(char.id)}
-                      title={`Remove ${char.name}`}
+                      title={t('sidebar.removeCharacter', { name: char.name })}
                       className="absolute -right-0.5 -top-0.5 hidden h-3.5 w-3.5 items-center justify-center rounded-full bg-red-600 text-white group-hover:flex"
                     >
                       <X className="h-2 w-2" />
@@ -179,7 +181,7 @@ export function ChatView({
               style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}
             >
               {chat.characters.length > 2
-                ? `${chat.characters[0].name} & ${chat.characters.length - 1} others`
+                ? `${chat.characters[0].name} ${t('group.andOthers', { count: chat.characters.length - 1 })}`
                 : chat.characters.map(c => c.name).join(' & ')}
             </span>
             {/* Add character button */}
@@ -187,7 +189,7 @@ export function ChatView({
               <button
                 ref={addCharBtnRef}
                 onClick={openAddCharMenu}
-                title="Add participant"
+                title={t('group.addParticipant')}
                 className="flex h-6 w-6 items-center justify-center rounded-full bg-zinc-700 text-zinc-400 hover:bg-zinc-600 hover:text-zinc-200 transition-colors"
               >
                 <Plus className="h-3.5 w-3.5" />
@@ -224,7 +226,7 @@ export function ChatView({
               <button
                 ref={addCharBtnRef}
                 onClick={openAddCharMenu}
-                title="Add participant"
+                title={t('group.addParticipant')}
                 className="flex h-6 w-6 items-center justify-center rounded-full bg-zinc-700 text-zinc-400 hover:bg-zinc-600 hover:text-zinc-200 transition-colors"
               >
                 <Plus className="h-3.5 w-3.5" />
@@ -280,7 +282,7 @@ export function ChatView({
             'rounded-md p-1.5 transition-colors hover:bg-zinc-800',
             spritePanelOpen ? 'text-indigo-400' : 'text-zinc-500 hover:text-zinc-300'
           )}
-          title={spritePanelOpen ? 'Hide sprites' : 'Show sprites'}
+          title={spritePanelOpen ? t('panel.hideSprites') : t('panel.showSprites')}
         >
           <Image className="h-4 w-4" />
         </button>
@@ -292,7 +294,7 @@ export function ChatView({
             'rounded-md p-1.5 transition-colors hover:bg-zinc-800',
             imageGenPanelOpen ? 'text-indigo-400' : 'text-zinc-500 hover:text-zinc-300'
           )}
-          title={imageGenPanelOpen ? 'Hide image gen' : 'Generate images'}
+          title={imageGenPanelOpen ? t('panel.hideImageGen') : t('panel.generateImages')}
         >
           <ImageIcon className="h-4 w-4" />
         </button>
@@ -302,7 +304,7 @@ export function ChatView({
           <button
             onClick={() => setExportMenuOpen(!exportMenuOpen)}
             className="rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-300"
-            title="Export chat"
+            title={t('export.title')}
           >
             <Download className="h-4 w-4" />
           </button>
@@ -311,9 +313,9 @@ export function ChatView({
               <div className="fixed inset-0 z-10" onClick={() => setExportMenuOpen(false)} />
               <div className="absolute right-0 top-full z-20 mt-1 w-52 rounded-lg border border-zinc-700 bg-zinc-800 py-1 shadow-xl">
                 {([
-                  { scope: 'full' as ExportScope, label: 'Full transcript', icon: FileText },
-                  { scope: 'bookmarks' as ExportScope, label: 'Bookmarked scenes', icon: BookOpen },
-                  { scope: 'raw' as ExportScope, label: 'Raw JSON', icon: FileJson },
+                  { scope: 'full' as ExportScope, label: t('export.fullTranscript'), icon: FileText },
+                  { scope: 'bookmarks' as ExportScope, label: t('export.bookmarkedScenes'), icon: BookOpen },
+                  { scope: 'raw' as ExportScope, label: t('export.rawJson'), icon: FileJson },
                 ]).map(({ scope, label, icon: Icon }) => (
                   <div key={scope}>
                     <div className="flex items-center gap-2 px-3 pt-2 pb-1 text-[10px] font-medium uppercase tracking-wider text-zinc-500">
@@ -348,7 +350,7 @@ export function ChatView({
             'rounded-md p-1.5 transition-colors hover:bg-zinc-800',
             sidebarOpen ? 'text-indigo-400' : 'text-zinc-500 hover:text-zinc-300'
           )}
-          title={sidebarOpen ? 'Hide settings' : 'Show settings'}
+          title={sidebarOpen ? t('panel.hideSettings') : t('panel.showSettings')}
         >
           <Settings className="h-4 w-4" />
         </button>
@@ -360,7 +362,7 @@ export function ChatView({
             'rounded-md p-1.5 transition-colors hover:bg-zinc-800',
             chatListOpen ? 'text-indigo-400' : 'text-zinc-500 hover:text-zinc-300'
           )}
-          title="Chat history"
+          title={t('panel.chatHistory')}
         >
           <List className="h-4 w-4" />
         </button>
@@ -372,7 +374,7 @@ export function ChatView({
             'rounded-md p-1.5 transition-colors hover:bg-zinc-800 hover:text-zinc-300',
             branchPanelOpen ? 'text-indigo-400' : 'text-zinc-500'
           )}
-          title={branchPanelOpen ? 'Hide branches' : 'Show branches'}
+          title={branchPanelOpen ? t('panel.hideBranches') : t('panel.showBranches')}
         >
           <GitBranch className="h-4 w-4" />
         </button>
@@ -384,7 +386,7 @@ export function ChatView({
             'rounded-md p-1.5 transition-colors hover:bg-zinc-800 hover:text-zinc-300',
             memoryPanelOpen ? 'text-indigo-400' : 'text-zinc-500'
           )}
-          title={memoryPanelOpen ? 'Hide semantic memory' : 'Show semantic memory'}
+          title={memoryPanelOpen ? t('panel.hideMemory') : t('panel.showMemory')}
         >
           <Brain className="h-4 w-4" />
         </button>
@@ -427,14 +429,14 @@ export function ChatView({
                     type="text"
                     value={chatSearchQuery}
                     onChange={(e) => setChatSearchQuery(e.target.value)}
-                    placeholder="Search chats..."
+                    placeholder={t('chatList.search')}
                     className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 py-1.5 pl-8 pr-3 text-xs text-zinc-100 outline-none placeholder:text-zinc-600 focus:border-indigo-500/50"
                   />
                 </div>
                 <button
                   onClick={() => onNewChat?.()}
                   className="rounded-md p-1 text-zinc-500 hover:bg-zinc-800 hover:text-indigo-400"
-                  title="New chat"
+                  title={t('chatList.newChat')}
                 >
                   <Plus className="h-4 w-4" />
                 </button>
@@ -472,12 +474,12 @@ export function ChatView({
                   )}
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-xs font-medium text-zinc-300">
-                      {c.title || 'Untitled chat'}
+                      {c.title || t('chatList.untitledChat')}
                     </p>
                     <p className="truncate text-[10px] text-zinc-500">{c.characterName}</p>
                     <div className="mt-0.5 flex items-center gap-2 text-[10px] text-zinc-600">
-                      <span>{c.messageCount} msgs</span>
-                      {c.wordCount > 0 && <span>{c.wordCount.toLocaleString()} words</span>}
+                      <span>{t('chatList.msgs', { count: c.messageCount })}</span>
+                      {c.wordCount > 0 && <span>{t('chatList.words', { count: c.wordCount })}</span>}
                     </div>
                   </div>
                   <button
@@ -486,7 +488,7 @@ export function ChatView({
                       onDeleteChat?.(c.id)
                     }}
                     className="shrink-0 rounded-md p-1 text-zinc-600 opacity-0 transition-all hover:bg-red-500/10 hover:text-red-400 group-hover/item:opacity-100"
-                    title="Delete chat"
+                    title={t('chatList.deleteChat')}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
@@ -557,7 +559,7 @@ export function ChatView({
                   <div className="mx-auto max-w-lg px-4 py-3 text-center">
                     <div className="inline-flex items-center gap-1.5 rounded-full bg-indigo-500/10 px-3 py-1 text-[11px] text-indigo-400">
                       <GitBranch className="h-3 w-3" />
-                      Branched — send a message to continue on this path
+                      {t('branch.branchedMessage')}
                     </div>
                   </div>
                 )
@@ -569,7 +571,7 @@ export function ChatView({
                   <div className="mx-auto max-w-lg px-4 py-3 text-center">
                     <div className="inline-flex items-center gap-1.5 rounded-full bg-indigo-500/10 px-3 py-1 text-[11px] text-indigo-400">
                       <GitBranch className="h-3 w-3" />
-                      Branch {sibling.index + 1} of {sibling.total}
+                      {t('branch.indicator', { index: sibling.index + 1, total: sibling.total })}
                     </div>
                   </div>
                 )
@@ -711,7 +713,7 @@ export function ChatView({
             }}
           >
             <div className="border-b border-zinc-700 px-3 py-2 rounded-t-xl" style={{ backgroundColor: 'rgba(63,63,70,0.6)' }}>
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Add participant</p>
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">{t('group.addParticipant')}</p>
             </div>
             {(allCharacters ?? [])
               .filter(c => !chat.characters.some(cc => cc.id === c.id))
@@ -732,7 +734,7 @@ export function ChatView({
                 </button>
               ))}
             {(allCharacters ?? []).filter(c => !chat.characters.some(cc => cc.id === c.id)).length === 0 && (
-              <p className="px-3 py-3 text-xs text-zinc-500">No more characters to add</p>
+              <p className="px-3 py-3 text-xs text-zinc-500">{t('group.noMoreCharacters')}</p>
             )}
           </div>
         </>

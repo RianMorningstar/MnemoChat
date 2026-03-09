@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { CharacterLibrary } from "@/components/characters";
 import {
@@ -13,6 +14,7 @@ import { extractCharacterFromPng } from "@/lib/png-metadata";
 import type { Character, ImportPreview } from "@shared/character-types";
 
 export function CharacterLibraryPage() {
+  const { t } = useTranslation('characters');
   const navigate = useNavigate();
   const [characters, setCharacters] = useState<Character[]>([]);
   const [loading, setLoading] = useState(true);
@@ -169,10 +171,10 @@ export function CharacterLibraryPage() {
     <div className="h-full p-6">
       <div className="mb-6">
         <h1 className="font-heading text-2xl font-semibold text-zinc-100">
-          Characters
+          {t('title')}
         </h1>
         <p className="mt-1 text-sm text-zinc-400">
-          Create and manage your character library.
+          {t('subtitle')}
         </p>
       </div>
 

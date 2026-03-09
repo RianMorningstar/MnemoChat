@@ -1,14 +1,8 @@
 import { Search, SlidersHorizontal, Plus, CheckSquare, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import type { SortOption, SortOptionItem, LibraryStats } from "@shared/character-types";
 import type { ContentTier } from "@shared/types";
-
-const SORT_OPTIONS: SortOptionItem[] = [
-  { value: "name", label: "Name" },
-  { value: "created", label: "Date Created" },
-  { value: "lastChatted", label: "Last Chatted" },
-  { value: "tokenCount", label: "Token Count" },
-];
 
 interface LibraryToolbarProps {
   search: string;
@@ -45,6 +39,15 @@ export function LibraryToolbar({
   onBulkDelete,
   onCreateNew,
 }: LibraryToolbarProps) {
+  const { t } = useTranslation('characters');
+
+  const SORT_OPTIONS: SortOptionItem[] = [
+    { value: "name", label: t('toolbar.sortName') },
+    { value: "created", label: t('toolbar.sortCreated') },
+    { value: "lastChatted", label: t('toolbar.sortLastChatted') },
+    { value: "tokenCount", label: t('toolbar.sortTokenCount') },
+  ];
+
   return (
     <div className="space-y-3">
       {/* Top row: search + actions */}
@@ -55,7 +58,7 @@ export function LibraryToolbar({
             type="text"
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Search characters..."
+            placeholder={t('toolbar.search')}
             className="w-full rounded-md border border-zinc-700 bg-zinc-800 py-2 pl-9 pr-3 text-sm text-zinc-200 placeholder-zinc-500 focus:border-indigo-500 focus:outline-none"
           />
         </div>
@@ -65,7 +68,7 @@ export function LibraryToolbar({
           className="flex items-center gap-1.5 rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500"
         >
           <Plus className="h-4 w-4" />
-          New Character
+          {t('toolbar.newCharacter')}
         </button>
 
         <button
@@ -78,7 +81,7 @@ export function LibraryToolbar({
           )}
         >
           <CheckSquare className="h-4 w-4" />
-          Select
+          {t('toolbar.select')}
         </button>
       </div>
 
@@ -86,7 +89,7 @@ export function LibraryToolbar({
       <div className="flex flex-wrap items-center gap-2 text-sm">
         <div className="flex items-center gap-1.5 text-zinc-500">
           <SlidersHorizontal className="h-3.5 w-3.5" />
-          <span>Filter:</span>
+          <span>{t('toolbar.filter')}</span>
         </div>
 
         {/* Content tier filter */}
@@ -101,12 +104,12 @@ export function LibraryToolbar({
                 : "bg-zinc-800 text-zinc-400 hover:text-zinc-200"
             )}
           >
-            {tier === "all" ? "All" : tier.toUpperCase()}
+            {tier === "all" ? t('toolbar.all') : tier.toUpperCase()}
           </button>
         ))}
 
         {/* Sort */}
-        <span className="ml-2 text-zinc-500">Sort:</span>
+        <span className="ml-2 text-zinc-500">{t('toolbar.sort')}</span>
         <select
           value={sort}
           onChange={(e) => onSortChange(e.target.value as SortOption)}
@@ -122,7 +125,7 @@ export function LibraryToolbar({
         {/* Tag filter */}
         {availableTags.length > 0 && (
           <>
-            <span className="ml-2 text-zinc-500">Tag:</span>
+            <span className="ml-2 text-zinc-500">{t('toolbar.tag')}</span>
             <select
               value={selectedTag || ""}
               onChange={(e) =>
@@ -130,7 +133,7 @@ export function LibraryToolbar({
               }
               className="rounded-md border border-zinc-700 bg-zinc-800 px-2 py-1 text-xs text-zinc-300 focus:border-indigo-500 focus:outline-none"
             >
-              <option value="">All tags</option>
+              <option value="">{t('toolbar.allTags')}</option>
               {availableTags.map((tag) => (
                 <option key={tag} value={tag}>
                   {tag}
@@ -142,7 +145,9 @@ export function LibraryToolbar({
 
         {/* Stats */}
         <span className="ml-auto text-xs text-zinc-500">
-          {stats.totalCharacters} character{stats.totalCharacters !== 1 ? "s" : ""}
+          {stats.totalCharacters === 1
+            ? t('toolbar.characterCountOne', { count: stats.totalCharacters })
+            : t('toolbar.characterCount', { count: stats.totalCharacters })}
         </span>
       </div>
 
@@ -150,14 +155,14 @@ export function LibraryToolbar({
       {bulkMode && selectedCount > 0 && (
         <div className="flex items-center gap-3 rounded-md border border-zinc-700 bg-zinc-800 px-4 py-2">
           <span className="text-sm text-zinc-300">
-            {selectedCount} selected
+            {t('toolbar.selectedCount', { count: selectedCount })}
           </span>
           <button
             onClick={onBulkDelete}
             className="flex items-center gap-1 rounded bg-red-600/20 px-2 py-1 text-xs text-red-400 hover:bg-red-600/30"
           >
             <X className="h-3 w-3" />
-            Delete
+            {t('toolbar.delete')}
           </button>
         </div>
       )}

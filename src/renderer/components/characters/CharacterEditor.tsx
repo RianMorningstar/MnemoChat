@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ArrowLeft, Save } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Character, LorebookEntry } from "@shared/character-types";
@@ -30,18 +31,6 @@ interface CharacterEditorProps {
   onDetachLorebook: (lorebookId: string) => void;
 }
 
-const TABS: { id: TabId; label: string }[] = [
-  { id: "basic", label: "Basic" },
-  { id: "prompts", label: "Prompt Engineering" },
-  { id: "lorebook", label: "Lorebook" },
-  { id: "generation", label: "Generation" },
-  { id: "regex", label: "Regex" },
-  { id: "sprites", label: "Sprites" },
-  { id: "voice", label: "Voice" },
-  { id: "imagegen", label: "Image Gen" },
-  { id: "meta", label: "Meta" },
-];
-
 export function CharacterEditor({
   character,
   lorebookEntries,
@@ -56,9 +45,22 @@ export function CharacterEditor({
   onAttachLorebook,
   onDetachLorebook,
 }: CharacterEditorProps) {
+  const { t } = useTranslation('characters');
   const [activeTab, setActiveTab] = useState<TabId>("basic");
   const [draft, setDraft] = useState<Partial<Character>>({});
   const [dirty, setDirty] = useState(false);
+
+  const TABS: { id: TabId; label: string }[] = [
+    { id: "basic", label: t('tab.basic') },
+    { id: "prompts", label: t('tab.prompts') },
+    { id: "lorebook", label: t('tab.lorebook') },
+    { id: "generation", label: t('tab.generation') },
+    { id: "regex", label: t('tab.regex') },
+    { id: "sprites", label: t('tab.sprites') },
+    { id: "voice", label: t('tab.voice') },
+    { id: "imagegen", label: t('tab.imageGen') },
+    { id: "meta", label: t('tab.meta') },
+  ];
 
   const merged: Character = { ...character, ...draft };
 
@@ -87,11 +89,11 @@ export function CharacterEditor({
             <ArrowLeft className="h-5 w-5" />
           </button>
           <h1 className="text-lg font-semibold text-zinc-100">
-            {merged.name || "Untitled Character"}
+            {merged.name || t('untitledCharacter')}
           </h1>
           {dirty && (
             <span className="rounded bg-amber-600/20 px-2 py-0.5 text-xs text-amber-400">
-              Unsaved
+              {t('unsaved')}
             </span>
           )}
         </div>
@@ -106,7 +108,7 @@ export function CharacterEditor({
           )}
         >
           <Save className="h-4 w-4" />
-          Save
+          {t('save')}
         </button>
       </div>
 

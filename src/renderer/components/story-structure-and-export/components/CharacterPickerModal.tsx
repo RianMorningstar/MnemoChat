@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { X, Search, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getLibraryCharacters } from "@/lib/api";
@@ -15,6 +16,7 @@ export function CharacterPickerModal({
   onConfirm,
   onClose,
 }: CharacterPickerModalProps) {
+  const { t } = useTranslation('story');
   const [characters, setCharacters] = useState<LibraryCharacter[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
@@ -50,7 +52,7 @@ export function CharacterPickerModal({
             className="text-base font-bold text-zinc-100"
             style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}
           >
-            Add Characters
+            {t('characterPicker.title')}
           </h3>
           <button
             onClick={onClose}
@@ -67,7 +69,7 @@ export function CharacterPickerModal({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search characters..."
+              placeholder={t('characterPicker.search')}
               className="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 py-2 pl-10 pr-4 text-sm text-zinc-100 outline-none placeholder:text-zinc-500 focus:border-indigo-500/50"
             />
           </div>
@@ -79,7 +81,7 @@ export function CharacterPickerModal({
               <div className="h-5 w-5 animate-spin rounded-full border-2 border-zinc-700 border-t-indigo-500" />
             </div>
           ) : filtered.length === 0 ? (
-            <p className="py-8 text-center text-sm text-zinc-500">No characters available.</p>
+            <p className="py-8 text-center text-sm text-zinc-500">{t('characterPicker.empty')}</p>
           ) : (
             <div className="space-y-1">
               {filtered.map((char) => {
@@ -120,7 +122,7 @@ export function CharacterPickerModal({
             disabled={selectedIds.size === 0}
             className="rounded-xl bg-indigo-500 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-400 disabled:opacity-40 disabled:hover:bg-indigo-500"
           >
-            Add ({selectedIds.size})
+            {t('characterPicker.add', { count: selectedIds.size })}
           </button>
         </div>
       </div>

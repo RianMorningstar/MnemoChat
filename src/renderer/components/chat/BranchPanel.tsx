@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { GitBranch, Trash2, X } from "lucide-react";
 import { getBranches } from "@/lib/api";
 import type { BranchLeaf } from "@shared/types";
@@ -13,6 +14,7 @@ interface BranchPanelProps {
 export function BranchPanel({ chatId, onSwitchBranch, onDeleteBranch, onClose }: BranchPanelProps) {
   const [branches, setBranches] = useState<BranchLeaf[]>([]);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const { t } = useTranslation('chat');
 
   useEffect(() => {
     getBranches(chatId).then(setBranches).catch(console.error);
@@ -35,7 +37,7 @@ export function BranchPanel({ chatId, onSwitchBranch, onDeleteBranch, onClose }:
       <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-3">
         <div className="flex items-center gap-2 text-sm font-medium text-zinc-200">
           <GitBranch className="h-4 w-4" />
-          Branches
+          {t('branches.title')}
         </div>
         <button
           onClick={onClose}
@@ -48,7 +50,7 @@ export function BranchPanel({ chatId, onSwitchBranch, onDeleteBranch, onClose }:
       {/* Branch list */}
       <div className="flex-1 overflow-y-auto p-2">
         {branches.length === 0 && (
-          <p className="px-2 py-4 text-center text-xs text-zinc-600">No branches yet</p>
+          <p className="px-2 py-4 text-center text-xs text-zinc-600">{t('branches.empty')}</p>
         )}
         {branches.map((branch) => (
           <div
@@ -63,16 +65,16 @@ export function BranchPanel({ chatId, onSwitchBranch, onDeleteBranch, onClose }:
             <div className="flex items-center gap-2">
               <GitBranch className={`h-3 w-3 ${branch.isActive ? "text-indigo-400" : "text-zinc-600"}`} />
               <span className={`text-xs font-medium ${branch.isActive ? "text-indigo-300" : "text-zinc-400"}`}>
-                {branch.depth} messages
+                {t('branches.messages', { count: branch.depth })}
               </span>
               {branch.isActive && (
                 <span className="rounded-full bg-indigo-500/20 px-1.5 py-0.5 text-[9px] font-medium text-indigo-400">
-                  active
+                  {t('branches.active')}
                 </span>
               )}
             </div>
             <p className="mt-1 truncate text-[11px] text-zinc-500">
-              {branch.lastContent || "(empty)"}
+              {branch.lastContent || t('branches.emptyContent')}
             </p>
             <p className="mt-0.5 text-[9px] text-zinc-600">
               {new Date(branch.leafTimestamp).toLocaleString([], {
@@ -99,7 +101,7 @@ export function BranchPanel({ chatId, onSwitchBranch, onDeleteBranch, onClose }:
                     ? "bg-red-500/20 text-red-400 opacity-100"
                     : "hover:bg-red-500/10 hover:text-red-400"
                 }`}
-                title={confirmDelete === branch.leafId ? "Click again to confirm" : "Delete branch"}
+                title={confirmDelete === branch.leafId ? t('branches.confirmDelete') : t('branches.deleteBranch')}
               >
                 <Trash2 className="h-3 w-3" />
               </button>

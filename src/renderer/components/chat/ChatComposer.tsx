@@ -10,6 +10,7 @@ import {
   Hash,
   Zap,
 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
 import type { InputMode, SceneDirection } from '@shared/chat-types'
 import type { QuickReply } from '@shared/character-types'
@@ -28,12 +29,6 @@ interface ChatComposerProps {
   quickReplies?: { character: QuickReply[]; global: QuickReply[] }
 }
 
-const modes: { id: InputMode; label: string; icon: typeof MessageSquare; description: string }[] = [
-  { id: 'in_character', label: 'In Character', icon: MessageSquare, description: 'Speak as your persona' },
-  { id: 'narrate', label: 'Narrate', icon: BookOpen, description: 'Third-person prose' },
-  { id: 'continue', label: 'Continue', icon: Pen, description: 'AI extends its last message' },
-]
-
 export function ChatComposer({
   inputMode,
   sceneDirection,
@@ -50,6 +45,13 @@ export function ChatComposer({
   const [sceneExpanded, setSceneExpanded] = useState(false)
   const [showModeMenu, setShowModeMenu] = useState(false)
   const [showQuickReplies, setShowQuickReplies] = useState(false)
+  const { t } = useTranslation('chat')
+
+  const modes: { id: InputMode; label: string; icon: typeof MessageSquare; description: string }[] = [
+    { id: 'in_character', label: t('mode.inCharacter'), icon: MessageSquare, description: t('mode.inCharacterDesc') },
+    { id: 'narrate', label: t('mode.narrate'), icon: BookOpen, description: t('mode.narrateDesc') },
+    { id: 'continue', label: t('mode.continue'), icon: Pen, description: t('mode.continueDesc') },
+  ]
 
   const hasQuickReplies = (quickReplies?.character?.length ?? 0) > 0 || (quickReplies?.global?.length ?? 0) > 0
 
@@ -91,7 +93,7 @@ export function ChatComposer({
           className="flex w-full items-center gap-2 px-4 py-1.5 text-left"
         >
           <span className="text-[10px] font-medium uppercase tracking-widest text-zinc-600">
-            Scene Direction
+            {t('sceneDirection.title')}
           </span>
           {sceneDirection.enabled && sceneDirection.text && (
             <span className="truncate text-[11px] text-zinc-500">
@@ -101,7 +103,7 @@ export function ChatComposer({
           <span className="ml-auto flex items-center gap-2">
             {sceneDirection.enabled && (
               <span className="text-[10px] tabular-nums text-zinc-600">
-                depth: {sceneDirection.injectionDepth}
+                {t('sceneDirection.depthLabel')} {sceneDirection.injectionDepth}
               </span>
             )}
             {sceneExpanded ? (
@@ -118,12 +120,12 @@ export function ChatComposer({
               value={sceneDirection.text}
               onChange={(e) => onUpdateSceneDirection?.(e.target.value)}
               rows={3}
-              placeholder="Guide the AI's direction for this scene..."
+              placeholder={t('sceneDirection.placeholder')}
               className="w-full resize-y rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2 text-xs leading-relaxed text-zinc-300 outline-none placeholder:text-zinc-600 focus:border-indigo-500/50"
             />
             <div className="mt-2 flex items-center gap-3">
               <label className="flex items-center gap-1.5 text-[10px] text-zinc-500">
-                Injection depth:
+                {t('sceneDirection.injectionDepth')}
                 <input
                   type="number"
                   value={sceneDirection.injectionDepth}
@@ -142,7 +144,7 @@ export function ChatComposer({
                     : 'bg-zinc-800 text-zinc-500'
                 )}
               >
-                {sceneDirection.enabled ? 'Active' : 'Disabled'}
+                {sceneDirection.enabled ? t('sceneDirection.active') : t('sceneDirection.disabled')}
               </button>
               {sceneDirection.text && (
                 <span className="text-[10px] tabular-nums text-zinc-600">
@@ -216,7 +218,7 @@ export function ChatComposer({
                   ? 'bg-indigo-500/15 text-indigo-400'
                   : 'text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300'
               )}
-              title="Quick replies"
+              title={t('quickReplies.title')}
             >
               <Zap className="h-4 w-4" />
             </button>
@@ -243,10 +245,10 @@ export function ChatComposer({
             rows={1}
             placeholder={
               inputMode === 'continue'
-                ? 'Optional direction for continuation...'
+                ? t('placeholder.continue')
                 : inputMode === 'narrate'
-                  ? 'Write a narrative beat...'
-                  : 'Write your message...'
+                  ? t('placeholder.narrate')
+                  : t('placeholder.inCharacter')
             }
             className="max-h-40 min-h-[38px] w-full resize-none rounded-xl border border-zinc-700 bg-zinc-800/50 py-2 pl-4 pr-12 text-sm leading-relaxed text-zinc-100 outline-none transition-colors placeholder:text-zinc-600 focus:border-indigo-500/50"
             style={{ fieldSizing: 'content' } as React.CSSProperties}

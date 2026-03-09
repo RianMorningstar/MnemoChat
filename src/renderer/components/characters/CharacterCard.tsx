@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { User, MessageSquare, Pencil, Copy, Download, FileJson, ImageIcon, Trash2, MoreVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Character } from "@shared/character-types";
@@ -26,6 +27,7 @@ export function CharacterCard({
   onSelect,
   bulkMode,
 }: CharacterCardProps) {
+  const { t } = useTranslation('characters');
   const [showMenu, setShowMenu] = useState(false);
 
   return (
@@ -61,21 +63,21 @@ export function CharacterCard({
           <button
             onClick={(e) => { e.stopPropagation(); onChat(character.id); }}
             className="rounded-full bg-indigo-600 p-2 text-white hover:bg-indigo-500"
-            title="Chat"
+            title={t('card.chat')}
           >
             <MessageSquare className="h-4 w-4" />
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); onEdit(character.id); }}
             className="rounded-full bg-zinc-700 p-2 text-white hover:bg-zinc-600"
-            title="Edit"
+            title={t('card.edit')}
           >
             <Pencil className="h-4 w-4" />
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); }}
             className="rounded-full bg-zinc-700 p-2 text-white hover:bg-zinc-600"
-            title="More"
+            title={t('card.more')}
           >
             <MoreVertical className="h-4 w-4" />
           </button>
@@ -134,12 +136,12 @@ export function CharacterCard({
           />
           <div className="absolute right-2 top-2 z-50 w-40 rounded-md border border-zinc-700 bg-zinc-800 py-1 shadow-xl">
             {[
-              { label: "Chat", icon: MessageSquare, action: () => onChat(character.id) },
-              { label: "Edit", icon: Pencil, action: () => onEdit(character.id) },
-              { label: "Duplicate", icon: Copy, action: () => onDuplicate(character.id) },
-              { label: "Export as JSON", icon: FileJson, action: () => onExport(character.id, "json") },
-              { label: "Export as PNG", icon: ImageIcon, action: () => onExport(character.id, "png") },
-              { label: "Delete", icon: Trash2, action: () => onDelete(character.id), danger: true },
+              { label: t('card.chat'), icon: MessageSquare, action: () => onChat(character.id) },
+              { label: t('card.edit'), icon: Pencil, action: () => onEdit(character.id) },
+              { label: t('card.duplicate'), icon: Copy, action: () => onDuplicate(character.id) },
+              { label: t('card.exportJson'), icon: FileJson, action: () => onExport(character.id, "json") },
+              { label: t('card.exportPng'), icon: ImageIcon, action: () => onExport(character.id, "png") },
+              { label: t('card.delete'), icon: Trash2, action: () => onDelete(character.id), danger: true },
             ].map((item) => (
               <button
                 key={item.label}

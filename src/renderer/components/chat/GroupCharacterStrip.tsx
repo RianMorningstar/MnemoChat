@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
 import type { ChatCharacter, ReplyStrategy } from '@shared/chat-types'
 
@@ -14,12 +15,6 @@ interface GroupCharacterStripProps {
   onAutoContinueChange?: (enabled: boolean) => void
 }
 
-const STRATEGY_LABELS: Record<ReplyStrategy, string> = {
-  round_robin: 'Round Robin',
-  random: 'Random',
-  weighted_random: 'Weighted Random',
-}
-
 export function GroupCharacterStrip({
   characters,
   pendingCharacterId,
@@ -33,6 +28,13 @@ export function GroupCharacterStrip({
 }: GroupCharacterStripProps) {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const debounceTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
+  const { t } = useTranslation('chat')
+
+  const STRATEGY_LABELS: Record<ReplyStrategy, string> = {
+    round_robin: t('group.roundRobin'),
+    random: t('group.random'),
+    weighted_random: t('group.weightedRandom'),
+  }
 
   const handleTalkativenessChange = useCallback((characterId: string, value: number) => {
     // Debounce API calls while dragging
@@ -48,11 +50,11 @@ export function GroupCharacterStrip({
     <div className="border-t border-zinc-800/60">
       <div className="flex items-center gap-1.5 px-4 py-2">
         <span className="shrink-0 text-[10px] font-medium uppercase tracking-widest text-zinc-600">
-          Speaks next
+          {t('group.speaksNext')}
         </span>
         {autoContinue && (
           <span className="shrink-0 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-400 ring-1 ring-emerald-500/30 animate-pulse">
-            Auto
+            {t('group.auto')}
           </span>
         )}
         <div className="flex flex-wrap gap-1.5">
@@ -95,7 +97,7 @@ export function GroupCharacterStrip({
         {/* Settings toggle */}
         <button
           onClick={() => setSettingsOpen((prev) => !prev)}
-          title="Group chat settings"
+          title={t('group.settings')}
           className={cn(
             'ml-auto shrink-0 rounded p-1.5 transition-colors',
             settingsOpen
@@ -116,7 +118,7 @@ export function GroupCharacterStrip({
           {/* Reply strategy selector */}
           <div className="flex items-center gap-3">
             <span className="text-[10px] font-medium uppercase tracking-widest text-zinc-600 shrink-0">
-              Strategy
+              {t('group.strategy')}
             </span>
             <div className="flex gap-1">
               {(Object.keys(STRATEGY_LABELS) as ReplyStrategy[]).map((s) => (
@@ -139,7 +141,7 @@ export function GroupCharacterStrip({
           {/* Auto-continue toggle */}
           <div className="flex items-center gap-3">
             <span className="text-[10px] font-medium uppercase tracking-widest text-zinc-600 shrink-0">
-              Auto-Continue
+              {t('group.autoContinue')}
             </span>
             <button
               onClick={() => onAutoContinueChange?.(!autoContinue)}
@@ -156,7 +158,7 @@ export function GroupCharacterStrip({
               />
             </button>
             <span className="text-[11px] text-zinc-500">
-              Characters respond automatically
+              {t('group.autoContinueDesc')}
             </span>
           </div>
 
@@ -164,7 +166,7 @@ export function GroupCharacterStrip({
           {replyStrategy !== 'round_robin' && (
             <div className="space-y-2">
               <span className="text-[10px] font-medium uppercase tracking-widest text-zinc-600">
-                Talkativeness
+                {t('group.talkativeness')}
               </span>
               {characters.map((char) => (
                 <TalkativenessSlider

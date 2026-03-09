@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { Upload } from "lucide-react";
 import type { Character, SortOption, LibraryStats, ImportPreview } from "@shared/character-types";
 import type { ContentTier } from "@shared/types";
@@ -35,6 +36,7 @@ export function CharacterLibrary({
   onCancelImport,
   onBulkDelete,
 }: CharacterLibraryProps) {
+  const { t } = useTranslation('characters');
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SortOption>("created");
   const [contentTierFilter, setContentTierFilter] = useState<ContentTier | "all">("all");
@@ -155,16 +157,16 @@ export function CharacterLibrary({
         >
           <Upload className="mb-4 h-12 w-12 text-zinc-600" />
           <p className="text-lg font-medium text-zinc-400">
-            No characters yet
+            {t('library.empty')}
           </p>
           <p className="mt-1 text-sm text-zinc-500">
-            Drop a PNG character card here, or create a new character
+            {t('library.emptyHint')}
           </p>
           <button
             onClick={onCreateNew}
             className="mt-4 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500"
           >
-            Create New Character
+            {t('library.createNew')}
           </button>
         </div>
       ) : (
@@ -192,7 +194,7 @@ export function CharacterLibrary({
           <div className="rounded-lg border-2 border-dashed border-indigo-500 bg-zinc-900/90 px-12 py-8">
             <Upload className="mx-auto mb-2 h-10 w-10 text-indigo-400" />
             <p className="text-sm font-medium text-indigo-300">
-              Drop PNG to import
+              {t('library.dropToImport')}
             </p>
           </div>
         </div>

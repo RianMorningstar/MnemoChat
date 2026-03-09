@@ -34,5 +34,8 @@
   "time.hoursAgo": "hace {{count}}h",
   "time.daysAgo": "hace {{count}}d",
   "time.monthsAgo": "hace {{count}} meses",
-  "count.msgs": "{{count}} msgs"
+  "count.msgs": "{{count}} msgs",
+  "titleBar.minimize": "Minimizar",
+  "titleBar.maximize": "Maximizar",
+  "titleBar.close": "Cerrar"
 }

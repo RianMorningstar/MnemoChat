@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { User } from "lucide-react";
 
 interface PersonaStepProps {
@@ -15,6 +16,7 @@ export function PersonaStep({
   onChangeDescription,
   onNext,
 }: PersonaStepProps) {
+  const { t } = useTranslation('onboarding');
   const canProceed = name.trim().length > 0;
 
   return (
@@ -27,11 +29,10 @@ export function PersonaStep({
         className="mb-2 text-2xl font-bold tracking-tight text-zinc-100 sm:text-3xl"
         style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}
       >
-        Who are you?
+        {t('persona.title')}
       </h2>
       <p className="mb-10 max-w-md text-center text-zinc-500">
-        Set your display name. Characters will address you by this name during
-        conversations.
+        {t('persona.subtitle')}
       </p>
 
       <div className="w-full max-w-md space-y-5">
@@ -40,14 +41,14 @@ export function PersonaStep({
             htmlFor="persona-name"
             className="mb-1.5 block text-sm font-medium text-zinc-300"
           >
-            Display Name
+            {t('persona.displayName')}
           </label>
           <input
             id="persona-name"
             type="text"
             value={name}
             onChange={(e) => onChangeName(e.target.value)}
-            placeholder="Enter your name…"
+            placeholder={t('persona.namePlaceholder')}
             className="w-full rounded-lg border border-zinc-700/50 bg-zinc-900/50 px-4 py-2.5 text-sm text-zinc-100 placeholder-zinc-600 outline-none transition-colors focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
             autoFocus
           />
@@ -58,14 +59,14 @@ export function PersonaStep({
             htmlFor="persona-description"
             className="mb-1.5 block text-sm font-medium text-zinc-300"
           >
-            Description{" "}
-            <span className="text-zinc-600">(optional)</span>
+            {t('persona.description')}{" "}
+            <span className="text-zinc-600">{t('persona.descriptionOptional')}</span>
           </label>
           <textarea
             id="persona-description"
             value={description}
             onChange={(e) => onChangeDescription(e.target.value)}
-            placeholder="A short bio or description of yourself…"
+            placeholder={t('persona.descriptionPlaceholder')}
             rows={3}
             className="w-full resize-none rounded-lg border border-zinc-700/50 bg-zinc-900/50 px-4 py-2.5 text-sm text-zinc-100 placeholder-zinc-600 outline-none transition-colors focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
           />
@@ -81,7 +82,7 @@ export function PersonaStep({
             : "cursor-not-allowed bg-zinc-800 text-zinc-600"
         }`}
       >
-        Continue
+        {t('persona.continue')}
       </button>
     </div>
   );

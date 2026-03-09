@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { Search, Star, X } from "lucide-react";
 import type { OllamaModel, ModelTag, ContentTier } from "@shared/types";
 
@@ -33,6 +34,7 @@ export function ModelPickerStep({
   onSelectModel,
   onComplete,
 }: ModelPickerStepProps) {
+  const { t } = useTranslation('onboarding');
   const [search, setSearch] = useState("");
   const [activeTagFilter, setActiveTagFilter] = useState<ModelTag | null>(null);
 
@@ -76,10 +78,10 @@ export function ModelPickerStep({
         className="mb-2 text-2xl font-bold tracking-tight text-zinc-100 sm:text-3xl"
         style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}
       >
-        Pick your default model
+        {t('model.title')}
       </h2>
       <p className="mb-8 text-zinc-500">
-        This will be used for new chats. You can change it at any time per chat.
+        {t('model.subtitle')}
       </p>
 
       <div className="mb-6 flex w-full flex-col gap-3 sm:flex-row sm:items-center">
@@ -92,7 +94,7 @@ export function ModelPickerStep({
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search models..."
+            placeholder={t('model.search')}
             className="w-full rounded-lg border border-zinc-700 bg-zinc-900 py-2 pl-9 pr-3 text-sm text-zinc-200 placeholder-zinc-600 outline-none transition-colors focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50"
           />
           {search && (
@@ -150,7 +152,7 @@ export function ModelPickerStep({
                         strokeWidth={0}
                       />
                       <span className="text-[10px] font-medium text-amber-400">
-                        Favorite
+                        {t('model.favorite')}
                       </span>
                     </div>
                   )}
@@ -203,7 +205,7 @@ export function ModelPickerStep({
         {sortedAndFiltered.length === 0 && (
           <div className="flex items-center justify-center py-12">
             <p className="text-sm text-zinc-500">
-              No models match your filters.
+              {t('model.noMatch')}
             </p>
           </div>
         )}
@@ -218,7 +220,7 @@ export function ModelPickerStep({
             : "cursor-not-allowed bg-zinc-800 text-zinc-600"
         }`}
       >
-        Start Chatting
+        {t('model.startChatting')}
       </button>
     </div>
   );

@@ -1,4 +1,5 @@
 import { FileText, MoreHorizontal, Pencil, Trash2, Download } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
 import type { Project, ProjectStatus } from '@shared/story-types'
 
@@ -11,28 +12,9 @@ interface ProjectCardProps {
   onChangeStatus?: (status: ProjectStatus) => void
 }
 
-const statusConfig: Record<ProjectStatus, { label: string; color: string }> = {
-  drafting: { label: 'Drafting', color: 'bg-zinc-700/60 text-zinc-400' },
-  'in-progress': { label: 'In Progress', color: 'bg-indigo-500/15 text-indigo-400' },
-  complete: { label: 'Complete', color: 'bg-teal-500/15 text-teal-400' },
-  archived: { label: 'Archived', color: 'bg-zinc-700/40 text-zinc-500' },
-}
-
 function formatWordCount(n: number): string {
   if (n >= 1000) return `${(n / 1000).toFixed(1)}k`
   return String(n)
-}
-
-function timeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime()
-  const mins = Math.floor(diff / 60000)
-  if (mins < 60) return `${mins}m ago`
-  const hours = Math.floor(mins / 60)
-  if (hours < 24) return `${hours}h ago`
-  const days = Math.floor(hours / 24)
-  if (days < 30) return `${days}d ago`
-  const months = Math.floor(days / 30)
-  return `${months}mo ago`
 }
 
 export function ProjectCard({
@@ -42,6 +24,27 @@ export function ProjectCard({
   onDelete,
   onExport,
 }: ProjectCardProps) {
+  const { t } = useTranslation('story')
+
+  const statusConfig: Record<ProjectStatus, { label: string; color: string }> = {
+    drafting: { label: t('status.drafting'), color: 'bg-zinc-700/60 text-zinc-400' },
+    'in-progress': { label: t('status.inProgress'), color: 'bg-indigo-500/15 text-indigo-400' },
+    complete: { label: t('status.complete'), color: 'bg-teal-500/15 text-teal-400' },
+    archived: { label: t('status.archived'), color: 'bg-zinc-700/40 text-zinc-500' },
+  }
+
+  function timeAgo(dateStr: string): string {
+    const diff = Date.now() - new Date(dateStr).getTime()
+    const mins = Math.floor(diff / 60000)
+    if (mins < 60) return t('card.mAgo', { count: mins })
+    const hours = Math.floor(mins / 60)
+    if (hours < 24) return t('card.hAgo', { count: hours })
+    const days = Math.floor(hours / 24)
+    if (days < 30) return t('card.dAgo', { count: days })
+    const months = Math.floor(days / 30)
+    return t('card.moAgo', { count: months })
+  }
+
   const status = statusConfig[project.status]
   const initials = project.characterNames.slice(0, 4)
 
@@ -156,14 +159,14 @@ export function ProjectCard({
 
         {/* Stats row */}
         <div className="mt-1.5 flex items-center gap-2 text-[11px] tabular-nums text-zinc-500">
-          <span>{project.sceneCount} scenes</span>
+          <span>{t('card.scenes', { count: project.sceneCount })}</span>
           <span className="text-zinc-700">&middot;</span>
           <span>{formatWordCount(project.wordCount)}w</span>
         </div>
 
         {/* Last edited */}
         <p className="mt-1 text-[10px] text-zinc-600">
-          Last edited {timeAgo(project.updatedAt)}
+          {t('card.lastEdited', { time: timeAgo(project.updatedAt) })}
         </p>
 
         {/* Cast preview */}

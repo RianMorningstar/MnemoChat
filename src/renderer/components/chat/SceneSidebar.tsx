@@ -6,6 +6,7 @@ import {
   Sliders,
   Save,
 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
 import type {
   Chat,
@@ -58,6 +59,7 @@ export function SceneSidebar({
   onAutoContinueChange,
   onTalkativenessChange,
 }: SceneSidebarProps) {
+  const { t } = useTranslation('chat')
   const [genOpen, setGenOpen] = useState(false)
   const [budgetExpanded, setBudgetExpanded] = useState(false)
   const [sidebarTab, setSidebarTab] = useState<'info' | 'bookmarks'>('info')
@@ -78,7 +80,7 @@ export function SceneSidebar({
               : 'text-zinc-500 hover:text-zinc-300'
           )}
         >
-          Scene
+          {t('sidebar.scene')}
         </button>
         <button
           onClick={() => setSidebarTab('bookmarks')}
@@ -89,7 +91,7 @@ export function SceneSidebar({
               : 'text-zinc-500 hover:text-zinc-300'
           )}
         >
-          Outline ({bookmarks.length})
+          {t('sidebar.outline', { count: bookmarks.length })}
         </button>
       </div>
 
@@ -133,7 +135,7 @@ export function SceneSidebar({
             {availableModels && availableModels.length > 0 && (
               <div className="border-b border-zinc-800 p-4">
                 <label className="mb-1.5 block text-[10px] font-medium uppercase tracking-widest text-zinc-500">
-                  Model
+                  {t('sidebar.model')}
                 </label>
                 <select
                   value={chat.modelId}
@@ -154,7 +156,7 @@ export function SceneSidebar({
               <div className="border-b border-zinc-800 p-4">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-[10px] font-medium uppercase tracking-widest text-zinc-500">
-                    Author's Note
+                    {t('sidebar.authorsNote')}
                   </span>
                   <button
                     onClick={() => onToggleSceneDirection?.(!sceneDirection.enabled)}
@@ -165,7 +167,7 @@ export function SceneSidebar({
                         : 'bg-zinc-800 text-zinc-600'
                     )}
                   >
-                    {sceneDirection.enabled ? 'ON' : 'OFF'}
+                    {sceneDirection.enabled ? t('sidebar.on') : t('sidebar.off')}
                   </button>
                 </div>
                 {sceneDirection.enabled && (
@@ -173,12 +175,12 @@ export function SceneSidebar({
                     <textarea
                       value={sceneDirection.text}
                       onChange={(e) => onUpdateSceneDirection?.(e.target.value)}
-                      placeholder="Guide the scene direction..."
+                      placeholder={t('sidebar.scenePlaceholder')}
                       rows={3}
                       className="w-full resize-none rounded border border-zinc-700 bg-zinc-800 px-2 py-1.5 text-xs text-zinc-300 placeholder-zinc-600 outline-none focus:border-indigo-500"
                     />
                     <div className="flex items-center justify-between">
-                      <label className="text-[10px] text-zinc-500">Injection depth</label>
+                      <label className="text-[10px] text-zinc-500">{t('sidebar.injectionDepth')}</label>
                       <input
                         type="number"
                         min={0}
@@ -197,23 +199,23 @@ export function SceneSidebar({
             {chat.characters && chat.characters.length > 1 && (
               <div className="border-b border-zinc-800 p-4">
                 <span className="mb-2 block text-[10px] font-medium uppercase tracking-widest text-zinc-500">
-                  Group Settings
+                  {t('sidebar.groupSettings')}
                 </span>
                 <div className="space-y-3">
                   <div>
-                    <label className="mb-1 block text-[10px] text-zinc-500">Reply Strategy</label>
+                    <label className="mb-1 block text-[10px] text-zinc-500">{t('sidebar.replyStrategy')}</label>
                     <select
                       value={chat.replyStrategy ?? 'round_robin'}
                       onChange={(e) => onReplyStrategyChange?.(e.target.value as ReplyStrategy)}
                       className="w-full rounded border border-zinc-700 bg-zinc-800 px-2 py-1.5 text-xs text-zinc-300 outline-none"
                     >
-                      <option value="round_robin">Round Robin</option>
-                      <option value="random">Random</option>
-                      <option value="weighted_random">Weighted Random</option>
+                      <option value="round_robin">{t('sidebar.roundRobin')}</option>
+                      <option value="random">{t('sidebar.random')}</option>
+                      <option value="weighted_random">{t('sidebar.weightedRandom')}</option>
                     </select>
                   </div>
                   <div className="flex items-center justify-between">
-                    <label className="text-[10px] text-zinc-500">Auto-continue</label>
+                    <label className="text-[10px] text-zinc-500">{t('sidebar.autoContinue')}</label>
                     <button
                       onClick={() => onAutoContinueChange?.(!chat.autoContinue)}
                       className={cn(
@@ -223,7 +225,7 @@ export function SceneSidebar({
                           : 'bg-zinc-800 text-zinc-600'
                       )}
                     >
-                      {chat.autoContinue ? 'ON' : 'OFF'}
+                      {chat.autoContinue ? t('sidebar.on') : t('sidebar.off')}
                     </button>
                   </div>
                   {chat.characters.map((c) => (
@@ -254,7 +256,7 @@ export function SceneSidebar({
                 className="flex w-full items-center gap-2 text-left"
               >
                 <span className="text-[10px] font-medium uppercase tracking-widest text-zinc-500">
-                  Context
+                  {t('sidebar.context')}
                 </span>
                 <span className="ml-auto text-[10px] tabular-nums text-zinc-400">
                   {usedTokens.toLocaleString()} / {tokenBudget.contextMax.toLocaleString()}
@@ -278,17 +280,17 @@ export function SceneSidebar({
               {budgetExpanded && (
                 <div className="mt-3 space-y-1.5">
                   {[
-                    { label: 'System prompt', value: tokenBudget.systemPrompt },
-                    { label: 'Character card', value: tokenBudget.characterCard },
+                    { label: t('sidebar.systemPrompt'), value: tokenBudget.systemPrompt },
+                    { label: t('sidebar.characterCard'), value: tokenBudget.characterCard },
                     {
-                      label: 'Chat history',
+                      label: t('sidebar.chatHistory'),
                       value: tokenBudget.chatHistory,
-                      note: tokenBudget.scrollingOutSoon ? 'scrolling out soon' : undefined,
+                      note: tokenBudget.scrollingOutSoon ? t('sidebar.scrollingOutSoon') : undefined,
                     },
                     {
-                      label: 'Scene direction',
+                      label: t('sidebar.sceneDirection'),
                       value: tokenBudget.sceneDirection,
-                      note: tokenBudget.sceneDirection > 0 ? 'active' : undefined,
+                      note: tokenBudget.sceneDirection > 0 ? t('sidebar.active') : undefined,
                     },
                   ].map((item) => (
                     <div key={item.label} className="flex items-center justify-between text-[10px]">
@@ -304,7 +306,7 @@ export function SceneSidebar({
                     </div>
                   ))}
                   <div className="flex items-center justify-between border-t border-zinc-800 pt-1.5 text-[10px]">
-                    <span className="font-medium text-teal-400">Available</span>
+                    <span className="font-medium text-teal-400">{t('sidebar.available')}</span>
                     <span className="tabular-nums text-teal-400">
                       {tokenBudget.available.toLocaleString()}
                     </span>
@@ -320,7 +322,7 @@ export function SceneSidebar({
                 className="flex w-full items-center gap-2 p-4 text-left"
               >
                 <Sliders className="h-3.5 w-3.5 text-zinc-500" />
-                <span className="text-xs font-medium text-zinc-400">Generation</span>
+                <span className="text-xs font-medium text-zinc-400">{t('sidebar.generation')}</span>
                 <span className="ml-auto text-[10px] text-zinc-600">{activePreset.name}</span>
                 {genOpen ? (
                   <ChevronDown className="h-3 w-3 text-zinc-600" />
@@ -334,7 +336,7 @@ export function SceneSidebar({
                   {/* Preset selector */}
                   <div>
                     <label className="mb-1 block text-[10px] uppercase tracking-wider text-zinc-600">
-                      Preset
+                      {t('sidebar.preset')}
                     </label>
                     <select
                       value={activePreset.id}
@@ -353,7 +355,7 @@ export function SceneSidebar({
                   <div>
                     <div className="flex items-center justify-between">
                       <label className="text-[10px] uppercase tracking-wider text-zinc-600">
-                        Temperature
+                        {t('sidebar.temperature')}
                       </label>
                       <span className="text-[10px] tabular-nums text-zinc-400">
                         {activePreset.temperature.toFixed(2)}
@@ -376,7 +378,7 @@ export function SceneSidebar({
                   <div>
                     <div className="flex items-center justify-between">
                       <label className="text-[10px] uppercase tracking-wider text-zinc-600">
-                        Rep. Penalty
+                        {t('sidebar.repPenalty')}
                       </label>
                       <span className="text-[10px] tabular-nums text-zinc-400">
                         {activePreset.repetitionPenalty.toFixed(2)}
@@ -399,7 +401,7 @@ export function SceneSidebar({
                   <div>
                     <div className="flex items-center justify-between">
                       <label className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-zinc-600">
-                        Top-P
+                        {t('sidebar.topP')}
                         <button
                           onClick={() =>
                             onUpdatePreset?.({ topPEnabled: !activePreset.topPEnabled })
@@ -411,7 +413,7 @@ export function SceneSidebar({
                               : 'bg-zinc-800 text-zinc-600'
                           )}
                         >
-                          {activePreset.topPEnabled ? 'ON' : 'OFF'}
+                          {activePreset.topPEnabled ? t('sidebar.on') : t('sidebar.off')}
                         </button>
                       </label>
                       <span className="text-[10px] tabular-nums text-zinc-400">
@@ -437,7 +439,7 @@ export function SceneSidebar({
                   <div>
                     <div className="flex items-center justify-between">
                       <label className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-zinc-600">
-                        Top-K
+                        {t('sidebar.topK')}
                         <button
                           onClick={() =>
                             onUpdatePreset?.({ topKEnabled: !activePreset.topKEnabled })
@@ -449,7 +451,7 @@ export function SceneSidebar({
                               : 'bg-zinc-800 text-zinc-600'
                           )}
                         >
-                          {activePreset.topKEnabled ? 'ON' : 'OFF'}
+                          {activePreset.topKEnabled ? t('sidebar.on') : t('sidebar.off')}
                         </button>
                       </label>
                       <span className="text-[10px] tabular-nums text-zinc-400">
@@ -474,7 +476,7 @@ export function SceneSidebar({
                   {/* Max New Tokens */}
                   <div>
                     <label className="mb-1 block text-[10px] uppercase tracking-wider text-zinc-600">
-                      Max New Tokens
+                      {t('sidebar.maxNewTokens')}
                     </label>
                     <input
                       type="number"
@@ -492,7 +494,7 @@ export function SceneSidebar({
                   {/* Stop Sequences */}
                   <div>
                     <label className="mb-1 block text-[10px] uppercase tracking-wider text-zinc-600">
-                      Stop Sequences
+                      {t('sidebar.stopSequences')}
                     </label>
                     <div className="flex flex-wrap gap-1">
                       {activePreset.stopSequences.map((seq, i) => (
@@ -509,14 +511,14 @@ export function SceneSidebar({
                   {/* Negative Prompt */}
                   <div>
                     <label className="mb-1 block text-[10px] uppercase tracking-wider text-zinc-600">
-                      Negative Prompt
+                      {t('sidebar.negativePrompt')}
                     </label>
                     <textarea
                       value={activePreset.negativePrompt}
                       onChange={(e) =>
                         onUpdatePreset?.({ negativePrompt: e.target.value })
                       }
-                      placeholder="Describe what to avoid..."
+                      placeholder={t('sidebar.negativePromptPlaceholder')}
                       rows={2}
                       className="w-full resize-none rounded border border-zinc-700 bg-zinc-800 px-2 py-1.5 text-xs text-zinc-300 placeholder-zinc-600 outline-none focus:border-indigo-500"
                     />
@@ -526,9 +528,9 @@ export function SceneSidebar({
                   <div>
                     <div className="flex items-center justify-between">
                       <label className="text-[10px] uppercase tracking-wider text-zinc-600">
-                        CFG Scale
+                        {t('sidebar.cfgScale')}
                       </label>
-                      <span className="text-[10px] text-zinc-600">Future use</span>
+                      <span className="text-[10px] text-zinc-600">{t('sidebar.futureUse')}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <input
@@ -554,7 +556,7 @@ export function SceneSidebar({
                     className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-800/50 py-1.5 text-xs font-medium text-zinc-400 transition-colors hover:bg-zinc-700 hover:text-zinc-200"
                   >
                     <Save className="h-3 w-3" />
-                    Save as Preset
+                    {t('sidebar.saveAsPreset')}
                   </button>
                 </div>
               )}
@@ -564,15 +566,15 @@ export function SceneSidebar({
             <div className="p-4">
               <div className="space-y-2 text-[10px]">
                 <div className="flex justify-between">
-                  <span className="text-zinc-600">Messages</span>
+                  <span className="text-zinc-600">{t('sidebar.messages')}</span>
                   <span className="tabular-nums text-zinc-400">{chat.messageCount}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-zinc-600">Words</span>
+                  <span className="text-zinc-600">{t('sidebar.words')}</span>
                   <span className="tabular-nums text-zinc-400">{chat.wordCount.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-zinc-600">Bookmarks</span>
+                  <span className="text-zinc-600">{t('sidebar.bookmarks')}</span>
                   <span className="tabular-nums text-zinc-400">{chat.bookmarkCount}</span>
                 </div>
               </div>
@@ -584,11 +586,11 @@ export function SceneSidebar({
         {sidebarTab === 'bookmarks' && (
           <div className="p-3">
             <h3 className="mb-3 px-1 text-[10px] font-medium uppercase tracking-widest text-zinc-500">
-              Scene Outline
+              {t('sidebar.sceneOutline')}
             </h3>
             {bookmarks.length === 0 ? (
               <p className="px-1 text-xs text-zinc-600">
-                Bookmark messages to build a scene outline.
+                {t('sidebar.outlineEmpty')}
               </p>
             ) : (
               <div className="space-y-1">
@@ -611,10 +613,10 @@ export function SceneSidebar({
                     />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-xs text-zinc-300">
-                        {bm.label || 'Untitled bookmark'}
+                        {bm.label || t('sidebar.untitledBookmark')}
                       </p>
                       <p className="text-[10px] text-zinc-600">
-                        msg {bm.messageIndex + 1}
+                        {t('sidebar.msgIndex', { index: bm.messageIndex + 1 })}
                       </p>
                     </div>
                   </button>

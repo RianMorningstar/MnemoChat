@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   ArrowLeft,
   Download,
@@ -45,10 +46,10 @@ type SceneEditorProps = Pick<
   onBack?: () => void
 }
 
-const sceneStatusConfig: Record<string, { label: string; color: string }> = {
-  placeholder: { label: 'Placeholder', color: 'bg-zinc-700/40 text-zinc-500' },
-  draft: { label: 'Draft', color: 'bg-amber-500/15 text-amber-400' },
-  final: { label: 'Final', color: 'bg-teal-500/15 text-teal-400' },
+const sceneStatusColors: Record<string, string> = {
+  placeholder: 'bg-zinc-700/40 text-zinc-500',
+  draft: 'bg-amber-500/15 text-amber-400',
+  final: 'bg-teal-500/15 text-teal-400',
 }
 
 function formatWordCount(n: number): string {
@@ -73,12 +74,6 @@ function renderProseText(text: string): React.ReactNode[] {
   })
 }
 
-const exportFormatLabels: Record<ExportFormat, string> = {
-  'prose-md': 'Prose (Markdown)',
-  'prose-txt': 'Prose (Plain Text)',
-  json: 'JSON (Structured)',
-  pdf: 'PDF (Formatted)',
-}
 
 export function SceneEditor({
   scene,
@@ -96,6 +91,21 @@ export function SceneEditor({
   onExport,
   onExecuteExport,
 }: SceneEditorProps) {
+  const { t } = useTranslation('story')
+
+  const sceneStatusConfig: Record<string, { label: string; color: string }> = {
+    placeholder: { label: t('scene.placeholder'), color: sceneStatusColors.placeholder },
+    draft: { label: t('scene.draft'), color: sceneStatusColors.draft },
+    final: { label: t('scene.final'), color: sceneStatusColors.final },
+  }
+
+  const exportFormatLabels: Record<ExportFormat, string> = {
+    'prose-md': t('export.proseMd'),
+    'prose-txt': t('export.proseTxt'),
+    json: t('export.json'),
+    pdf: t('export.pdf'),
+  }
+
   const [exportModalOpen, setExportModalOpen] = useState(false)
   const [exportFormat, setExportFormat] = useState<ExportFormat>('prose-md')
   const [exportCharHeaders, setExportCharHeaders] = useState(false)
@@ -149,7 +159,7 @@ export function SceneEditor({
           className="flex items-center gap-2 rounded-xl bg-indigo-500 px-3.5 py-1.5 text-sm font-medium text-white transition-colors hover:bg-indigo-400"
         >
           <Download className="h-3.5 w-3.5" />
-          Export
+          {t('export.button')}
         </button>
         <div className="relative">
           <button
@@ -170,7 +180,7 @@ export function SceneEditor({
                   className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs text-red-400 hover:bg-zinc-700"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
-                  Delete Scene
+                  {t('sceneEditor.deleteScene')}
                 </button>
               </div>
             </>
@@ -185,11 +195,11 @@ export function SceneEditor({
           {/* Block count bar */}
           <div className="flex items-center justify-between border-b border-zinc-800/50 px-6 py-2.5">
             <span className="text-xs text-zinc-500">
-              {orderedBlocks.length} block{orderedBlocks.length !== 1 ? 's' : ''}{' '}
+              {orderedBlocks.length} {orderedBlocks.length === 1 ? t('sceneEditor.blocksOne') : t('sceneEditor.blocks')}{' '}
               <span className="text-zinc-700">&middot;</span>{' '}
               {orderedBlocks.filter((b) => b.hidden).length > 0 && (
                 <span className="text-zinc-600">
-                  {orderedBlocks.filter((b) => b.hidden).length} hidden
+                  {t('sceneEditor.hidden', { count: orderedBlocks.filter((b) => b.hidden).length })}
                 </span>
               )}
             </span>
@@ -198,7 +208,7 @@ export function SceneEditor({
               className="flex items-center gap-1.5 rounded-lg bg-zinc-800 px-3 py-1.5 text-xs font-medium text-zinc-300 transition-colors hover:bg-zinc-700"
             >
               <Plus className="h-3 w-3" />
-              Add Block
+              {t('sceneEditor.addBlock')}
             </button>
           </div>
 
@@ -235,7 +245,7 @@ export function SceneEditor({
                   {block.hidden && (
                     <div className="mb-2 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-zinc-600">
                       <EyeOff className="h-3 w-3" />
-                      Hidden from export
+                      {t('sceneEditor.hiddenFromExport')}
                     </div>
                   )}
                   <div className="whitespace-pre-wrap text-sm leading-relaxed">
@@ -255,11 +265,11 @@ export function SceneEditor({
                   >
                     {block.hidden ? (
                       <>
-                        <Eye className="h-3 w-3" /> Show
+                        <Eye className="h-3 w-3" /> {t('sceneEditor.show')}
                       </>
                     ) : (
                       <>
-                        <EyeOff className="h-3 w-3" /> Hide
+                        <EyeOff className="h-3 w-3" /> {t('sceneEditor.hide')}
                       </>
                     )}
                   </button>
@@ -291,7 +301,7 @@ export function SceneEditor({
                     onClick={() => onViewBlockSource?.(block.sourceMessageId)}
                     className="flex items-center gap-1 rounded px-2 py-1 text-[10px] text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-300"
                   >
-                    <ExternalLink className="h-3 w-3" /> View Source
+                    <ExternalLink className="h-3 w-3" /> {t('sceneEditor.viewSource')}
                   </button>
                 </div>
               </div>
@@ -300,15 +310,15 @@ export function SceneEditor({
             {orderedBlocks.length === 0 && (
               <div className="flex flex-col items-center py-16 text-center">
                 <Bookmark className="mb-3 h-10 w-10 text-zinc-700" />
-                <p className="text-sm text-zinc-500">No content blocks yet.</p>
+                <p className="text-sm text-zinc-500">{t('sceneEditor.noBlocks')}</p>
                 <p className="mt-1 text-xs text-zinc-600">
-                  Add blocks from bookmarked chat messages.
+                  {t('sceneEditor.noBlocksHint')}
                 </p>
                 <button
                   onClick={() => onAddBlock?.(scene.id)}
                   className="mt-3 text-sm font-medium text-indigo-400 transition-colors hover:text-indigo-300"
                 >
-                  Add from bookmarks
+                  {t('sceneEditor.addFromBookmarks')}
                 </button>
               </div>
             )}
@@ -320,7 +330,7 @@ export function SceneEditor({
           {/* Title */}
           <div className="mb-5">
             <label className="mb-1.5 block text-[10px] font-medium uppercase tracking-widest text-zinc-600">
-              Title
+              {t('sceneEditor.titleLabel')}
             </label>
             <h2
               className="text-base font-bold text-zinc-100"
@@ -333,17 +343,17 @@ export function SceneEditor({
           {/* Position */}
           <div className="mb-5">
             <label className="mb-1.5 block text-[10px] font-medium uppercase tracking-widest text-zinc-600">
-              Position in Project
+              {t('sceneEditor.position')}
             </label>
             <span className="text-sm tabular-nums text-zinc-300">
-              Scene {scene.position}
+              {t('sceneEditor.sceneNumber', { number: scene.position })}
             </span>
           </div>
 
           {/* Status */}
           <div className="mb-5">
             <label className="mb-1.5 block text-[10px] font-medium uppercase tracking-widest text-zinc-600">
-              Status
+              {t('sceneEditor.statusLabel')}
             </label>
             <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-medium', ss.color)}>
               {ss.label}
@@ -353,7 +363,7 @@ export function SceneEditor({
           {/* Source chat */}
           <div className="mb-5">
             <label className="mb-1.5 block text-[10px] font-medium uppercase tracking-widest text-zinc-600">
-              Source Chat
+              {t('sceneEditor.sourceChat')}
             </label>
             {scene.sourceChatTitle ? (
               <button
@@ -364,20 +374,20 @@ export function SceneEditor({
                 {scene.sourceChatTitle}
               </button>
             ) : (
-              <span className="text-xs italic text-zinc-600">None</span>
+              <span className="text-xs italic text-zinc-600">{t('sceneEditor.none')}</span>
             )}
           </div>
 
           {/* Word count */}
           <div className="mb-5">
             <label className="mb-1.5 block text-[10px] font-medium uppercase tracking-widest text-zinc-600">
-              Word Count
+              {t('sceneEditor.wordCount')}
             </label>
             <div className="text-sm tabular-nums text-zinc-300">
               {formatWordCount(scene.wordCount)}
               {orderedBlocks.some((b) => b.hidden) && (
                 <span className="ml-1.5 text-[10px] text-zinc-600">
-                  ({formatWordCount(visibleWordCount)} visible)
+                  ({t('sceneEditor.visible', { words: formatWordCount(visibleWordCount) })})
                 </span>
               )}
             </div>
@@ -386,10 +396,10 @@ export function SceneEditor({
           {/* Characters present */}
           <div className="mb-5">
             <label className="mb-1.5 block text-[10px] font-medium uppercase tracking-widest text-zinc-600">
-              Characters Present
+              {t('sceneEditor.charactersPresent')}
             </label>
             {scene.charactersPresent.length === 0 ? (
-              <span className="text-xs italic text-zinc-600">None detected</span>
+              <span className="text-xs italic text-zinc-600">{t('sceneEditor.noneDetected')}</span>
             ) : (
               <div className="flex flex-wrap gap-1.5">
                 {scene.charactersPresent.map((char) => (
@@ -410,8 +420,8 @@ export function SceneEditor({
           {/* Scene notes */}
           <div>
             <label className="mb-1.5 block text-[10px] font-medium uppercase tracking-widest text-zinc-600">
-              Scene Notes
-              <span className="ml-1.5 font-normal normal-case text-zinc-700">(never exported)</span>
+              {t('sceneEditor.sceneNotes')}
+              <span className="ml-1.5 font-normal normal-case text-zinc-700">{t('sceneEditor.neverExported')}</span>
             </label>
             {scene.sceneNotes ? (
               <div className="rounded-lg bg-zinc-800/60 p-3">
@@ -421,7 +431,7 @@ export function SceneEditor({
               </div>
             ) : (
               <div className="rounded-lg border border-dashed border-zinc-800 p-3">
-                <p className="text-xs italic text-zinc-600">No notes yet.</p>
+                <p className="text-xs italic text-zinc-600">{t('sceneEditor.noNotes')}</p>
               </div>
             )}
           </div>
@@ -438,7 +448,7 @@ export function SceneEditor({
                 className="text-base font-bold text-zinc-100"
                 style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}
               >
-                Export Scene
+                {t('export.exportScene')}
               </h3>
               <button
                 onClick={() => setExportModalOpen(false)}
@@ -451,7 +461,7 @@ export function SceneEditor({
             {/* Format */}
             <div className="mb-4">
               <label className="mb-1.5 block text-[10px] font-medium uppercase tracking-widest text-zinc-600">
-                Format
+                {t('export.format')}
               </label>
               <div className="space-y-1.5">
                 {(exportFormats ?? []).map((fmt) => (
@@ -480,11 +490,11 @@ export function SceneEditor({
                   onChange={(e) => setExportCharHeaders(e.target.checked)}
                   className="h-3.5 w-3.5 rounded border-zinc-600 bg-zinc-800 text-indigo-500 focus:ring-indigo-500/30"
                 />
-                Character name headers
+                {t('export.charHeaders')}
               </label>
               {exportFormat === 'pdf' && (
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-zinc-500">PDF style:</span>
+                  <span className="text-xs text-zinc-500">{t('export.pdfStyle')}</span>
                   {(pdfStyleOptions ?? []).map((style) => (
                     <button
                       key={style}
@@ -508,7 +518,7 @@ export function SceneEditor({
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-500 py-3 text-sm font-medium text-white transition-colors hover:bg-indigo-400"
             >
               <Download className="h-4 w-4" />
-              Export
+              {t('export.button')}
             </button>
           </div>
         </div>

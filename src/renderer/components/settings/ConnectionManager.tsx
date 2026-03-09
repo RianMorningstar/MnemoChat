@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { Loader2, Trash2, Plus, Zap, CheckCircle2, XCircle, Eye, EyeOff } from "lucide-react";
 import type { ConnectionProfile, ConnectionState, ProviderType } from "@shared/types";
 import {
@@ -22,6 +23,7 @@ interface ProfileStatus {
 }
 
 export function ConnectionManager() {
+  const { t } = useTranslation('settings');
   const [profiles, setProfiles] = useState<ConnectionProfile[]>([]);
   const [statuses, setStatuses] = useState<Record<string, ProfileStatus>>({});
   const [loading, setLoading] = useState(true);
@@ -120,7 +122,7 @@ export function ConnectionManager() {
     return (
       <div className="flex items-center gap-2 py-4 text-zinc-500">
         <Loader2 className="h-4 w-4 animate-spin" />
-        <span className="text-sm">Loading connections...</span>
+        <span className="text-sm">{t('connections.loading')}</span>
       </div>
     );
   }
@@ -128,7 +130,7 @@ export function ConnectionManager() {
   return (
     <div className="space-y-4">
       {profiles.length === 0 && !showAdd && (
-        <p className="text-sm text-zinc-500">No connection profiles yet.</p>
+        <p className="text-sm text-zinc-500">{t('connections.empty')}</p>
       )}
 
       {profiles.map((profile) => {
@@ -159,7 +161,7 @@ export function ConnectionManager() {
                   </span>
                   {profile.isActive && (
                     <span className="rounded bg-indigo-500/15 px-1.5 py-0.5 text-[10px] font-medium text-indigo-400">
-                      Active
+                      {t('connections.active')}
                     </span>
                   )}
                 </div>
@@ -169,7 +171,7 @@ export function ConnectionManager() {
                 >
                   {profile.endpoint}
                   {profile.defaultModel && ` / ${profile.defaultModel}`}
-                  {profile.apiKey && " · key set"}
+                  {profile.apiKey && ` · ${t('connections.keySet')}`}
                 </p>
               </div>
             </div>
@@ -179,7 +181,7 @@ export function ConnectionManager() {
                 onClick={() => handleTest(profile)}
                 disabled={status?.testing}
                 className="rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-300"
-                title="Test connection"
+                title={t('connections.testConnection')}
               >
                 {status?.testing ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -197,7 +199,7 @@ export function ConnectionManager() {
                   onClick={() => handleActivate(profile.id)}
                   className="rounded-md px-2 py-1 text-xs font-medium text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-200"
                 >
-                  Set Active
+                  {t('connections.setActive')}
                 </button>
               )}
 
@@ -207,20 +209,20 @@ export function ConnectionManager() {
                     onClick={() => handleDelete(profile.id)}
                     className="rounded-md px-2 py-1 text-xs font-medium text-red-400 transition-colors hover:bg-red-500/10"
                   >
-                    Confirm
+                    {t('connections.confirm')}
                   </button>
                   <button
                     onClick={() => setConfirmDeleteId(null)}
                     className="rounded-md px-2 py-1 text-xs font-medium text-zinc-500 transition-colors hover:bg-zinc-800"
                   >
-                    Cancel
+                    {t('connections.cancel')}
                   </button>
                 </div>
               ) : (
                 <button
                   onClick={() => setConfirmDeleteId(profile.id)}
                   className="rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-red-400"
-                  title="Delete"
+                  title={t('connections.delete')}
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
@@ -235,7 +237,7 @@ export function ConnectionManager() {
           {/* Provider type */}
           <div>
             <label className="mb-1.5 block text-xs font-medium text-zinc-400">
-              Provider
+              {t('connections.provider')}
             </label>
             <select
               value={newType}
@@ -255,7 +257,7 @@ export function ConnectionManager() {
             type="text"
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
-            placeholder="Profile name"
+            placeholder={t('connections.profileName')}
             className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-200 placeholder-zinc-600 outline-none focus:border-indigo-500"
           />
 
@@ -276,7 +278,7 @@ export function ConnectionManager() {
                 type={showApiKey ? "text" : "password"}
                 value={newApiKey}
                 onChange={(e) => setNewApiKey(e.target.value)}
-                placeholder="API key"
+                placeholder={t('connections.apiKey')}
                 className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 pr-10 text-sm text-zinc-200 placeholder-zinc-600 outline-none focus:border-indigo-500"
                 style={{ fontFamily: "'JetBrains Mono', monospace" }}
               />
@@ -300,7 +302,7 @@ export function ConnectionManager() {
               disabled={!canSave}
               className="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-400 disabled:cursor-not-allowed disabled:bg-zinc-800 disabled:text-zinc-600"
             >
-              Save
+              {t('connections.save')}
             </button>
             <button
               onClick={() => {
@@ -312,7 +314,7 @@ export function ConnectionManager() {
               }}
               className="rounded-lg px-4 py-2 text-sm font-medium text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-200"
             >
-              Cancel
+              {t('connections.cancel')}
             </button>
           </div>
         </div>
@@ -322,7 +324,7 @@ export function ConnectionManager() {
           className="flex items-center gap-1.5 rounded-lg border border-dashed border-zinc-700 px-4 py-2.5 text-sm text-zinc-500 transition-colors hover:border-zinc-600 hover:text-zinc-300"
         >
           <Plus className="h-4 w-4" />
-          Add Profile
+          {t('connections.addProfile')}
         </button>
       )}
     </div>

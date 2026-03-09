@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   MessageSquare,
   Pencil,
@@ -43,19 +44,6 @@ function getTagGradient(tags: string[]): string {
   return 'from-zinc-800/60 to-zinc-900/80'
 }
 
-function timeAgo(date: string | null): string {
-  if (!date) return 'Never'
-  const diff = Date.now() - new Date(date).getTime()
-  const mins = Math.floor(diff / 60000)
-  if (mins < 60) return `${mins}m ago`
-  const hours = Math.floor(mins / 60)
-  if (hours < 24) return `${hours}h ago`
-  const days = Math.floor(hours / 24)
-  if (days < 7) return `${days}d ago`
-  const weeks = Math.floor(days / 7)
-  return `${weeks}w ago`
-}
-
 export function LibraryCard({
   character,
   density,
@@ -66,8 +54,22 @@ export function LibraryCard({
   onAddToCollection,
   onDelete,
 }: LibraryCardProps) {
+  const { t } = useTranslation('library')
   const [hovered, setHovered] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+
+  function timeAgo(date: string | null): string {
+    if (!date) return t('card.never')
+    const diff = Date.now() - new Date(date).getTime()
+    const mins = Math.floor(diff / 60000)
+    if (mins < 60) return t('card.mAgo', { count: mins })
+    const hours = Math.floor(mins / 60)
+    if (hours < 24) return t('card.hAgo', { count: hours })
+    const days = Math.floor(hours / 24)
+    if (days < 7) return t('card.dAgo', { count: days })
+    const weeks = Math.floor(days / 7)
+    return t('card.wAgo', { count: weeks })
+  }
 
   if (density === 'list') {
     return (
@@ -88,9 +90,9 @@ export function LibraryCard({
           </div>
         </div>
         <div className="flex items-center gap-6 text-[11px] tabular-nums text-zinc-500">
-          <span>{character.messageCount} msgs</span>
+          <span>{t('card.msgs', { count: character.messageCount })}</span>
           <span>{timeAgo(character.lastChatted)}</span>
-          <span>{character.tokenCount} tok</span>
+          <span>{t('card.tok', { count: character.tokenCount })}</span>
         </div>
         <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
           <button onClick={onChat} className="rounded p-1.5 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-200">
@@ -167,7 +169,7 @@ export function LibraryCard({
 
         {character.source === 'community' && (
           <div className="absolute left-2 top-2 rounded-full bg-teal-500/80 px-2 py-0.5 text-[9px] font-medium text-white backdrop-blur-sm">
-            Community
+            {t('card.community')}
           </div>
         )}
 
@@ -188,15 +190,15 @@ export function LibraryCard({
           <div className="absolute inset-0 flex flex-col justify-between bg-black/60 p-3 backdrop-blur-[2px]">
             <div className="flex justify-end">
               <span className="rounded bg-zinc-900/80 px-1.5 py-0.5 text-[10px] tabular-nums text-zinc-400">
-                {character.tokenCount} tok
+                {t('card.tok', { count: character.tokenCount })}
               </span>
             </div>
             <div>
               <div className="mb-2 space-y-1 text-[10px] text-zinc-400">
-                <div>Last chatted: {timeAgo(character.lastChatted)}</div>
-                <div>{character.messageCount} messages</div>
+                <div>{t('card.lastChatted', { time: timeAgo(character.lastChatted) })}</div>
+                <div>{t('card.messages', { count: character.messageCount })}</div>
                 {character.collectionIds.length > 0 && (
-                  <div>{character.collectionIds.length} collection(s)</div>
+                  <div>{t('card.collections', { count: character.collectionIds.length })}</div>
                 )}
               </div>
               <div className="flex items-center gap-1">
@@ -204,7 +206,7 @@ export function LibraryCard({
                   onClick={(e) => { e.stopPropagation(); onChat?.() }}
                   className="flex-1 rounded-md bg-indigo-500 py-1.5 text-center text-[11px] font-medium text-white transition-colors hover:bg-indigo-400"
                 >
-                  Chat
+                  {t('card.chat')}
                 </button>
                 <button
                   onClick={(e) => { e.stopPropagation(); onEdit?.() }}
@@ -231,19 +233,19 @@ export function LibraryCard({
                         onClick={(e) => { e.stopPropagation(); onDuplicate?.(); setMenuOpen(false) }}
                         className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[11px] text-zinc-300 hover:bg-zinc-700"
                       >
-                        <Copy className="h-3 w-3" /> Duplicate
+                        <Copy className="h-3 w-3" /> {t('card.duplicate')}
                       </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); onAddToCollection?.(); setMenuOpen(false) }}
                         className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[11px] text-zinc-300 hover:bg-zinc-700"
                       >
-                        <FolderPlus className="h-3 w-3" /> Add to Collection
+                        <FolderPlus className="h-3 w-3" /> {t('card.addToCollection')}
                       </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); onDelete?.(); setMenuOpen(false) }}
                         className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[11px] text-red-400 hover:bg-zinc-700"
                       >
-                        <Trash2 className="h-3 w-3" /> Delete
+                        <Trash2 className="h-3 w-3" /> {t('card.delete')}
                       </button>
                     </div>
                   )}

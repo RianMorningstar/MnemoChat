@@ -1,4 +1,5 @@
 import { useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { User, Camera, X } from "lucide-react";
 import type { Character } from "@shared/character-types";
 
@@ -8,6 +9,7 @@ interface BasicTabProps {
 }
 
 export function BasicTab({ character, onChange }: BasicTabProps) {
+  const { t } = useTranslation('characters');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
@@ -49,7 +51,7 @@ export function BasicTab({ character, onChange }: BasicTabProps) {
             )}
             <div className="absolute inset-0 flex flex-col items-center justify-center rounded-lg bg-black/60 opacity-0 transition-opacity group-hover:opacity-100">
               <Camera className="h-5 w-5 text-zinc-200" />
-              <span className="mt-1 text-xs text-zinc-300">Change</span>
+              <span className="mt-1 text-xs text-zinc-300">{t('basic.changePortrait')}</span>
             </div>
           </button>
           {character.portraitUrl && (
@@ -60,7 +62,7 @@ export function BasicTab({ character, onChange }: BasicTabProps) {
                 onChange({ portraitUrl: null });
               }}
               className="absolute -right-1.5 -top-1.5 rounded-full bg-zinc-700 p-0.5 text-zinc-400 opacity-0 transition-opacity hover:bg-red-600 hover:text-white group-hover/portrait:opacity-100"
-              title="Remove portrait"
+              title={t('basic.removePortrait')}
             >
               <X className="h-3.5 w-3.5" />
             </button>
@@ -69,7 +71,7 @@ export function BasicTab({ character, onChange }: BasicTabProps) {
         <div className="flex-1 space-y-4">
           <div>
             <label className="mb-1 block text-sm font-medium text-zinc-300">
-              Name
+              {t('basic.name')}
             </label>
             <input
               type="text"
@@ -80,7 +82,7 @@ export function BasicTab({ character, onChange }: BasicTabProps) {
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-zinc-300">
-              Tags
+              {t('basic.tags')}
             </label>
             <input
               type="text"
@@ -89,11 +91,11 @@ export function BasicTab({ character, onChange }: BasicTabProps) {
                 onChange({
                   tags: e.target.value
                     .split(",")
-                    .map((t) => t.trim())
+                    .map((s) => s.trim())
                     .filter(Boolean),
                 })
               }
-              placeholder="Comma-separated tags"
+              placeholder={t('basic.tagsPlaceholder')}
               className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-200 placeholder-zinc-500 focus:border-indigo-500 focus:outline-none"
             />
           </div>
@@ -103,13 +105,13 @@ export function BasicTab({ character, onChange }: BasicTabProps) {
       {/* Description */}
       <div>
         <label className="mb-1 block text-sm font-medium text-zinc-300">
-          Description
+          {t('basic.description')}
         </label>
         <textarea
           value={character.description || ""}
           onChange={(e) => onChange({ description: e.target.value })}
           rows={4}
-          placeholder="A detailed description of the character..."
+          placeholder={t('basic.descriptionPlaceholder')}
           className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-200 placeholder-zinc-500 focus:border-indigo-500 focus:outline-none"
         />
       </div>
@@ -117,13 +119,13 @@ export function BasicTab({ character, onChange }: BasicTabProps) {
       {/* Personality */}
       <div>
         <label className="mb-1 block text-sm font-medium text-zinc-300">
-          Personality
+          {t('basic.personality')}
         </label>
         <textarea
           value={character.personality || ""}
           onChange={(e) => onChange({ personality: e.target.value })}
           rows={3}
-          placeholder="Character's personality traits..."
+          placeholder={t('basic.personalityPlaceholder')}
           className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-200 placeholder-zinc-500 focus:border-indigo-500 focus:outline-none"
         />
       </div>
@@ -131,13 +133,13 @@ export function BasicTab({ character, onChange }: BasicTabProps) {
       {/* Scenario */}
       <div>
         <label className="mb-1 block text-sm font-medium text-zinc-300">
-          Scenario
+          {t('basic.scenario')}
         </label>
         <textarea
           value={character.scenario || ""}
           onChange={(e) => onChange({ scenario: e.target.value })}
           rows={3}
-          placeholder="The scenario or setting for this character..."
+          placeholder={t('basic.scenarioPlaceholder')}
           className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-200 placeholder-zinc-500 focus:border-indigo-500 focus:outline-none"
         />
       </div>
@@ -145,13 +147,13 @@ export function BasicTab({ character, onChange }: BasicTabProps) {
       {/* First Message */}
       <div>
         <label className="mb-1 block text-sm font-medium text-zinc-300">
-          First Message
+          {t('basic.firstMessage')}
         </label>
         <textarea
           value={character.firstMessage || ""}
           onChange={(e) => onChange({ firstMessage: e.target.value })}
           rows={4}
-          placeholder="The character's opening message..."
+          placeholder={t('basic.firstMessagePlaceholder')}
           className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-200 placeholder-zinc-500 focus:border-indigo-500 focus:outline-none"
         />
       </div>
@@ -159,7 +161,7 @@ export function BasicTab({ character, onChange }: BasicTabProps) {
       {/* Alternate Greetings */}
       <div>
         <label className="mb-1 block text-sm font-medium text-zinc-300">
-          Alternate Greetings
+          {t('basic.alternateGreetings')}
         </label>
         {character.alternateGreetings.map((greeting, i) => (
           <div key={i} className="mb-2 flex gap-2">
@@ -180,7 +182,7 @@ export function BasicTab({ character, onChange }: BasicTabProps) {
               }}
               className="self-start rounded px-2 py-2 text-sm text-red-400 hover:bg-red-900/20"
             >
-              Remove
+              {t('basic.remove')}
             </button>
           </div>
         ))}
@@ -192,17 +194,17 @@ export function BasicTab({ character, onChange }: BasicTabProps) {
           }
           className="text-sm text-indigo-400 hover:text-indigo-300"
         >
-          + Add greeting
+          {t('basic.addGreeting')}
         </button>
       </div>
 
       {/* Quick Replies */}
       <div>
         <label className="mb-1 block text-sm font-medium text-zinc-300">
-          Quick Replies
+          {t('basic.quickReplies')}
         </label>
         <p className="mb-2 text-xs text-zinc-500">
-          Shortcut buttons shown in the chat composer. Click to send instantly.
+          {t('basic.quickRepliesDesc')}
         </p>
         {(character.quickReplies ?? []).map((qr, i) => (
           <div key={i} className="mb-2 flex gap-2">
@@ -213,7 +215,7 @@ export function BasicTab({ character, onChange }: BasicTabProps) {
                 updated[i] = { ...updated[i], label: e.target.value };
                 onChange({ quickReplies: updated });
               }}
-              placeholder="Button label"
+              placeholder={t('basic.buttonLabel')}
               className="w-32 shrink-0 rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-indigo-500 focus:outline-none"
             />
             <input
@@ -223,7 +225,7 @@ export function BasicTab({ character, onChange }: BasicTabProps) {
                 updated[i] = { ...updated[i], content: e.target.value };
                 onChange({ quickReplies: updated });
               }}
-              placeholder="Message content (sent on click)"
+              placeholder={t('basic.messageContent')}
               className="flex-1 rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-indigo-500 focus:outline-none"
             />
             <button
@@ -233,7 +235,7 @@ export function BasicTab({ character, onChange }: BasicTabProps) {
               }}
               className="self-start rounded px-2 py-2 text-sm text-red-400 hover:bg-red-900/20"
             >
-              Remove
+              {t('basic.remove')}
             </button>
           </div>
         ))}
@@ -245,7 +247,7 @@ export function BasicTab({ character, onChange }: BasicTabProps) {
           }
           className="text-sm text-indigo-400 hover:text-indigo-300"
         >
-          + Add quick reply
+          {t('basic.addQuickReply')}
         </button>
       </div>
     </div>
